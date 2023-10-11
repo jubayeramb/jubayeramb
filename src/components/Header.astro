@@ -1,13 +1,20 @@
+---
+const { pathname } = Astro.url;
+const activePage = pathname.split("/")[1];
+const active = (path: string) =>
+  activePage === path ? "border-b border-gray-700" : "";
+---
+
 <header
-  class="w-full fixed top-0 bg-white backdrop-blur-sm backdrop-filter bg-opacity-40 z-50"
+  class="w-full fixed top-0 bg-white dark:bg-transparent backdrop-blur-sm backdrop-filter bg-opacity-40 z-50"
 >
   <nav class="flex justify-between items-center p-3 w-full max-w-3xl mx-auto">
-    <a href="/" class="text-2xl font-bold text-gray-800 hover:text-gray-700"
-      >Jub</a
-    >
-    <div class="flex justify-center items-center gap-2">
-      <a href="/blog" class="text-sm text-gray-700 hover:text-gray-600">Blog</a>
-      <a href="/about" class="ml-4 text-sm text-gray-700 hover:text-gray-600"
+    <a href="/" class="text-2xl font-bold hover:text-gray-700">Jub</a>
+    <div class="flex justify-center items-center gap-6">
+      <a href="/blog" class={`text-sm hover:text-gray-500 ${active("blog")}`}
+        >Blog</a
+      >
+      <a href="/about" class={`text-sm hover:text-gray-500 ${active("about")}`}
         >About</a
       >
     </div>
