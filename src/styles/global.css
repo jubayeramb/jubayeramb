@@ -2,21 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* poppins-latin-400-normal */
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-400-normal.woff2)
+      format("woff2"),
+    url(https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-400-normal.woff)
+      format("woff");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @layer base {
-  :root {
+  :root,
+  :root[data-theme="light"] {
     --color-bgc: 221 230 237;
     --color-content: 34 40 49;
-    --color-accent1: 288deg 95.8% 90.6%;
-    --color-accent2: 168deg 83.8% 78.2%;
+    --nav-background: rgba(255, 255, 255, 0.4);
+    --sun-fill: rgb(0, 0, 0);
+    --moon-fill: transparent;
+    --grayscale: grayscale(0%);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --color-bgc: 34 40 49;
       --color-content: 238 238 238;
+      --nav-background: transparent;
+      --sun-fill: transparent;
+      --moon-fill: rgb(255, 255, 255);
+      --grayscale: grayscale(100%);
     }
   }
   :root[data-theme="dark"] {
     --color-bgc: 34 40 49;
     --color-content: 238 238 238;
+    --nav-background: transparent;
+    --sun-fill: transparent;
+    --moon-fill: rgb(255, 255, 255);
+    --grayscale: grayscale(100%);
   }
+}
+
+.theme-grayscale {
+  filter: var(--grayscale);
 }

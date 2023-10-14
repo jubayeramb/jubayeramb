@@ -1,22 +1,32 @@
 ---
+import ThemeIcon from "./ThemeIcon.astro";
 const { pathname } = Astro.url;
 const activePage = pathname.split("/")[1];
 const active = (path: string) =>
-  activePage === path ? "border-b border-gray-700" : "";
+  activePage === path ? "border-b border-content/60" : "";
 ---
 
 <header
-  class="w-full fixed top-0 bg-white dark:bg-transparent backdrop-blur-sm backdrop-filter bg-opacity-40 z-50"
+  class="w-full fixed top-0 bg-[--nav-background] backdrop-blur-sm backdrop-filter z-50"
 >
-  <nav class="flex justify-between items-center p-3 w-full max-w-3xl mx-auto">
-    <a href="/" class="text-2xl font-bold hover:text-gray-700">Jub</a>
+  <nav
+    class="flex justify-between items-center px-4 py-2 w-full max-w-3xl mx-auto"
+  >
     <div class="flex justify-center items-center gap-6">
+      <a
+        href="/"
+        class="text-xl font-bold hover:text-gray-700 pr-3 border-r-2 border-r-content/30"
+        >Jub</a
+      >
       <a href="/blog" class={`text-sm hover:text-gray-500 ${active("blog")}`}
         >Blog</a
       >
       <a href="/about" class={`text-sm hover:text-gray-500 ${active("about")}`}
         >About</a
       >
+    </div>
+    <div class="flex justify-center items-center gap-6">
+      <ThemeIcon />
     </div>
   </nav>
 </header>
