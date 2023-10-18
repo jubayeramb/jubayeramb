@@ -1,5 +1,3 @@
-### Hi there 👋
-
 <!--
 **jubayeramb/jubayeramb** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
@@ -14,3 +12,11 @@ Here are some ideas to get you started:
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
 -->
+
+### 👋 Hi there!
+
+I'm **Jubayer Al Mamun** enrolling in **Computer Science & Engineering** and working as a **Software Developer**
+
+- 💻 Technologies I use: JavaScript, TypeScript, React.js, Next.js, Node.js, C#, .Net Core and PostgreSQL
+- 🌱 Currently I'm learning Back-end & DevOps
+- ❤️ I love extending my knowledge on the latest trending technologies
