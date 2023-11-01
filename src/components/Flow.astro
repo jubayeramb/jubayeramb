@@ -1,0 +1,38 @@
+---
+type Props = {
+  year: string | number;
+  story: string[];
+  className?: string;
+};
+
+const { year, story, className } = Astro.props;
+---
+
+<div class={className}>
+  <div class="flex flex-row gap-2">
+    <p class="text-lg font-bold w-11">{year}</p>
+    <div class="flex items-center relative">
+      <div class="absolute left-0 h-3 w-3 rounded-full bg-gray-500"></div>
+      <div class="absolute left-1 h-1 w-12 bg-gray-500 flex flex-col"></div>
+    </div>
+  </div>
+  <div class="relative left-0 flex flex-col ml-[100px]">
+    {
+      story.map((data, i) => (
+        <div class="flex relative gap-2 items-center max-w-3xl border-l-4 border-gray-500 before:block before:w-1 before:h-[50%] before:bg-gray-500 before:absolute before:-left-1 before:top-0 last:border-transparent first:before:-top-3">
+          <div class="w-3 absolute -left-[8px]">
+            <div class="w-3 h-3 bg-gray-500 rounded-full" />
+          </div>
+          <p class="pl-4 py-1">{data}</p>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<!-- <div
+    class:list={[
+      "absolute top-0 left-1 w-1 bg-gray-500 before:w-1 before:h-3 before:absolute before:-top-3 before:bg-gray-500",
+      getLineHeight(),
+    ]}
+  > -->

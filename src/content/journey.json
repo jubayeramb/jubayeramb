@@ -1,0 +1,33 @@
+{
+  "2023": [
+    "Learned more on Next.js and Server-client architecture",
+    "Learned more on Node.js and Express.js",
+    "Learned some JS ORM's (Prisma, TypeORM)",
+    "Learned testing with Cypress",
+    "Left my first job",
+    "Learned React Native",
+    "Learned basic Cloud Computing"
+  ],
+  "2022": [
+    "Got into a university for a computer science degree",
+    "Got my first job as a Software Developer",
+    "Learned more about React.js and Next.js",
+    "Learned basics of C#",
+    "Learned ASP.NET Core and Entity Framework Core",
+    "Learned basics of SQL",
+    "Got to another job as a Full Stack Developer",
+    "Learned TypeScript"
+  ],
+  "2021": [
+    "Learned more about JavaScript",
+    "Built some DOM manipulation projects",
+    "Started learning React.js",
+    "Built some React.js projects",
+    "Started learning Node.js"
+  ],
+  "2020": [
+    "Learned basic Python",
+    "Grabbed more knowledge on HTML and CSS",
+    "Started learning JavaScript"
+  ]
+}
