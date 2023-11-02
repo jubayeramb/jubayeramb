@@ -1,0 +1,35 @@
+{
+  "1": {
+    "company": "HomePay",
+    "url": "https://homepay.io/",
+    "description": "HomePay is a Bangladesh-focussed real-time FinTech infrastructure company, providing 24 hours Cross-Border Payment Network and Local Payment Services",
+    "designation": "Software Developer",
+    "startDate": "2022-02-01",
+    "endDate": "2023-03-04",
+    "technologies": [
+      ".NET Core",
+      "MSSQL Server",
+      "Azure DevOps",
+      "React.js",
+      "TypeScript"
+    ]
+  },
+  "2": {
+    "company": "Finding Healers",
+    "url": "https://findinghealers.com/",
+    "description": "Finding Healers is a marketplace for those looking for holistic healing services.",
+    "designation": "Full Stack Developer",
+    "startDate": "2022-12-15",
+    "endDate": "",
+    "technologies": [
+      "React.js",
+      "Next.js",
+      "TypeScript",
+      "Node.js",
+      "PostgreSQL",
+      "Prisma",
+      "React Native",
+      "Digital Ocean"
+    ]
+  }
+}

@@ -1,24 +1,47 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import journey from "../content/journey.json";
+import jobsHistory from "../content/jobs.json";
 import Flow from "../components/Flow.astro";
+import Section from "../components/Section.astro";
+import JobCard from "../components/JobCard.astro";
+import type { JobDescription } from "../types";
 
 const journeyData: { [key: string]: string[] } = journey;
+const jobsData: { [key: string]: JobDescription } = jobsHistory;
 ---
 
 <Layout title="About - Jubayer Al Mamun">
-  <div>
-    <h3 class="font-bold text-xl mb-4">My Journey 👇</h3>
-    {
-      Object.keys(journeyData)
-        .sort((a, b) => (a > b ? -1 : 1))
-        .map((year, idx) => (
-          <Flow
-            year={year}
-            story={journeyData[year].reverse()}
-            className="mb-4"
-          />
-        ))
-    }
+  <div class="flex flex-col gap-10">
+    <p>
+      👋 Hi, I'm Jubayer Al Mamun, a Software Developer and CS Undergrad based
+      in Dhaka, Bangladesh. I currently work at{" "}
+      <a class="underline" href="https://findinghealers.com/">Finding Healers</a
+      > as a Full Stack Developer. I have a keen interest in web technologies
+      and love to work with Javascript and Typescript. I also love to learn new
+      things and share my learnings with others.
+    </p>
+    <Section title="Working Experience 🧑‍💻">
+      {
+        Object.keys(jobsData)
+          .sort((a, b) => (a > b ? -1 : 1))
+          .map((year, idx) => (
+            <JobCard jobDescription={jobsData[year]} className="mb-6" />
+          ))
+      }
+    </Section>
+    <Section title="My Journey 🚶">
+      {
+        Object.keys(journeyData)
+          .sort((a, b) => (a > b ? -1 : 1))
+          .map((year, idx) => (
+            <Flow
+              year={year}
+              story={journeyData[year].reverse()}
+              className="mb-4"
+            />
+          ))
+      }
+    </Section>
   </div>
 </Layout>

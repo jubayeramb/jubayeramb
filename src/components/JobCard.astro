@@ -1,0 +1,49 @@
+---
+import type { JobDescription } from "../types";
+import { getMonthYear } from "../utils";
+
+type Props = {
+  jobDescription: JobDescription;
+  className?: string;
+};
+
+const {
+  jobDescription: {
+    company,
+    url,
+    description,
+    designation,
+    startDate,
+    endDate,
+    technologies,
+  },
+  className,
+} = Astro.props;
+---
+
+<div class={className}>
+  <div class="flex flex-col gap-2">
+    <div class="flex flex-col">
+      <p class="text-sm text-content/75">
+        {getMonthYear(startDate)} - {getMonthYear(endDate)}
+      </p>
+      <p>
+        <span class="font-semibold">{designation}</span> | <a
+          href={url}
+          target="_blank"
+          class="underline text-indigo-500 font-semibold">{company}</a
+        >
+      </p>
+    </div>
+    <p class="text-sm text-content/75">{description}</p>
+    <div class="flex flex-wrap gap-1">
+      {
+        technologies.map((technology) => (
+          <span class="text-xs text-gray-300 bg-slate-500 px-2 py-1 rounded-xl">
+            {technology}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</div>
