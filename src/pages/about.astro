@@ -1,10 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import journey from "../content/journey.json";
-import jobsHistory from "../content/jobs.json";
-import Flow from "../components/Flow.astro";
-import Section from "../components/Section.astro";
-import JobCard from "../components/JobCard.astro";
+import journey from "@content/journey.json";
+import jobsHistory from "@content/jobs.json";
+import Flow from "@components/Flow.astro";
+import Section from "@components/Section.astro";
+import JobCard from "@components/JobCard.astro";
 import type { JobDescription } from "../types";
 
 const journeyData: { [key: string]: string[] } = journey;
@@ -29,6 +29,12 @@ const jobsData: { [key: string]: JobDescription } = jobsHistory;
             <JobCard jobDescription={jobsData[year]} className="mb-6" />
           ))
       }
+    </Section>
+    <Section title="Education 📖">
+      <p>
+        Currently enrolling Bachelor of Computer Science and Engineering at
+        Greeen University of Bangladesh and expected to graducate in 2026.
+      </p>
     </Section>
     <Section title="My Journey 🚶">
       {
