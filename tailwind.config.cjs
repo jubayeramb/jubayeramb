@@ -12,6 +12,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ["Poppins", ...defaultTheme.fontFamily.sans],
+        tailwindDefault: [...defaultTheme.fontFamily.sans],
       },
     },
   },

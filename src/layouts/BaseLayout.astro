@@ -1,9 +1,13 @@
 ---
 interface Props {
   title: string;
+  description?: string;
 }
 
-const { title } = Astro.props;
+const {
+  title = "Jubayer Al Mamun",
+  description = "Software Developer, CS Undergrad, Tech Enthusiast, and Travel Freak",
+} = Astro.props;
 import "../styles/global.css";
 ---
 
@@ -11,7 +15,8 @@ import "../styles/global.css";
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="Jubayer Al Mamun - Personal Site" />
+    <meta name="robots" content="index, follow" />
+    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="author" content="Jubayer Al Mamun" />
@@ -33,10 +38,7 @@ import "../styles/global.css";
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Jubayer Al Mamun" />
     <meta property="og:title" content={title} />
-    <meta
-      property="og:description"
-      content="Software Developer, CS Undergrad, Tech Enthusiast, and Travel Freak"
-    />
+    <meta property="og:description" content={description} />
     <meta property="og:url" content="https://jubayeramb.github.io/" />
     <meta property="og:type" content="website" />
     <meta name="generator" content={Astro.generator} />

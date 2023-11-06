@@ -50,3 +50,120 @@
 .theme-grayscale {
   filter: var(--grayscale);
 }
+
+::-webkit-scrollbar {
+  width: 0.6rem;
+  height: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(161, 155, 155);
+  border-radius: 2rem;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  @apply font-bold;
+}
+
+h1 {
+  @apply text-3xl;
+}
+
+h2 {
+  @apply text-2xl;
+}
+
+h3 {
+  @apply text-xl;
+}
+
+h4 {
+  @apply text-lg;
+}
+
+h5 {
+  @apply text-base;
+}
+
+code {
+  font-family: "Courier New", Courier, monospace;
+  font-weight: 600;
+}
+
+blockquote {
+  @apply border-l-4 border-content/50 bg-content/10 p-4 italic my-1;
+}
+
+ul {
+  @apply ml-4 list-inside list-disc;
+}
+
+li > ul {
+  @apply list-[square] ml-6;
+}
+
+li > ul > li > ul {
+  @apply list-[circle] ml-6;
+}
+
+ol {
+  @apply ml-4 list-inside list-decimal;
+}
+
+.blog-content a {
+  @apply text-indigo-400 hover:text-indigo-500;
+}
+
+.code-block {
+  margin: 0.8rem 0.1rem;
+  position: relative;
+}
+
+pre {
+  background-color: #0e1525 !important;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: small;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.copy-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #3d3d3d;
+  opacity: 0.6;
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.copy-button:hover {
+  opacity: 1;
+}
+
+.copy-button:active {
+  top: 1.2rem;
+}
+
+.copied {
+  position: absolute;
+  font-size: 0.75rem;
+  top: 1rem;
+  right: 4rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #e5e5e5;
+  color: #000;
+}

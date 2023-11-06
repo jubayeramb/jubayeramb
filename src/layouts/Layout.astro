@@ -5,12 +5,13 @@ import Footer from "../components/Footer.astro";
 
 type Props = {
   title: string;
+  description?: string;
 };
 
-const { title } = Astro.props;
+const { title, description } = Astro.props;
 ---
 
-<BaseLayout title={title}>
+<BaseLayout {title} {description}>
   <Header />
   <main class="min-h-screen w-full max-w-3xl px-5 mx-auto my-20">
     <slot />
