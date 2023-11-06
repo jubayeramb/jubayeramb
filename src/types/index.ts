@@ -1,3 +1,5 @@
+import type { MarkdownInstance } from "astro";
+
 export type JobDescription = {
   company: string;
   description: string;
@@ -19,3 +21,5 @@ export type BlogPostFrontMatter = {
   imageAlt?: string;
   updatedDate?: string;
 };
+
+export type BlogPostType = MarkdownInstance<BlogPostFrontMatter>;

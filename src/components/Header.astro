@@ -4,6 +4,8 @@ const { pathname } = Astro.url;
 const activePage = pathname.split("/")[1];
 const active = (path: string) =>
   activePage === path ? "border-b border-content/60" : "";
+
+const NavItems = ["Writing", "About"];
 ---
 
 <header
@@ -15,15 +17,21 @@ const active = (path: string) =>
     <div class="flex justify-center items-center gap-6">
       <a
         href="/"
-        class="text-xl font-bold hover:text-gray-700 pr-3 border-r-2 border-r-content/30"
+        class="text-xl font-bold hover:text-content/75 pr-3 border-r-2 border-r-content/30"
         >Jub</a
       >
-      <a href="/blog" class={`text-sm hover:text-gray-500 ${active("blog")}`}
-        >Blog</a
-      >
-      <a href="/about" class={`text-sm hover:text-gray-500 ${active("about")}`}
-        >About</a
-      >
+      {
+        NavItems.map((item) => (
+          <a
+            href={`/${item.toLowerCase()}`}
+            class={`text-sm hover:text-content/75 ${active(
+              item.toLowerCase()
+            )}`}
+          >
+            {item}
+          </a>
+        ))
+      }
     </div>
     <div class="flex justify-center items-center gap-6">
       <ThemeIcon />

@@ -1,0 +1,43 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import type { GetStaticPaths } from "astro";
+import type { BlogPostType } from "@/types";
+import { getAllUniqueTags } from "@/utils";
+import BlogPostList from "@/components/BlogPostList.astro";
+
+export const getStaticPaths = (async () => {
+  const allPosts: BlogPostType[] = await Astro.glob("../writing/*.md");
+  const uniqueTags = getAllUniqueTags(allPosts);
+
+  return uniqueTags.map((tag) => {
+    const filteredPosts = allPosts.filter((post) =>
+      post.frontmatter.tags?.includes(tag)
+    );
+    return {
+      params: { tag },
+      props: { posts: filteredPosts, tags: uniqueTags },
+    };
+  });
+}) satisfies GetStaticPaths;
+
+const { tag } = Astro.params;
+const { posts, tags } = Astro.props;
+
+const description = `Posts tagged with ${tag}`;
+---
+
+<Layout title={tag} {description}>
+  <div class="flex flex-row justify-between items-center mb-10">
+    <p>
+      Posts tagged with <span class="font-bold">{tag}</span> 👇
+    </p>
+    <p>
+      <a
+        href="/tags"
+        class="text-sm text-blue-400 hover:text-blue-500 hover:underline"
+        >All tags →</a
+      >
+    </p>
+  </div>
+  <BlogPostList {posts} {tags} />
+</Layout>

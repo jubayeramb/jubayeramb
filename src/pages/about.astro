@@ -1,5 +1,5 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from "@/layouts/Layout.astro";
 import journey from "@content/journey.json";
 import jobsHistory from "@content/jobs.json";
 import Flow from "@components/Flow.astro";
@@ -9,9 +9,11 @@ import type { JobDescription } from "../types";
 
 const journeyData: { [key: string]: string[] } = journey;
 const jobsData: { [key: string]: JobDescription } = jobsHistory;
+
+const title = "About - Jubayer Al Mamun";
 ---
 
-<Layout title="About - Jubayer Al Mamun">
+<Layout {title}>
   <div class="flex flex-col gap-10">
     <p>
       👋 Hi, I'm Jubayer Al Mamun, a Software Developer and CS Undergrad based

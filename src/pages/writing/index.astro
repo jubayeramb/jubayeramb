@@ -1,0 +1,29 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import type { BlogPostFrontMatter } from "@/types";
+import { getAllUniqueTags } from "@/utils";
+import BlogPostList from "@/components/BlogPostList.astro";
+
+const posts = await Astro.glob<BlogPostFrontMatter>("../writing/*.md");
+const sortedPost = posts.sort((a, b) => {
+  const aDate = new Date(a.frontmatter.date);
+  const bDate = new Date(b.frontmatter.date);
+  return bDate.getTime() - aDate.getTime();
+});
+
+const tags = getAllUniqueTags(posts);
+
+const title = "Writing - Jubayer Al Mamun";
+const description =
+  "A collection of my writing on technology, programming, DIY, and more.";
+---
+
+<Layout {title} {description}>
+  <div class="mb-10 flex flex-col gap-1">
+    <h1 class="text-4xl">Writings</h1>
+    <p class="text-content/75">
+      I try to put my thoughts into words sometimes. Here are some of them.
+    </p>
+  </div>
+  <BlogPostList posts={sortedPost} {tags} />
+</Layout>

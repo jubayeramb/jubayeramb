@@ -1,0 +1,23 @@
+---
+import type { BlogPostFrontMatter } from "@/types";
+import { getFullDate } from "@/utils";
+type Props = Pick<BlogPostFrontMatter, "title" | "description" | "date"> & {
+  url: string;
+};
+
+const { title, url, description, date } = Astro.props;
+---
+
+<a href={url} class="group">
+  <div class="flex flex-row justify-between items-center w-full">
+    <div class="flex flex-col">
+      <p class="text-lg font-bold group-hover:underline">
+        {title}
+      </p>
+      <p class="text-sm text-content/70">{description}</p>
+    </div>
+    <p class="text-sm text-content/70 whitespace-nowrap ml-2">
+      {getFullDate(date)}
+    </p>
+  </div>
+</a>
