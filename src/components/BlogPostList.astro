@@ -6,9 +6,10 @@ import SuggestedTags from "./SuggestedTags.astro";
 type Props = {
   posts: BlogPostType[];
   tags: string[];
+  showBlogDescription?: boolean;
 };
 
-const { posts, tags } = Astro.props;
+const { posts, tags, showBlogDescription = true } = Astro.props;
 ---
 
 <div class="flex flex-col">
@@ -18,11 +19,12 @@ const { posts, tags } = Astro.props;
         <BlogPost
           title={post.frontmatter.title}
           description={post.frontmatter.description}
-          date={post.frontmatter.date}
+          pubDate={post.frontmatter.pubDate}
           url={post.url as string}
+          showDescription={showBlogDescription}
         />
       ))
     }
   </div>
-  <SuggestedTags {tags} />
+  {showBlogDescription ? <SuggestedTags {tags} /> : null}
 </div>

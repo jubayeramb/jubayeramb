@@ -14,7 +14,7 @@ export type BlogPostFrontMatter = {
   layout: string;
   title: string;
   description: string;
-  date: string;
+  pubDate: string;
   slug: string;
   tags: string[];
   image?: string;

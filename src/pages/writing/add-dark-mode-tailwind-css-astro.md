@@ -1,8 +1,8 @@
 ---
 layout: "../../layouts/BlogLayout.astro"
 title: "Tailwind CSS Dark Mode without `dark:` Prefixes"
-description: "A quick guide on how to add dark mode to your Astro (or whatever) website without `dark:` prefixes using Tailwind CSS. Also supports `prefers-color-scheme` media query."
-date: 2023-11-10
+description: "Add dark mode to your Astro (or whatever) website using Tailwind CSS without `dark:` prefixes. Also supports `prefers-color-scheme` media query."
+pubDate: 2023-11-10
 tags: ["technical", "astro", "tailwindcss", "css"]
 ---
 

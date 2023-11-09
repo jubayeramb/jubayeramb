@@ -1,27 +1,41 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import Section from "@/components/Section.astro";
+import BlogPostList from "@/components/BlogPostList.astro";
+import { getAllUniqueTags } from "@/utils";
+import type { BlogPostFrontMatter } from "@/types";
+
+const posts = await Astro.glob<BlogPostFrontMatter>("./writing/*.md");
+const sortedPost = posts.sort((a, b) => {
+  const aDate = new Date(a.frontmatter.pubDate);
+  const bDate = new Date(b.frontmatter.pubDate);
+  return bDate.getTime() - aDate.getTime();
+});
+
+const tags = getAllUniqueTags(posts);
 ---
 
 <Layout title="Jubayer Al Mamun">
-  <div class="h-[80vh] w-full grid place-items-center mb-10">
-    <div class="flex flex-col">
-      <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
-        <img
-          src="https://github.com/jubayeramb.png"
-          alt="Avatar"
-          class="w-48 rounded-full mx-auto theme-grayscale"
-        />
-        <div
-          class="flex flex-col items-center md:items-baseline gap-2 md:w-2/4"
-        >
-          <h1 class="text-3xl font-bold">Jubayer Al Mamun</h1>
-          <p class="text-sm text-center md:text-start">
-            A software engineer who loves to build things for the web.
-            Self-taught and passionate about learning new things. Currently
-            pursuing a bachelor's degree in Computer Science and Engineering.
-          </p>
-        </div>
+  <div class="flex flex-col gap-20">
+    <div
+      class="flex flex-col md:flex-row gap-4 justify-between items-center mt-16"
+    >
+      <img
+        src="https://github.com/jubayeramb.png"
+        alt="Avatar"
+        class="w-48 rounded-full mx-auto theme-grayscale"
+      />
+      <div class="flex flex-col items-center md:items-baseline gap-2 md:w-2/4">
+        <h1 class="text-3xl font-bold">Jubayer Al Mamun</h1>
+        <p class="text-sm text-center md:text-start">
+          A software engineer who loves to build things for the web. Self-taught
+          and passionate about learning new things. Currently pursuing a
+          bachelor's degree in Computer Science and Engineering.
+        </p>
       </div>
     </div>
+    <Section title="Writings 📝">
+      <BlogPostList posts={sortedPost} {tags} showBlogDescription={false} />
+    </Section>
   </div>
 </Layout>
