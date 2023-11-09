@@ -13,7 +13,7 @@ const description = "A list of all tags used on this site.";
   <div class="flex flex-row flex-wrap gap-2">
     {
       tags.map((tag) => (
-        <p class="px-1 text-indigo-400 hover:text-indigo-500 border border-indigo-400 hover:border-indigo-500 rounded-md">
+        <p class="px-1 text-indigo-400 hover:bg-indigo-400 hover:text-white border border-indigo-400 hover:border-indigo-500 rounded-md">
           <a href={`/tags/${tag}`}>#{tag}</a>
         </p>
       ))

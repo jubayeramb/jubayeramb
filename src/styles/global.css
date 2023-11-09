@@ -95,11 +95,11 @@ h5 {
 
 code {
   font-family: "Courier New", Courier, monospace;
-  font-weight: 600;
+  @apply bg-content/10 p-[2px] rounded-md;
 }
 
 blockquote {
-  @apply border-l-4 border-content/50 bg-content/10 p-4 italic my-1;
+  @apply border-l-4 border-indigo-500 bg-content/10 px-4 py-3 italic my-1;
 }
 
 ul {
@@ -122,6 +122,12 @@ ol {
   @apply text-indigo-400 hover:text-indigo-500;
 }
 
+.blog-content {
+  > * + * {
+    margin-top: 10px;
+  }
+}
+
 .code-block {
   margin: 0.8rem 0.1rem;
   position: relative;
@@ -133,6 +139,13 @@ pre {
   border-radius: 0.5rem;
   font-size: small;
   font-family: "Courier New", Courier, monospace;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
 }
 
 .copy-button {

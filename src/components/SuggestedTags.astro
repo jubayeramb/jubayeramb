@@ -1,0 +1,24 @@
+---
+type Props = {
+  tags: string[];
+};
+
+const { tags } = Astro.props;
+---
+
+<div class="flex flex-col items-center gap-1 mt-10">
+  {tags.length > 0 && <h6 class="text-sm font-semibold">View posts by tag</h6>}
+  <div class="flex flex-row flex-wrap gap-2">
+    {
+      tags.length > 0 &&
+        tags.map((tag) => (
+          <a
+            href={`/tags/${tag}`}
+            class="text-sm text-indigo-400 hover:text-indigo-500 transition-colors"
+          >
+            #{tag}
+          </a>
+        ))
+    }
+  </div>
+</div>

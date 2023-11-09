@@ -1,7 +1,11 @@
 ---
+import SuggestedTags from "@/components/SuggestedTags.astro";
 import Layout from "./Layout.astro";
-import type { BlogPostFrontMatter } from "../types";
-import { getFullDate } from "@/utils";
+import type { BlogPostFrontMatter, BlogPostType } from "@/types";
+import { getAllUniqueTags, getFullDate } from "@/utils";
+
+const allPosts: BlogPostType[] = await Astro.glob("../pages/writing/*.md");
+const uniqueTags = getAllUniqueTags(allPosts);
 
 type Props = { frontmatter: BlogPostFrontMatter };
 const {
@@ -10,7 +14,7 @@ const {
 ---
 
 <Layout {title} {description}>
-  <article class="py-6 md:px-6 lg:py-16 font-tailwindDefault blog-content">
+  <article class="py-6 md:px-6 font-tailwindDefault blog-content">
     <div class="mb-5">
       <div class="mb-4">
         <h1
@@ -18,7 +22,7 @@ const {
         >
           {title}
         </h1>
-        <p class="text-sm text-content/70">
+        <p class="text-sm text-content/70 mt-2">
           Posted on <time datetime={date}>{getFullDate(date)}</time>
         </p>
       </div>
@@ -49,6 +53,7 @@ const {
     </div>
     <slot />
   </article>
+  <SuggestedTags tags={uniqueTags} />
 </Layout>
 
 <script>
