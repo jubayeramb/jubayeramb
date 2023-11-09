@@ -9,7 +9,15 @@ const uniqueTags = getAllUniqueTags(allPosts);
 
 type Props = { frontmatter: BlogPostFrontMatter };
 const {
-  frontmatter: { title, description, date, updatedDate, image, imageAlt, tags },
+  frontmatter: {
+    title,
+    description,
+    pubDate,
+    updatedDate,
+    image,
+    imageAlt,
+    tags,
+  },
 } = Astro.props;
 ---
 
@@ -23,7 +31,7 @@ const {
           {title}
         </h1>
         <p class="text-sm text-content/70 mt-2">
-          Posted on <time datetime={date}>{getFullDate(date)}</time>
+          Posted on <time datetime={pubDate}>{getFullDate(pubDate)}</time>
         </p>
       </div>
       {
