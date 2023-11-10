@@ -12,6 +12,10 @@ const {
   image = "https://jubayeramb.github.io/assets/images/og-image.png",
   keywords,
 } = Astro.props;
+
+const keywords_ =
+  keywords && keywords.length > 0 ? keywords.join(", ") + ", " : "";
+
 import "../styles/global.css";
 ---
 
@@ -25,7 +29,7 @@ import "../styles/global.css";
     <meta name="author" content="Jubayer Al Mamun" />
     <meta
       name="keywords"
-      content={keywords?.join(", ") +
+      content={keywords_ +
         `Jubayer Al Mamun, jubayeramb, jubayer amb, Jubayer, Al Mamun, Jubayer Amb, Mamun, Jubayer Al Mamun, Jubayer Al Mamun Blog, 
       Jubayer Al Mamun Website, Jubayer Al Mamun Portfolio, blog, portfolio, programmer, software engineer, software developer, web developer, full stack developer, 
       frontend developer, backend developer, personal website, Jubayer Al Mamun Personal Website, Jubayer Al Mamun Personal Blog, Jubayer Al Mamun Personal Portfolio, 
