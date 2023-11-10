@@ -185,7 +185,7 @@ Now your site will respond to the user's system preference. Toggle your System t
 
 #### 4.4. Add a toggle button
 
-Now we will add a toggle button to switch between light and dark mode manually. We will use the `data-theme` attribute to switch between light and dark mode. We will also use the `--sun-fill` and `--moon-fill` variables to define the fill color of the sun and moon icons. We will use the `bg-[color]` and `text-[color]` classes to apply the colors to the elements.
+Now we will add a toggle button to switch between light and dark mode manually. We will use the `data-theme` attribute to switch between light and dark mode. We will also use the `--sun-fill` and `--moon-fill` variables to define the fill color of the sun and moon icons. We will use the `bg-bgColor` and `text-contentColor` classes to apply the colors to the elements.
 
 Create a `ThemeIcon.astro` file into the `./src/components/` directory and add the following code:
 
@@ -261,7 +261,7 @@ document
 </script>
 ```
 
-> Here we are using a SVG icon to toggle between light and dark mode (you can update the icon as of your choice). We are also using the `localStorage` API to store the user's preference. We are using the `data-theme` attribute to switch between light and dark mode. We are also using the `--sun-fill` and `--moon-fill` variables to define the fill color of the sun and moon icons. We are using the `bg-[color]` and `text-[color]` classes to apply the colors to the elements.
+> Here we are using a SVG icon to toggle between light and dark mode (you can update the icon as of your choice). We are also using the `localStorage` API to store the user's preference. We are using the `data-theme` attribute to switch between light and dark mode. We are also using the `--sun-fill` and `--moon-fill` variables to define the fill color of the sun and moon icons. We are using the `bg-bgColor` and `text-contentColor` classes to apply the colors to the elements.
 
 Now you can import the `ThemeIcon.astro` component in the `./src/layouts/Layout.astro` file and place it anywhere you want. For example, you can place it in the `<body>` element of the `./src/layouts/Layout.astro` wrapper file like this:
 
@@ -276,8 +276,8 @@ Now you can import the `ThemeIcon.astro` component in the `./src/layouts/Layout.
 
 > You can create a Nav component and place the `ThemeIcon.astro` component in the Nav component.
 
-**Congratulations! You have successfully added a dynamic dark mode to your website!** 🎉 </br>
-You don't event need to add the `dark:` prefixes to the Tailwind CSS classes. You can use the `bg-[color]` and `text-[color]` classes to apply the colors to the elements and the site will automatically adjust the theme color. </br>
+**Congratulations! You did it! You Added a dynamic dark theme to your site!** 🎉 </br>
+You don't even need to add the `dark:` prefixes to the every Tailwind CSS classes where you need to add dark theme variant. You can use the `bgColor` and `contentColor` color variant to apply the colors to the elements and the site will automatically adjust the theme color. </br>
 Now you can save the files and check the browser (make suer the dev server is running). You should see a toggle button in the center of the page. Click on the button to switch between light and dark mode.
 
 Thanks for reading! 🙏 </br>

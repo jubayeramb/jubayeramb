@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jubayeramb.me/sitemap-index.xml

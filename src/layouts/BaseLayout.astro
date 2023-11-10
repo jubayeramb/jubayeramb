@@ -2,11 +2,15 @@
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  keywords?: string[];
 }
 
 const {
   title = "Jubayer Al Mamun",
   description = "Software Developer, CS Undergrad, Tech Enthusiast, and Travel Freak",
+  image = "https://jubayeramb.github.io/assets/images/og-image.png",
+  keywords,
 } = Astro.props;
 import "../styles/global.css";
 ---
@@ -14,22 +18,29 @@ import "../styles/global.css";
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Global Metadata -->
     <meta charset="UTF-8" />
-    <meta name="robots" content="index, follow" />
-    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="author" content="Jubayer Al Mamun" />
     <meta
       name="keywords"
-      content="Jubayer Al Mamun, jubayeramb, jubayer amb, Jubayer, Al Mamun, Jubayer Amb, Mamun, Jubayer Al Mamun, Jubayer Al Mamun Blog, 
-	Jubayer Al Mamun Website, Jubayer Al Mamun Portfolio, blog, portfolio, programmer, software engineer, software developer, web developer, full stack developer, 
-	frontend developer, backend developer, personal website, Jubayer Al Mamun Personal Website, Jubayer Al Mamun Personal Blog, Jubayer Al Mamun Personal Portfolio, 
-	Jubayer Al Mamun Personal Website, Jubayer Al Mamun Personal Blog, website, blog website, portfolio website, javascript, typescript, react, reactjs, react js, 
-	react native, reactnative, react-native, nextjs, next js, next, next.js, gatsby, gatsbyjs, gatsby js, gatsby.js, nodejs, node js, node, node.js, express, 
-	expressjs, express js, express.js, mongodb, mongo db, mongo, mongo-db, mongo db, mongodb, mongodb, mongodb, mongodb, mongodb, mongodb, mongodb,
-	software engineering, software development,web development, full stack development"
+      content={keywords?.join(", ") +
+        `Jubayer Al Mamun, jubayeramb, jubayer amb, Jubayer, Al Mamun, Jubayer Amb, Mamun, Jubayer Al Mamun, Jubayer Al Mamun Blog, 
+      Jubayer Al Mamun Website, Jubayer Al Mamun Portfolio, blog, portfolio, programmer, software engineer, software developer, web developer, full stack developer, 
+      frontend developer, backend developer, personal website, Jubayer Al Mamun Personal Website, Jubayer Al Mamun Personal Blog, Jubayer Al Mamun Personal Portfolio, 
+      Jubayer Al Mamun Personal Website, Jubayer Al Mamun Personal Blog, website, blog website, portfolio website, javascript, typescript, react, reactjs, react js, 
+      react native, reactnative, react-native, nextjs, next js, next, next.js, gatsby, gatsbyjs, gatsby js, gatsby.js, nodejs, node js, node, node.js, express, 
+      expressjs, express js, express.js, mongodb, mongo db, mongo, mongo-db, mongo db, mongodb, mongodb, mongodb, mongodb, mongodb, mongodb, mongodb,
+      software engineering, software development,web development, full stack development`}
     />
+
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+
+    <!-- Open Graph / Facebook -->
     <meta
       property="og:image"
       content="https://jubayeramb.github.io/assets/images/og-image.png"
@@ -42,7 +53,26 @@ import "../styles/global.css";
     <meta property="og:url" content="https://jubayeramb.github.io/" />
     <meta property="og:type" content="website" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta name="twitter:creator" content="@jubayeramb" />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Sitemap -->
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- RSS Link -->
+    <link
+      rel="alternate"
+      href="/rss.xml"
+      type="application/rss+xml"
+      title={title}
+    />
   </head>
   <body class="h-screen bg-bgc text-content">
     <slot />

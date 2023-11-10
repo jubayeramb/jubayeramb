@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@astrojs/rss": "^3.0.0",
+    "@astrojs/sitemap": "^3.0.3",
     "@astrojs/tailwind": "^5.0.0",
     "astro": "^3.4.2",
     "sanitize-html": "^2.11.0",
