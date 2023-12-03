@@ -4,7 +4,7 @@ import Layout from "./Layout.astro";
 import type { BlogPostFrontMatter, BlogPostType } from "@/types";
 import { getAllUniqueTags, getFullDate } from "@/utils";
 
-const allPosts: BlogPostType[] = await Astro.glob("../pages/writing/*.md");
+const allPosts: BlogPostType[] = await Astro.glob("../pages/writings/*.md");
 const uniqueTags = getAllUniqueTags(allPosts);
 
 type Props = { frontmatter: BlogPostFrontMatter };

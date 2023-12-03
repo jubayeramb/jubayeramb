@@ -5,7 +5,7 @@ import BlogPostList from "@/components/BlogPostList.astro";
 import { getAllUniqueTags } from "@/utils";
 import type { BlogPostFrontMatter } from "@/types";
 
-const posts = await Astro.glob<BlogPostFrontMatter>("./writing/*.md");
+const posts = await Astro.glob<BlogPostFrontMatter>("./writings/*.md");
 const sortedPost = posts.sort((a, b) => {
   const aDate = new Date(a.frontmatter.pubDate);
   const bDate = new Date(b.frontmatter.pubDate);

@@ -6,7 +6,7 @@ import { getAllUniqueTags } from "@/utils";
 import BlogPostList from "@/components/BlogPostList.astro";
 
 export const getStaticPaths = (async () => {
-  const allPosts: BlogPostType[] = await Astro.glob("../writing/*.md");
+  const allPosts: BlogPostType[] = await Astro.glob("../writings/*.md");
   const uniqueTags = getAllUniqueTags(allPosts);
 
   return uniqueTags.map((tag) => {

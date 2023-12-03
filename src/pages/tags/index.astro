@@ -2,7 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import type { BlogPostFrontMatter } from "@/types";
 import { getAllUniqueTags } from "@/utils";
-const allPosts = await Astro.glob<BlogPostFrontMatter>("../writing/*.md");
+const allPosts = await Astro.glob<BlogPostFrontMatter>("../writings/*.md");
 const tags = getAllUniqueTags(allPosts);
 const title = "Tags";
 const description = "A list of all tags used on this site.";

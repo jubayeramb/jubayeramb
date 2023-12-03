@@ -1,10 +1,10 @@
 ---
+import BlogPostList from "@/components/BlogPostList.astro";
 import Layout from "@/layouts/Layout.astro";
 import type { BlogPostFrontMatter } from "@/types";
 import { getAllUniqueTags } from "@/utils";
-import BlogPostList from "@/components/BlogPostList.astro";
 
-const posts = await Astro.glob<BlogPostFrontMatter>("../writing/*.md");
+const posts = await Astro.glob<BlogPostFrontMatter>("../writings/*.md");
 const sortedPost = posts.sort((a, b) => {
   const aDate = new Date(a.frontmatter.pubDate);
   const bDate = new Date(b.frontmatter.pubDate);
@@ -13,7 +13,7 @@ const sortedPost = posts.sort((a, b) => {
 
 const tags = getAllUniqueTags(posts);
 
-const title = "Writing - Jubayer Al Mamun";
+const title = "Writings";
 const description =
   "A collection of my writing on technology, programming, DIY, and more.";
 ---
