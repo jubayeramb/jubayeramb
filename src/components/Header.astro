@@ -24,9 +24,7 @@ const NavItems = ["Writings", "About"];
         NavItems.map((item) => (
           <a
             href={`/${item.toLowerCase()}`}
-            class={`text-sm hover:text-content/75 ${active(
-              item.toLowerCase()
-            )}`}
+            class={`hover:text-content/75 ${active(item.toLowerCase())}`}
           >
             {item}
           </a>

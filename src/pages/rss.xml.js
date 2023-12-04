@@ -3,7 +3,7 @@ import sanitizeHtml from "sanitize-html";
 
 export async function GET(context) {
   const posts = Object.values(
-    import.meta.glob("./writing/*.md", {
+    import.meta.glob("./writings/*.md", {
       eager: true,
     })
   );

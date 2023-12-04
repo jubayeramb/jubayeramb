@@ -4,15 +4,34 @@
     class="w-full max-w-3xl px-5 py-4 mx-auto flex flex-row justify-between items-center gap-2"
   >
     <div class="flex gap-1">
-      <a class="text-xs hover:opacity-75" href="/writings"> Writings</a>
-      <a class="text-xs hover:opacity-75" href="/about"> About</a>
-      <a class="text-xs hover:opacity-75" href="/contact"> Contact</a>
+      <a
+        class="text-xs hover:opacity-75"
+        aria-label="Writings"
+        href="/writings"
+      >
+        Writings</a
+      >
+      <a class="text-xs hover:opacity-75" aria-label="About" href="/about">
+        About</a
+      >
+      <a class="text-xs hover:opacity-75" aria-label="Contact" href="/contact">
+        Contact</a
+      >
     </div>
     <div class="flex gap-2">
       <a
         class="hover:opacity-75"
         target="_blank"
+        href="mailto:jubayeramb@gmail.com"
+        aria-label="Email"
+      >
+        <span class="iconify" data-icon="material-symbols:mail"></span>
+      </a>
+      <a
+        class="hover:opacity-75"
+        target="_blank"
         href="https://github.com/jubayeramb"
+        aria-label="Github"
       >
         <span class="iconify" data-icon="mdi:github"></span>
       </a>
@@ -20,6 +39,7 @@
         class="hover:opacity-75"
         target="_blank"
         href="https://www.linkedin.com/in/jubayeramb/"
+        aria-label="Linkedin"
       >
         <span class="iconify" data-icon="mdi:linkedin"></span>
       </a>
@@ -27,6 +47,7 @@
         class="hover:opacity-75"
         target="_blank"
         href="https://twitter.com/jubayeramb"
+        aria-label="X (formerly known as Twitter)"
       >
         <!-- <span class="iconify" data-icon="simple-icons:x"></span> -->
         <span class="iconify" data-icon="pajamas:x"></span>
@@ -35,6 +56,7 @@
         class="hover:opacity-75"
         target="_blank"
         href="https://facebook.com/jubayeramb"
+        aria-label="Facebook"
       >
         <span class="iconify" data-icon="ic:baseline-facebook"></span>
       </a>
@@ -42,13 +64,24 @@
         class="hover:opacity-75"
         target="_blank"
         href="https://instagram.com/jubayer_amb"
+        aria-label="Instagram"
       >
         <span class="iconify" data-icon="mdi:instagram"></span>
       </a>
-      <a class="hover:opacity-75" target="_blank" href="/rss.xml">
+      <a
+        class="hover:opacity-75"
+        target="_blank"
+        href="/rss.xml"
+        aria-label="RSS"
+      >
         <span class="iconify" data-icon="mdi:rss"></span>
       </a>
-      <a class="hover:opacity-75" target="_blank" href="/sitemap-index.xml">
+      <a
+        class="hover:opacity-75"
+        target="_blank"
+        href="/sitemap-index.xml"
+        aria-label="Sitemap"
+      >
         <span class="iconify" data-icon="mdi:sitemap"></span>
       </a>
     </div>
