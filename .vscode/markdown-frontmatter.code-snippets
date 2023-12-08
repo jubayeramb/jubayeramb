@@ -1,0 +1,15 @@
+{
+  "Frontmatter": {
+    "scope": "markdown",
+    "prefix": "frontmatter",
+    "body": [
+      "---",
+      "layout: \"../../layouts/BlogLayout.astro\"",
+      "title: \"${1:title}\"",
+      "description: \"${2:description}\"",
+      "pubDate: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+      "tags: [\"${4:tag}\"]",
+      "---"
+    ]
+  }
+}
