@@ -35,7 +35,10 @@ const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${ge
           {title}
         </h1>
         <p class="text-sm text-content/70 mt-2">
-          Posted on <time datetime={pubDate}>{getFullDate(pubDate)}</time>
+          Posted on <time datetime={pubDate}>{getFullDate(pubDate)}</time> • <span
+            id="reading-time"
+          >
+          </span>
         </p>
       </div>
       {
@@ -63,12 +66,24 @@ const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${ge
         }
       </div>
     </div>
-    <slot />
+    <div id="article-content" class="blog-content">
+      <slot />
+    </div>
   </article>
   <SuggestedTags tags={uniqueTags} />
 </Layout>
 
 <script>
+  const readingTime = document.getElementById("reading-time");
+  const articleContent = document.getElementById("article-content");
+
+  if (readingTime && articleContent) {
+    const wordsPerMinute = 200;
+    const textLength = articleContent.textContent?.split(" ").length || 0;
+    const readingTimeValue = Math.ceil(textLength / wordsPerMinute);
+    readingTime.textContent = `${readingTimeValue} min read`;
+  }
+
   const preElements = document.querySelectorAll("pre");
   if (preElements.length > 0) {
     const copyToClipboard = (text: string) => {

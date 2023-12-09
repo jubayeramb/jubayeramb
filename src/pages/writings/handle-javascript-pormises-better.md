@@ -6,9 +6,17 @@ pubDate: 2023-12-09
 tags: ["technical", "javascript", "promises", "error-handling"]
 ---
 
-The word "Promise" itself describes the concept of a commitment, signifying that something will occur in the future. A promise is a value that may not be available immediately but could be in the future. In JavaScript, a promise is an object that represents the eventual completion or failure of an asynchronous operation and its resulting value. The program's execution does not halt while waiting for the promise to resolve; instead, it continues to execute the next line of code. The promise will be resolved or rejected at a later point. The promise object has three states: _Pending_, _Fulfilled_, and _Rejected_. Consequently, handling the fulfilled and rejected states of the promise is crucial to maintaining the smooth execution of our program.
+If you're familiar with what promises are, you can skip the next section and jump straight to the approaches. Otherwise, read on!
 
-There are various ways to handle promises in JavaScript. In this article, we'll explore some of these methods and discuss the pros and cons of each. Let's get started!
+## What are Promises?
+
+The word "Promise" itself describes the concept of a commitment, signifying that something will occur in the future. A promise is a value that may not be available immediately but could be in the future.
+
+In JavaScript, a promise is an object that represents the eventual completion or failure of an asynchronous operation and its resulting value. The program's execution does not halt while waiting for the promise to resolve; instead, it continues to execute the next line of code. The promise will be resolved or rejected at a later point. For example, a promise can be used to fetch data from an API. The promise will be resolved when the data is available, and the program can continue its execution. If an error occurs, the promise will be rejected, and the error can be handled appropriately.
+
+The promise object has three states: _Pending_, _Fulfilled_, and _Rejected_. Consequently, handling the fulfilled and rejected states of the promise is crucial to maintaining the smooth execution of our program.
+
+There are various ways to handle promises in JavaScript. In this article, we'll explore some of the most common approaches to handling data and errors in promises, discussing the pros and cons of each approach. Let's get started!
 
 ## Initial Setup
 
