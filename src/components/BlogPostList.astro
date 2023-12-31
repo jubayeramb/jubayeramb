@@ -21,6 +21,7 @@ const { posts, tags, showBlogDescription = true } = Astro.props;
           description={post.frontmatter.description}
           pubDate={post.frontmatter.pubDate}
           url={post.url as string}
+          tags={post.frontmatter.tags}
           showDescription={showBlogDescription}
         />
       ))

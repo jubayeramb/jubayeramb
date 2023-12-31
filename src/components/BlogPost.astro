@@ -1,7 +1,10 @@
 ---
 import type { BlogPostFrontMatter } from "@/types";
 import { getFullDate } from "@/utils";
-type Props = Pick<BlogPostFrontMatter, "title" | "description" | "pubDate"> & {
+type Props = Pick<
+  BlogPostFrontMatter,
+  "title" | "description" | "pubDate" | "tags"
+> & {
   url: string;
   showDescription?: boolean;
 };
@@ -12,6 +15,7 @@ const {
   description,
   pubDate,
   showDescription = true,
+  tags,
 } = Astro.props;
 ---
 
@@ -27,7 +31,18 @@ const {
       </p>
       {
         showDescription ? (
-          <p class="text-sm text-content/70">{description}</p>
+          <>
+            <p class="text-sm text-content/70">{description}</p>
+            <div class="flex items-center gap-1 mt-1">
+              {tags
+                ? tags.map((tag) => (
+                    <span class="text-xs text-indigo-400 border border-dashed rounded-md border-indigo-400 px-1 whitespace-nowrap">
+                      {tag}
+                    </span>
+                  ))
+                : null}
+            </div>
+          </>
         ) : null
       }
     </div>

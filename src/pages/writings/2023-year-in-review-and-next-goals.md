@@ -68,7 +68,7 @@ I have been to some places in the country but I have never been to any other cou
 
 I have learnt some cloud stuffs in the past year and also gained some knowledge on advanced frontend concepts. I have learned and work with Astro and Svelte. I want to learn more backend stuff and cloud technologies this year.
 
-## 10. Improve my communication skills
+## 10. Improve communication skills
 
 Continuing the journey to enhance communication, focusing on increased interaction, forging new connections, and refining writing skills through increased social media and blog engagement.
 
