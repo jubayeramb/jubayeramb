@@ -74,48 +74,50 @@ const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${ge
 </Layout>
 
 <script>
-  const readingTime = document.getElementById("reading-time");
-  const articleContent = document.getElementById("article-content");
+  document.addEventListener("astro:page-load", () => {
+    const readingTime = document.getElementById("reading-time");
+    const articleContent = document.getElementById("article-content");
 
-  if (readingTime && articleContent) {
-    const wordsPerMinute = 200;
-    const textLength = articleContent.textContent?.split(" ").length || 0;
-    const readingTimeValue = Math.ceil(textLength / wordsPerMinute);
-    readingTime.textContent = `${readingTimeValue} min read`;
-  }
+    if (readingTime && articleContent) {
+      const wordsPerMinute = 200;
+      const textLength = articleContent.textContent?.split(" ").length || 0;
+      const readingTimeValue = Math.ceil(textLength / wordsPerMinute);
+      readingTime.textContent = `${readingTimeValue} min read`;
+    }
 
-  const preElements = document.querySelectorAll("pre");
-  if (preElements.length > 0) {
-    const copyToClipboard = (text: string) => {
-      navigator.clipboard.writeText(text);
-    };
+    const preElements = document.querySelectorAll("pre");
+    if (preElements.length > 0) {
+      const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+      };
 
-    preElements.forEach((preElement, idx) => {
-      const parentDiv = document.createElement("div");
-      parentDiv.classList.add("code-block");
-      preElement.parentNode?.insertBefore(parentDiv, preElement);
+      preElements.forEach((preElement, idx) => {
+        const parentDiv = document.createElement("div");
+        parentDiv.classList.add("code-block");
+        preElement.parentNode?.insertBefore(parentDiv, preElement);
 
-      const button = document.createElement("button");
-      button.textContent = "Copy";
-      button.classList.add("copy-button");
+        const button = document.createElement("button");
+        button.textContent = "Copy";
+        button.classList.add("copy-button");
 
-      const span = document.createElement("span");
-      span.textContent = "Copied!";
-      span.classList.add("copied", "hidden");
-      span.id = `copied-${idx}`;
+        const span = document.createElement("span");
+        span.textContent = "Copied!";
+        span.classList.add("copied", "hidden");
+        span.id = `copied-${idx}`;
 
-      button.addEventListener("click", () => {
-        copyToClipboard(preElement.textContent || "");
-        document.getElementById(`copied-${idx}`)?.classList.remove("hidden");
+        button.addEventListener("click", () => {
+          copyToClipboard(preElement.textContent || "");
+          document.getElementById(`copied-${idx}`)?.classList.remove("hidden");
+        });
+
+        button.addEventListener("mouseleave", () => {
+          document.getElementById(`copied-${idx}`)?.classList.add("hidden");
+        });
+
+        parentDiv.appendChild(preElement);
+        parentDiv.appendChild(button);
+        parentDiv.appendChild(span.cloneNode(true));
       });
-
-      button.addEventListener("mouseleave", () => {
-        document.getElementById(`copied-${idx}`)?.classList.add("hidden");
-      });
-
-      parentDiv.appendChild(preElement);
-      parentDiv.appendChild(button);
-      parentDiv.appendChild(span.cloneNode(true));
-    });
-  }
+    }
+  });
 </script>

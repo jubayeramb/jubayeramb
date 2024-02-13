@@ -23,52 +23,43 @@
   </svg>
 </button>
 
-<script is:inline>
-const attributeName = "data-theme";
-const theme = (() => {
-  if (typeof localStorage !== "undefined") {
-    return localStorage.getItem("theme") || null;
-  }
-  // if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-  //   return "dark";
-  // }
-  // return "light";
-})();
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const attributeName = "data-theme";
+    const element = document.documentElement;
 
-if (!!theme) {
-  document.documentElement.setAttribute(attributeName, theme);
-}
+    const updateTheme = (theme: string) => {
+      element.setAttribute(attributeName, theme);
+      window.localStorage.setItem("theme", theme);
+    };
 
-const handleToggleClick = () => {
-  const element = document.documentElement;
-  const themeAtt = element.attributes.getNamedItem(attributeName)?.value;
-  // no att. and system is dark
-  if (
-    !themeAtt &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    element.setAttribute(attributeName, "light");
-    window.localStorage.setItem("theme", "light");
-    return;
-  } else if (!themeAtt) {
-    // no att. and system is light
-    element.setAttribute(attributeName, "dark");
-    window.localStorage.setItem("theme", "dark");
-    return;
-  } else if (themeAtt === "light") {
-    // light att.
-    element.setAttribute(attributeName, "dark");
-    window.localStorage.setItem("theme", "dark");
-    return;
-  } else if (themeAtt === "dark") {
-    // dark att.
-    element.setAttribute(attributeName, "light");
-    window.localStorage.setItem("theme", "light");
-    return;
-  }
-};
+    const handleToggleClick = () => {
+      const themeAtt = element.attributes.getNamedItem(attributeName)?.value;
+      // no att. and system is dark
+      if (
+        !themeAtt &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        // no att. and system is dark
+        updateTheme("light");
+        return;
+      } else if (!themeAtt) {
+        // no att. and system is light
+        updateTheme("dark");
+        return;
+      } else if (themeAtt === "light") {
+        // light att.
+        updateTheme("dark");
+        return;
+      } else if (themeAtt === "dark") {
+        // dark att.
+        updateTheme("light");
+        return;
+      }
+    };
 
-document
-  .getElementById("themeToggle")
-  .addEventListener("click", handleToggleClick);
+    document
+      .getElementById("themeToggle")
+      ?.addEventListener("click", handleToggleClick);
+  });
 </script>

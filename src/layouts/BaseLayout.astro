@@ -1,4 +1,6 @@
 ---
+import { ViewTransitions } from "astro:transitions";
+import "../styles/global.css";
 interface Props {
   title: string;
   description?: string;
@@ -16,7 +18,7 @@ const {
 const keywords_ =
   keywords && keywords.length > 0 ? keywords.join(", ") + ", " : "";
 
-import "../styles/global.css";
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
@@ -66,6 +68,7 @@ import "../styles/global.css";
     <!-- Sitemap -->
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonicalUrl} />
 
     <!-- RSS Link -->
     <link
@@ -77,6 +80,12 @@ import "../styles/global.css";
 
     <!-- External Resources -->
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+
+    <!-- Internal Scripts -->
+    <script is:inline src="/scripts/dark-mode.js"></script>
+
+    <!-- View Transitions -->
+    <ViewTransitions />
   </head>
   <body class="h-screen bg-bgc text-content">
     <slot />
