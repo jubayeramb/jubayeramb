@@ -1,4 +1,4 @@
-import type { MarkdownInstance } from "astro";
+import type { CollectionEntry } from "astro:content";
 
 export type JobDescription = {
   company: string;
@@ -10,16 +10,5 @@ export type JobDescription = {
   technologies: string[];
 };
 
-export type BlogPostFrontMatter = {
-  layout: string;
-  title: string;
-  description: string;
-  pubDate: string;
-  slug: string;
-  tags: string[];
-  image?: string;
-  imageAlt?: string;
-  updatedDate?: string;
-};
-
-export type BlogPostType = MarkdownInstance<BlogPostFrontMatter>;
+export type BlogPostType = CollectionEntry<"posts">;
+export type BlogPostFrontMatter = BlogPostType["data"];

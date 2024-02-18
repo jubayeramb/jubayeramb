@@ -1,8 +1,9 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import type { BlogPostFrontMatter } from "@/types";
 import { getAllUniqueTags } from "@/utils";
-const allPosts = await Astro.glob<BlogPostFrontMatter>("../writings/*.md");
+import { getCollection } from "astro:content";
+
+const allPosts = await getCollection("posts");
 const tags = getAllUniqueTags(allPosts);
 const title = "Tags";
 const description = "A list of all tags used on this site.";

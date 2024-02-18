@@ -4,14 +4,15 @@ import type { GetStaticPaths } from "astro";
 import type { BlogPostType } from "@/types";
 import { getAllUniqueTags } from "@/utils";
 import BlogPostList from "@/components/BlogPostList.astro";
+import { getCollection } from "astro:content";
 
 export const getStaticPaths = (async () => {
-  const allPosts: BlogPostType[] = await Astro.glob("../writings/*.md");
+  const allPosts: BlogPostType[] = await getCollection("posts");
   const uniqueTags = getAllUniqueTags(allPosts);
 
   return uniqueTags.map((tag) => {
     const filteredPosts = allPosts.filter((post) =>
-      post.frontmatter.tags?.includes(tag)
+      post.data.tags?.includes(tag)
     );
     return {
       params: { tag },

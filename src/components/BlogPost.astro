@@ -22,13 +22,13 @@ const {
 <a href={url} class="group">
   <div class="flex flex-row justify-between items-center w-full">
     <div class="flex flex-col">
-      <p
+      <h1
         class={`text-lg ${
-          showDescription ? "font-bold" : ""
+          !showDescription ? "font-normal" : ""
         } group-hover:underline`}
       >
         {title}
-      </p>
+      </h1>
       {
         showDescription ? (
           <>

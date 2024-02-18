@@ -1,5 +1,4 @@
 ---
-layout: "../../layouts/BlogLayout.astro"
 title: "2023 Year in Review and Next Goals"
 description: "Reflection on the accomplishments and challenges of the year 2023 and outline the goals for the next year."
 pubDate: 2023-12-31

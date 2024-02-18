@@ -17,11 +17,11 @@ const { posts, tags, showBlogDescription = true } = Astro.props;
     {
       posts.map((post, idx) => (
         <BlogPost
-          title={post.frontmatter.title}
-          description={post.frontmatter.description}
-          pubDate={post.frontmatter.pubDate}
-          url={post.url as string}
-          tags={post.frontmatter.tags}
+          title={post.data.title}
+          description={post.data.description}
+          pubDate={post.data.pubDate}
+          url={`/writings/${post.slug}`}
+          tags={post.data.tags}
           showDescription={showBlogDescription}
         />
       ))

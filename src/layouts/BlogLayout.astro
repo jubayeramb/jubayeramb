@@ -1,31 +1,29 @@
 ---
 import SuggestedTags from "@/components/SuggestedTags.astro";
 import Layout from "./Layout.astro";
-import type { BlogPostFrontMatter, BlogPostType } from "@/types";
+import type { BlogPostType } from "@/types";
 import { generateOgImage, getAllUniqueTags, getFullDate } from "@/utils";
+import { getCollection } from "astro:content";
 
-const allPosts: BlogPostType[] = await Astro.glob("../pages/writings/*.md");
+const allPosts = await getCollection("posts");
 const uniqueTags = getAllUniqueTags(allPosts);
 
-type Props = { frontmatter: BlogPostFrontMatter };
+type Props = { postData: BlogPostType };
+
 const {
-  frontmatter: {
-    title,
-    description,
-    pubDate,
-    updatedDate,
-    imageAlt,
-    tags,
-    image,
-  },
+  postData: { data: frontmatter, body },
 } = Astro.props;
+
+const { title, description, pubDate, updatedDate, tags, image } = frontmatter;
+
+const readingTime = Math.ceil(body.split(" ").length / 200);
 
 const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${generateOgImage(
   title
 )}`;
 ---
 
-<Layout {title} {description} image={image || ogImage} keywords={tags}>
+<Layout {title} {description} image={image?.url || ogImage} keywords={tags}>
   <article class="py-6 md:px-6 font-tailwindDefault blog-content">
     <div class="mb-5">
       <div class="mb-4">
@@ -35,18 +33,17 @@ const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${ge
           {title}
         </h1>
         <p class="text-sm text-content/70 mt-2">
-          Posted on <time datetime={pubDate}>{getFullDate(pubDate)}</time> • <span
-            id="reading-time"
-          >
-          </span>
+          Posted on <time datetime={pubDate}
+            >{getFullDate(pubDate.toString())}</time
+          > • <span>{readingTime} min read</span>
         </p>
       </div>
       {
-        image ? (
+        image?.url ? (
           <figure>
             <img
-              src={image}
-              alt="Cover image"
+              src={image.url}
+              alt={image.alt || "Cover image"}
               width="1250"
               height="340"
               class="aspect-video object-cover rounded-md mb-3"
@@ -75,16 +72,6 @@ const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${ge
 
 <script>
   document.addEventListener("astro:page-load", () => {
-    const readingTime = document.getElementById("reading-time");
-    const articleContent = document.getElementById("article-content");
-
-    if (readingTime && articleContent) {
-      const wordsPerMinute = 200;
-      const textLength = articleContent.textContent?.split(" ").length || 0;
-      const readingTimeValue = Math.ceil(textLength / wordsPerMinute);
-      readingTime.textContent = `${readingTimeValue} min read`;
-    }
-
     const preElements = document.querySelectorAll("pre");
     if (preElements.length > 0) {
       const copyToClipboard = (text: string) => {

@@ -1,5 +1,4 @@
 ---
-layout: "../../layouts/BlogLayout.astro"
 title: "Handle JavaScript Promises in a Better Way"
 description: "Learn different strategies to handle data and errors in JavaScript promises."
 pubDate: 2023-12-09

@@ -9,7 +9,7 @@ export const getAllUniqueTags = (posts: BlogPostType[]): string[] => {
   return [
     ...new Set(
       posts
-        .map((post) => post.frontmatter.tags)
+        .map((post) => post.data.tags)
         .flat()
         .filter((tag) => !!tag)
     ),

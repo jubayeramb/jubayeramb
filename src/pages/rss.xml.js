@@ -1,12 +1,9 @@
 import rss, { pagesGlobToRssItems } from "@astrojs/rss";
+import { getCollection } from "astro:content";
 import sanitizeHtml from "sanitize-html";
 
 export async function GET(context) {
-  const posts = Object.values(
-    import.meta.glob("./writings/*.md", {
-      eager: true,
-    })
-  );
+  const posts = await getCollection("posts");
   return rss({
     // `<title>` field in output xml
     title: "Jubayer's Blog",
@@ -18,9 +15,9 @@ export async function GET(context) {
     // Array of `<item>`s in output xml
     // See "Generating items" section for examples using content collections and glob imports
     items: posts.map((post) => ({
-      link: post.url,
-      content: sanitizeHtml(post.compiledContent()),
-      ...post.frontmatter,
+      link: `/writings/${post.slug}`,
+      content: sanitizeHtml(post.body),
+      ...post.data,
     })),
     stylesheet: "/rss/styles.xsl",
     // (optional) inject custom xml

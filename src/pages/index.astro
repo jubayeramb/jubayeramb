@@ -3,12 +3,12 @@ import Layout from "@/layouts/Layout.astro";
 import Section from "@/components/Section.astro";
 import BlogPostList from "@/components/BlogPostList.astro";
 import { getAllUniqueTags } from "@/utils";
-import type { BlogPostFrontMatter } from "@/types";
+import { getCollection } from "astro:content";
 
-const posts = await Astro.glob<BlogPostFrontMatter>("./writings/*.md");
+const posts = await getCollection("posts");
 const sortedPost = posts.sort((a, b) => {
-  const aDate = new Date(a.frontmatter.pubDate);
-  const bDate = new Date(b.frontmatter.pubDate);
+  const aDate = new Date(a.data.pubDate);
+  const bDate = new Date(b.data.pubDate);
   return bDate.getTime() - aDate.getTime();
 });
 
