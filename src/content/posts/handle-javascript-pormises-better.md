@@ -5,7 +5,7 @@ pubDate: 2023-12-09
 tags: ["technical", "javascript", "promises", "error-handling"]
 ---
 
-If you're familiar with what promises are, you can skip the next section and jump straight to the approaches. Otherwise, read on!
+If you're familiar with what promises are, you can skip the next section and jump straight to the [approaches](#initial-setup). Otherwise, read on!
 
 ## What are Promises?
 
@@ -41,8 +41,10 @@ sayHi().then(
   (result) => console.log(result),
   (error) => console.log(error)
 );
+```
 
-// Output: Hi! 😊
+```
+Hi! 😊
 ```
 
 This approach is concise and convenient for simple scenarios. However, for complex chains with multiple promises, separate `then` and `catch` calls can enhance code readability and maintainability. This separation improves code organization, making success and error-handling logic clearer. For instance:
@@ -55,8 +57,10 @@ sayHi(true)
   .catch((error) => {
     console.log(error);
   });
+```
 
-// Output: No, I won't say Hi! 😡
+```
+No, I won't say Hi! 😡
 ```
 
 While the `then`/`catch` method is common, it has some drawbacks. For instance, if multiple promises are used, the `catch` block captures errors from any point in the promise chain, leading to a lack of granularity in error handling.
@@ -68,12 +72,15 @@ sayHi(true)
   })
   .then(() => {
     console.log("This will not be executed");
+    throw new Error("This will not be caught by the next catch block");
   })
   .catch((error) => {
     console.log(error);
   });
+```
 
-// Output: No, I won't say Hi! 😡
+```
+No, I won't say Hi! 😡
 ```
 
 This problem can be mitigated by using the `catch` method on each promise, but this results in more verbose code. Nesting too many `then`/`catch` blocks can also lead to "promise hell," making the code challenging to read and maintain.
@@ -93,11 +100,12 @@ sayHi(true)
   .catch((error) => {
     console.log(error.message);
   });
+```
 
-// Output:
-// No, I won't say Hi! 😡
-// This will be executed
-// This will be caught by the next catch block
+```
+No, I won't say Hi! 😡
+This will be executed
+This will be caught by the next catch block
 ```
 
 While `then` and `catch` are still widely used, some developers prefer the cleaner and more concise syntax of `async`/`await` for handling promises, especially in scenarios where a more synchronous-looking code is desired.
@@ -117,8 +125,10 @@ async function asyncWrapper() {
 }
 
 asyncWrapper();
+```
 
-// Output: Hi! 😊
+```
+Hi! 😊
 ```
 
 The `async`/`await` syntax can be combined with the `catch` method syntax:
@@ -128,8 +138,10 @@ const message = await sayHi(true).catch((error) => {
   console.log(error);
 });
 console.log(message);
+```
 
-// Output: No, I won't say Hi! 😡
+```
+No, I won't say Hi! 😡
 ```
 
 However, a drawback is that if a rejection occurs, the execution of the next line where `message` is being used cannot be stopped. Additionally, outside the `catch` block, there is no access to the `error` object, making it impossible to check for errors before the execution of the next line.
@@ -144,15 +156,16 @@ async function asyncWrapper() {
   } catch (error) {
     console.log(error);
   } finally {
-    console.log("This will be executed");
+    console.log("This will be executed regardless of the promise's state");
   }
 }
 
 asyncWrapper();
+```
 
-// Output:
-// No, I won't say Hi! 😡
-// This will be executed
+```
+No, I won't say Hi! 😡
+This will be executed regardless of the promise's state
 ```
 
 We can also go with kinda `callback` pattern we're used to within Node.js. We can get both the data and the error from a single call and can easily handle them.
@@ -173,8 +186,10 @@ if (error) {
 } else {
   console.log(message);
 }
+```
 
-// Output: Hi! 😊
+```
+Hi! 😊
 ```
 
 > Note: `null` or `undefined` can be returned instead of an empty array, for example, `return [result, null]` or `return [result, undefined]`. Another approach utilizing the `Promise.allSettled` method will be discussed shortly.
@@ -188,12 +203,13 @@ a `value` when fulfilled or a `reason` when rejected.
 Promise.allSettled([sayHi(true), sayHi(false)]).then((results) => {
   console.log(results);
 });
+```
 
-// Output:
-// [
-//   { status: 'rejected', reason: 'No, I won\'t say Hi! 😡' },
-//   { status: 'fulfilled', value: 'Hi! 😊' }
-// ]
+```
+[
+   { status: 'rejected', reason: 'No, I won\'t say Hi! 😡' },
+   { status: 'fulfilled', value: 'Hi! 😊' }
+]
 ```
 
 If promises depend on each other, and immediate rejection is desired if any fails, `Promise.all` can be used. This method waits for all promises to be resolved and is rejected immediately if any promise is rejected. Errors can be handled using the `catch` method.
@@ -206,9 +222,13 @@ Promise.all([sayHi(false), sayHi(false), Promise.resolve("Resolved!! 😁")])
   .catch((error) => {
     console.log(error);
   });
+```
 
-// Output: [ 'Hi! 😊', 'Hi! 😊', 'Resolved!! 😁' ]
+```
+[ 'Hi! 😊', 'Hi! 😊', 'Resolved!! 😁' ]
+```
 
+```js
 Promise.all([sayHi(true), sayHi(false), sayHi(false)])
   .then((results) => {
     console.log(results);
@@ -216,8 +236,10 @@ Promise.all([sayHi(true), sayHi(false), sayHi(false)])
   .catch((error) => {
     console.log(error);
   });
+```
 
-// Output: No, I won't say Hi! 😡
+```
+No, I won't say Hi! 😡
 ```
 
 The `async`/`await` syntax for handling data and errors in a single call can be achieved using the `Promise.allSettled` method:
@@ -236,8 +258,10 @@ if (error) {
 } else {
   console.log(message);
 }
+```
 
-// Output: Hi! 😊
+```
+Hi! 😊
 ```
 
 This approach appears more concise and readable than the `async`/`await` syntax!
