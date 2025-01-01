@@ -18,10 +18,10 @@ const title = "About";
     <p>
       👋 Hi, I'm Jubayer Al Mamun, a Software Developer and CS Undergrad based
       in Dhaka, Bangladesh. I currently work at{" "}
-      <a class="underline" href="https://findinghealers.com/">Finding Healers</a
-      > as a Full Stack Developer. I have a keen interest in web technologies
-      and love to work with Javascript and Typescript. I also love to learn new
-      things and share my learnings with others.
+      <a class="underline" href="https://getwecycle.com/">WeCycle</a> as a Software
+      Engineer. I have a keen interest in web technologies and love to work with
+      Javascript and Typescript. I also love to learn new things and share my learnings
+      with others.
     </p>
     <Section title="Working Experience 🧑‍💻">
       {
@@ -43,11 +43,7 @@ const title = "About";
         Object.keys(journeyData)
           .sort((a, b) => (a > b ? -1 : 1))
           .map((year, idx) => (
-            <Flow
-              year={year}
-              story={journeyData[year].reverse()}
-              className="mb-4"
-            />
+            <Flow year={year} story={journeyData[year]} className="mb-4" />
           ))
       }
     </Section>

@@ -7,7 +7,7 @@
     "startDate": "2022-02-01",
     "endDate": "2023-03-04",
     "technologies": [
-      ".NET Core",
+      "ASP .NET Core",
       "MSSQL Server",
       "Azure DevOps",
       "React.js",
@@ -20,7 +20,7 @@
     "description": "Finding Healers is a marketplace for those looking for holistic healing services.",
     "designation": "Full Stack Developer",
     "startDate": "2022-12-15",
-    "endDate": "",
+    "endDate": "2023-12-31",
     "technologies": [
       "React.js",
       "Next.js",
@@ -28,6 +28,24 @@
       "Node.js",
       "PostgreSQL",
       "Prisma",
+      "Digital Ocean"
+    ]
+  },
+  "3": {
+    "company": "WeCycle",
+    "url": "https://getwecycle.com/",
+    "description": "WeCycle provides premium on-demand junk removal services and recycling solutions.",
+    "designation": "Software Engineer",
+    "startDate": "2023-12-01",
+    "endDate": "",
+    "technologies": [
+      "Next.js",
+      "React Native",
+      "TypeScript",
+      "Node.js",
+      "MongoDB",
+      "Docker",
+      "Nginx",
       "Digital Ocean"
     ]
   }
