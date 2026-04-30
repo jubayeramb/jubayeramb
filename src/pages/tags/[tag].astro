@@ -28,10 +28,15 @@ const sortedPosts = posts.sort(
     new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
 );
 
-const description = `Posts tagged with #${tag}.`;
+const description = `Posts by Jubayer Al Mamun tagged with #${tag} — ${sortedPosts.length} ${sortedPosts.length === 1 ? "post" : "posts"}.`;
 ---
 
-<Layout title={`#${tag}`} {description} activeRoute="writings">
+<Layout
+  title={`#${tag}`}
+  {description}
+  keywords={[tag as string]}
+  activeRoute="writings"
+>
   <div class="page">
     <FadeUp>
       <div style="margin-bottom: 16px;">

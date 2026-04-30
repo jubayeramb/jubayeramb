@@ -1,26 +1,30 @@
-import rss, { pagesGlobToRssItems } from "@astrojs/rss";
+import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 import sanitizeHtml from "sanitize-html";
 
 export async function GET(context) {
   const posts = await getCollection("posts");
+  const sortedPosts = posts.sort(
+    (a, b) =>
+      new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
+  );
+
   return rss({
-    // `<title>` field in output xml
-    title: "Jubayer's Blog",
-    // `<description>` field in output xml
-    description: "A blog about web development, programming and DIY",
-    // Pull in your project "site" from the endpoint context
-    // https://docs.astro.build/en/reference/api-reference/#contextsite
+    title: "Jubayer Al Mamun — Writing",
+    description:
+      "Notes on JavaScript, TypeScript, Astro, and the occasional reflection by Jubayer Al Mamun.",
     site: context.site,
-    // Array of `<item>`s in output xml
-    // See "Generating items" section for examples using content collections and glob imports
-    items: posts.map((post) => ({
-      link: `/writings/${post.id}`,
-      content: sanitizeHtml(post.body ?? ""),
-      ...post.data,
+    items: sortedPosts.map((post) => ({
+      title: post.data.title,
+      description: post.data.description,
+      pubDate: new Date(post.data.pubDate),
+      link: `/writings/${post.id}/`,
+      content: sanitizeHtml(post.body ?? "", {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
+      }),
+      categories: post.data.tags ?? [],
     })),
     stylesheet: "/rss/styles.xsl",
-    // (optional) inject custom xml
-    customData: `<language>en-us</language>`,
+    customData: `<language>en-us</language><copyright>© ${new Date().getFullYear()} Jubayer Al Mamun</copyright>`,
   });
 }

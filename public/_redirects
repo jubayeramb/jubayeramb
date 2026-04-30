@@ -1,0 +1,12 @@
+# Force pages.dev preview hostname → custom domain (canonical)
+https://jubayeramb.pages.dev/*  https://jubayeramb.com/:splat  301
+
+# Common sitemap aliases → the actual sitemap index
+/sitemap.xml      /sitemap-index.xml  301
+/sitemap_index.xml /sitemap-index.xml  301
+/sitemap          /sitemap-index.xml  301
+
+# Common feed aliases → the canonical RSS feed
+/feed             /rss.xml            301
+/feed.xml         /rss.xml            301
+/atom.xml         /rss.xml            301
