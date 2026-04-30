@@ -1,6 +1,7 @@
 ---
 import { ViewTransitions } from "astro:transitions";
 import "../styles/global.css";
+
 interface Props {
   title: string;
   description?: string;
@@ -10,7 +11,7 @@ interface Props {
 
 const {
   title = "Jubayer Al Mamun",
-  description = "Software Developer, CS Undergrad, Tech Enthusiast, and Travel Freak",
+  description = "Software Engineer building things for the web — based in Dhaka, Bangladesh.",
   image = "https://jubayeramb.github.io/assets/images/og-image.png",
   keywords,
 } = Astro.props;
@@ -24,29 +25,20 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Global Metadata -->
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="author" content="Jubayer Al Mamun" />
     <meta
       name="keywords"
       content={keywords_ +
-        `Jubayer Al Mamun, jubayeramb, jubayer amb, Jubayer, Al Mamun, Jubayer Amb, Mamun, Jubayer Al Mamun, Jubayer Al Mamun Blog, 
-      Jubayer Al Mamun Website, Jubayer Al Mamun Portfolio, blog, portfolio, programmer, software engineer, software developer, web developer, full stack developer, 
-      frontend developer, backend developer, personal website, Jubayer Al Mamun Personal Website, Jubayer Al Mamun Personal Blog, Jubayer Al Mamun Personal Portfolio, 
-      Jubayer Al Mamun Personal Website, Jubayer Al Mamun Personal Blog, website, blog website, portfolio website, javascript, typescript, react, reactjs, react js, 
-      react native, reactnative, react-native, nextjs, next js, next, next.js, gatsby, gatsbyjs, gatsby js, gatsby.js, nodejs, node js, node, node.js, express, 
-      expressjs, express js, express.js, mongodb, mongo db, mongo, mongo-db, mongo db, mongodb, mongodb, mongodb, mongodb, mongodb, mongodb, mongodb,
-      software engineering, software development,web development, full stack development`}
+        "Jubayer Al Mamun, software engineer, web developer, full stack developer, JavaScript, TypeScript, React, Next.js, Astro, Node.js, blog, portfolio"}
     />
 
-    <!-- Primary Meta Tags -->
     <title>{title}</title>
     <meta name="title" content={title} />
     <meta name="description" content={description} />
 
-    <!-- Open Graph / Facebook -->
     <meta property="og:image" content={image} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -57,7 +49,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:type" content="website" />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={Astro.url} />
     <meta property="twitter:title" content={title} />
@@ -65,12 +56,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta name="twitter:creator" content="@jubayeramb" />
     <meta name="twitter:image" content={image} />
 
-    <!-- Sitemap -->
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href={canonicalUrl} />
 
-    <!-- RSS Link -->
     <link
       rel="alternate"
       href="/rss.xml"
@@ -78,16 +67,27 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
       title={title}
     />
 
-    <!-- External Resources -->
-    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script is:inline>
+      (function () {
+        function applyTheme() {
+          try {
+            var stored = localStorage.getItem("theme");
+            var prefersDark = window.matchMedia(
+              "(prefers-color-scheme: dark)"
+            ).matches;
+            var theme = stored || (prefersDark ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", theme);
+          } catch (e) {}
+        }
+        applyTheme();
+        // Astro View Transitions swap the document; re-apply on each swap.
+        document.addEventListener("astro:after-swap", applyTheme);
+      })();
+    </script>
 
-    <!-- Internal Scripts -->
-    <script is:inline src="/scripts/dark-mode.js"></script>
-
-    <!-- View Transitions -->
     <ViewTransitions />
   </head>
-  <body class="bg-bgc text-content">
+  <body>
     <slot />
   </body>
 </html>

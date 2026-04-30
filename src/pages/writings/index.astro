@@ -1,29 +1,69 @@
 ---
-import BlogPostList from "@/components/BlogPostList.astro";
 import Layout from "@/layouts/Layout.astro";
-import { getAllUniqueTags } from "@/utils";
+import FadeUp from "@/components/FadeUp.astro";
+import { getFullDate } from "@/utils";
 import { getCollection } from "astro:content";
 
 const posts = await getCollection("posts");
-const sortedPost = posts.sort((a, b) => {
-  const aDate = new Date(a.data.pubDate);
-  const bDate = new Date(b.data.pubDate);
-  return bDate.getTime() - aDate.getTime();
+const sortedPosts = posts.sort((a, b) => {
+  return (
+    new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
+  );
 });
 
-const tags = getAllUniqueTags(posts);
+type Group = { year: string; items: typeof sortedPosts };
+const grouped: Group[] = [];
+for (const p of sortedPosts) {
+  const year = String(new Date(p.data.pubDate).getFullYear());
+  let group = grouped.find((g) => g.year === year);
+  if (!group) {
+    group = { year, items: [] };
+    grouped.push(group);
+  }
+  group.items.push(p);
+}
 
-const title = "Writings";
+const title = "Writing";
 const description =
-  "A collection of my writing on technology, programming, DIY, and more.";
+  "Notes on JavaScript, TypeScript, Astro, and the occasional reflection.";
 ---
 
-<Layout {title} {description}>
-  <div class="mb-10 flex flex-col gap-1">
-    <h1 class="text-4xl">Writings</h1>
-    <p class="text-content/75">
-      I try to put my thoughts into words sometimes. Here are some of them.
-    </p>
+<Layout {title} {description} activeRoute="writings">
+  <div class="page">
+    <FadeUp>
+      <h1 class="h1">Writing</h1>
+    </FadeUp>
+    <FadeUp delay={60}>
+      <p class="lead">
+        Notes on tech, personal growth, life experiences, and the occasional
+        reflection. I write about things I'm learning, hoping that it helps
+        someone else on a similar path.
+      </p>
+    </FadeUp>
+
+    <section class="section">
+      {
+        grouped.map((g, gi) => (
+          <div>
+            <FadeUp delay={gi * 60}>
+              <div class="write-year">{g.year}</div>
+            </FadeUp>
+            <div class="list">
+              {g.items.map((post, i) => (
+                <FadeUp
+                  delay={gi * 60 + i * 30}
+                  as="a"
+                  class="list-item"
+                  href={`/writings/${post.slug}`}
+                >
+                  <div class="list-title">{post.data.title}</div>
+                  <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
+                </FadeUp>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </section>
   </div>
-  <BlogPostList posts={sortedPost} {tags} />
 </Layout>

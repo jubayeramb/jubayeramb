@@ -1,43 +1,116 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import Section from "@/components/Section.astro";
-import BlogPostList from "@/components/BlogPostList.astro";
-import { getAllUniqueTags } from "@/utils";
+import FadeUp from "@/components/FadeUp.astro";
 import { getCollection } from "astro:content";
+import { getFullDate } from "@/utils";
 
 const posts = await getCollection("posts");
-const sortedPost = posts.sort((a, b) => {
-  const aDate = new Date(a.data.pubDate);
-  const bDate = new Date(b.data.pubDate);
-  return bDate.getTime() - aDate.getTime();
+const sortedPosts = posts.sort((a, b) => {
+  return (
+    new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
+  );
 });
-
-const tags = getAllUniqueTags(posts);
+const recent = sortedPosts.slice(0, 3);
 ---
 
-<Layout title="Jubayer Al Mamun">
-  <div class="flex flex-col gap-20">
-    <div
-      class="flex flex-col md:flex-row gap-4 justify-between items-center mt-16"
-    >
-      <img
-        src="https://github.com/jubayeramb.png"
-        alt="Avatar"
-        class="rounded-full mx-auto theme-grayscale"
-        height="200"
-        width="200"
-      />
-      <div class="flex flex-col items-center md:items-baseline gap-2 md:w-2/4">
-        <h1 class="text-3xl font-bold">Jubayer Al Mamun</h1>
-        <p class="text-sm text-center md:text-start">
-          A Software Developer who loves to build things for the web.
-          Self-taught and passionate about learning new things. Currently
-          pursuing a bachelor's degree in Computer Science and Engineering.
+<Layout
+  title="Jubayer Al Mamun — Software Engineer"
+  description="Software engineer building things for the web. Based in Dhaka, Bangladesh."
+  activeRoute="home"
+>
+  <div class="page">
+    <FadeUp>
+      <h1 class="h1">
+        Hi, I'm Jubayer — a software engineer building things for the <em
+          >web</em
+        >.
+      </h1>
+    </FadeUp>
+
+    <FadeUp delay={80}>
+      <div class="home-intro">
+        <p class="lead">
+          I've spent the last few years shipping production software end-to-end
+          — from <strong>Postgres schemas</strong> to <strong
+            >pixel-tight UI</strong
+          >. I care about well-considered interfaces, fast systems, and code
+          that ages well.
+        </p>
+        <p class="lead">
+          Currently a Software Engineer at <a
+            href="https://getwecycle.com/"
+            target="_blank"
+            rel="noopener"
+            style="color: var(--fg); border-bottom: 1px solid var(--line-2);"
+            >WeCycle</a
+          >, working on web and mobile products. CS graduate, mostly
+          self-taught, still learning in public.
         </p>
       </div>
-    </div>
-    <Section title="Writings 📝">
-      <BlogPostList posts={sortedPost} {tags} showBlogDescription={false} />
-    </Section>
+    </FadeUp>
+
+    <FadeUp delay={140}>
+      <div class="home-meta">
+        <span class="avail">Open to freelance work</span>
+        <span>Dhaka, Bangladesh</span>
+        <span>UTC+6</span>
+      </div>
+    </FadeUp>
+
+    <section class="section">
+      <FadeUp>
+        <div class="section-label">Recent writing</div>
+      </FadeUp>
+      <div class="list">
+        {
+          recent.map((post, i) => (
+            <FadeUp
+              delay={i * 40}
+              as="a"
+              class="list-item"
+              href={`/writings/${post.slug}`}
+            >
+              <div class="list-title">{post.data.title}</div>
+              <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
+            </FadeUp>
+          ))
+        }
+      </div>
+      <FadeUp delay={200}>
+        <div
+          style="margin-top: 16px; font-family: var(--font-mono); font-size: 12px;"
+        >
+          <a
+            href="/writings"
+            style="color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
+            >All writing →</a
+          >
+        </div>
+      </FadeUp>
+    </section>
+
+    <section class="section">
+      <FadeUp>
+        <div class="section-label">Elsewhere</div>
+      </FadeUp>
+      <FadeUp delay={60}>
+        <div class="tag-cloud">
+          <a href="https://github.com/jubayeramb" target="_blank" rel="noopener"
+            >GitHub ↗</a
+          >
+          <a
+            href="https://www.linkedin.com/in/jubayeramb/"
+            target="_blank"
+            rel="noopener">LinkedIn ↗</a
+          >
+          <a
+            href="https://twitter.com/jubayeramb"
+            target="_blank"
+            rel="noopener">X (Twitter) ↗</a
+          >
+          <a href="mailto:jubayeramb@gmail.com">Email ↗</a>
+        </div>
+      </FadeUp>
+    </section>
   </div>
 </Layout>

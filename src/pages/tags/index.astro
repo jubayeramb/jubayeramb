@@ -1,23 +1,34 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import FadeUp from "@/components/FadeUp.astro";
 import { getAllUniqueTags } from "@/utils";
 import { getCollection } from "astro:content";
 
 const allPosts = await getCollection("posts");
-const tags = getAllUniqueTags(allPosts);
+const tags = getAllUniqueTags(allPosts).sort();
+
 const title = "Tags";
-const description = "A list of all tags used on this site.";
+const description = "All tags used across writing on this site.";
 ---
 
-<Layout {title} {description}>
-  <h1 class="text-3xl font-bold mb-10">Tags</h1>
-  <div class="flex flex-row flex-wrap gap-2">
-    {
-      tags.map((tag) => (
-        <p class="px-1 text-indigo-400 hover:bg-indigo-400 hover:text-white border border-indigo-400 hover:border-indigo-500 rounded-md">
-          <a href={`/tags/${tag}`}>#{tag}</a>
-        </p>
-      ))
-    }
+<Layout {title} {description} activeRoute="writings">
+  <div class="page">
+    <FadeUp>
+      <h1 class="h1">Tags</h1>
+    </FadeUp>
+    <FadeUp delay={60}>
+      <p class="lead">
+        Browse writing by topic. {tags.length}
+        {tags.length === 1 ? "tag" : "tags"} in total.
+      </p>
+    </FadeUp>
+
+    <section class="section">
+      <FadeUp>
+        <div class="tag-cloud">
+          {tags.map((tag) => <a href={`/tags/${tag}`}>#{tag}</a>)}
+        </div>
+      </FadeUp>
+    </section>
   </div>
 </Layout>

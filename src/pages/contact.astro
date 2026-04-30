@@ -1,0 +1,67 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import FadeUp from "@/components/FadeUp.astro";
+
+const contacts = [
+  {
+    label: "Email",
+    val: "jubayeramb@gmail.com",
+    href: "mailto:jubayeramb@gmail.com",
+  },
+  {
+    label: "GitHub",
+    val: "@jubayeramb",
+    href: "https://github.com/jubayeramb",
+  },
+  {
+    label: "X (Twitter)",
+    val: "@jubayeramb",
+    href: "https://twitter.com/jubayeramb",
+  },
+  {
+    label: "LinkedIn",
+    val: "/in/jubayeramb",
+    href: "https://www.linkedin.com/in/jubayeramb/",
+  },
+  { label: "RSS", val: "/rss.xml", href: "/rss.xml" },
+];
+
+const title = "Get in touch";
+const description =
+  "Open to freelance work and interesting collaborations. Email is the fastest way to reach me.";
+---
+
+<Layout {title} {description} activeRoute="contact">
+  <div class="page">
+    <FadeUp>
+      <h1 class="h1">Get in touch</h1>
+    </FadeUp>
+    <FadeUp delay={60}>
+      <p class="lead">
+        I'm open to freelance work and interesting collaborations. The fastest
+        way to reach me is email — I usually reply within 48 hours.
+      </p>
+    </FadeUp>
+
+    <section class="section">
+      <div class="contact-list">
+        {
+          contacts.map((c, i) => (
+            <FadeUp
+              delay={i * 40}
+              as="a"
+              class="contact-row"
+              href={c.href}
+              target={c.href.startsWith("http") ? "_blank" : undefined}
+              rel={c.href.startsWith("http") ? "noopener" : undefined}
+            >
+              <div class="contact-label">{c.label}</div>
+              <div class="contact-val">{c.val}</div>
+              <div class="contact-arrow">↗</div>
+            </FadeUp>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</Layout>

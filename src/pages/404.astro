@@ -1,17 +1,44 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import FadeUp from "@/components/FadeUp.astro";
 
-const title = "404 - Page Not Found";
-const description = "Page not found";
+const title = "404 — Page not found";
+const description = "The page you're looking for doesn't exist.";
 ---
 
 <Layout {title} {description}>
-  <div class="h-screen w-full grid place-items-center">
-    <div class="flex flex-col justify-center items-center">
-      <span style="font-size: 9rem;">
-        <span class="iconify" data-icon="tabler:error-404"></span>
-      </span>
-      <p class="text-2xl">Page Not Found! :(</p>
-    </div>
+  <div class="page">
+    <FadeUp>
+      <div
+        style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); margin-bottom: 16px; letter-spacing: 0.06em;"
+      >
+        404
+      </div>
+    </FadeUp>
+    <FadeUp delay={60}>
+      <h1 class="h1">Nothing here, sorry.</h1>
+    </FadeUp>
+    <FadeUp delay={120}>
+      <p class="lead">
+        The page you're looking for doesn't exist — maybe it moved, or maybe
+        the link was off. Try the home page or recent writing.
+      </p>
+    </FadeUp>
+    <FadeUp delay={180}>
+      <div
+        style="margin-top: 32px; display: flex; gap: 18px; font-family: var(--font-mono); font-size: 13px;"
+      >
+        <a
+          href="/"
+          style="color: var(--fg); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
+          >Home →</a
+        >
+        <a
+          href="/writings"
+          style="color: var(--fg); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
+          >Writing →</a
+        >
+      </div>
+    </FadeUp>
   </div>
 </Layout>

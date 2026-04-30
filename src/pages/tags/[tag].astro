@@ -1,9 +1,9 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import FadeUp from "@/components/FadeUp.astro";
 import type { GetStaticPaths } from "astro";
 import type { BlogPostType } from "@/types";
-import { getAllUniqueTags } from "@/utils";
-import BlogPostList from "@/components/BlogPostList.astro";
+import { getAllUniqueTags, getFullDate } from "@/utils";
 import { getCollection } from "astro:content";
 
 export const getStaticPaths = (async () => {
@@ -16,29 +16,59 @@ export const getStaticPaths = (async () => {
     );
     return {
       params: { tag },
-      props: { posts: filteredPosts, tags: uniqueTags },
+      props: { posts: filteredPosts },
     };
   });
 }) satisfies GetStaticPaths;
 
 const { tag } = Astro.params;
-const { posts, tags } = Astro.props;
+const { posts } = Astro.props;
+const sortedPosts = posts.sort(
+  (a, b) =>
+    new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
+);
 
-const description = `Posts tagged with ${tag}`;
+const description = `Posts tagged with #${tag}.`;
 ---
 
-<Layout title={tag} {description}>
-  <div class="flex flex-row justify-between items-center mb-10">
-    <p>
-      Posts tagged with <span class="font-bold">{tag}</span> 👇
-    </p>
-    <p>
-      <a
-        href="/tags"
-        class="text-sm text-blue-400 hover:text-blue-500 hover:underline"
-        >All tags →</a
-      >
-    </p>
+<Layout title={`#${tag}`} {description} activeRoute="writings">
+  <div class="page">
+    <FadeUp>
+      <div style="margin-bottom: 16px;">
+        <a
+          href="/tags"
+          style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
+          >← All tags</a
+        >
+      </div>
+    </FadeUp>
+    <FadeUp delay={40}>
+      <h1 class="h1">
+        Posts tagged <em>#{tag}</em>
+      </h1>
+    </FadeUp>
+    <FadeUp delay={80}>
+      <p class="lead">
+        {sortedPosts.length} {sortedPosts.length === 1 ? "post" : "posts"}.
+      </p>
+    </FadeUp>
+
+    <section class="section">
+      <div class="list">
+        {
+          sortedPosts.map((post, i) => (
+            <FadeUp
+              delay={i * 30}
+              as="a"
+              class="list-item"
+              href={`/writings/${post.slug}`}
+            >
+              <div class="list-title">{post.data.title}</div>
+              <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
+            </FadeUp>
+          ))
+        }
+      </div>
+    </section>
   </div>
-  <BlogPostList {posts} {tags} />
 </Layout>

@@ -1,38 +1,116 @@
 ---
-import ThemeIcon from "./ThemeIcon.astro";
-const { pathname } = Astro.url;
-const activePage = pathname.split("/")[1];
-const active = (path: string) =>
-  activePage === path ? "border-b border-content/60" : "";
+type Props = {
+  activeRoute?: string;
+};
 
-const NavItems = ["Writings", "About"];
+const { activeRoute } = Astro.props;
+const { pathname } = Astro.url;
+
+const inferred = (() => {
+  const seg = pathname.replace(/\/$/, "").split("/")[1];
+  if (!seg) return "home";
+  return seg;
+})();
+
+const active = activeRoute || inferred;
+
+const NAV = [
+  { id: "writings", label: "Writings", href: "/writings" },
+  { id: "about", label: "About", href: "/about" },
+  { id: "contact", label: "Contact", href: "/contact" },
+];
 ---
 
-<header
-  class="w-full fixed top-0 bg-[--nav-background] backdrop-blur-sm backdrop-filter z-50"
->
-  <nav
-    class="flex justify-between items-center px-5 py-1 w-full max-w-4xl mx-auto"
-  >
-    <div class="flex justify-center items-center gap-6">
-      <a
-        href="/"
-        class="text-xl font-bold hover:text-content/75 pr-3 border-r-2 border-r-content/30"
-        >Jub</a
+<nav class="nav">
+  <a href="/" class="brand" aria-label="Jubayer Al Mamun, home">
+    <span class="brand-mark">J</span>
+    <span>Jubayer Al Mamun</span>
+  </a>
+  <div class="nav-links">
+    {
+      NAV.map((item) => (
+        <a
+          href={item.href}
+          class={`nav-link ${active === item.id ? "active" : ""}`}
+        >
+          {item.label}
+        </a>
+      ))
+    }
+    <button
+      id="themeToggle"
+      class="theme-toggle"
+      aria-label="Toggle color theme"
+      type="button"
+    >
+      <svg
+        id="themeIconSun"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
       >
-      {
-        NavItems.map((item) => (
-          <a
-            href={`/${item.toLowerCase()}`}
-            class={`hover:text-content/75 ${active(item.toLowerCase())}`}
-          >
-            {item}
-          </a>
-        ))
-      }
-    </div>
-    <div class="flex justify-center items-center gap-6">
-      <ThemeIcon />
-    </div>
-  </nav>
-</header>
+        <circle cx="12" cy="12" r="4"></circle>
+        <path
+          d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+        ></path>
+      </svg>
+      <svg
+        id="themeIconMoon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+        style="display:none"
+      >
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<script>
+  const syncIcon = () => {
+    const theme = document.documentElement.getAttribute("data-theme") || "light";
+    const sun = document.getElementById("themeIconSun") as HTMLElement | null;
+    const moon = document.getElementById("themeIconMoon") as HTMLElement | null;
+    if (!sun || !moon) return;
+    if (theme === "dark") {
+      sun.style.display = "block";
+      moon.style.display = "none";
+    } else {
+      sun.style.display = "none";
+      moon.style.display = "block";
+    }
+  };
+
+  const handleToggle = () => {
+    const current =
+      document.documentElement.getAttribute("data-theme") || "light";
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("theme", next);
+    } catch (e) {}
+    syncIcon();
+  };
+
+  const wire = () => {
+    syncIcon();
+    const btn = document.getElementById("themeToggle");
+    if (btn && !(btn as any).__wired) {
+      btn.addEventListener("click", handleToggle);
+      (btn as any).__wired = true;
+    }
+  };
+
+  wire();
+  document.addEventListener("astro:page-load", wire);
+  document.addEventListener("astro:after-swap", syncIcon);
+</script>
