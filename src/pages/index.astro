@@ -68,7 +68,7 @@ const recent = sortedPosts.slice(0, 3);
               delay={i * 40}
               as="a"
               class="list-item"
-              href={`/writings/${post.slug}`}
+              href={`/writings/${post.id}`}
             >
               <div class="list-title">{post.data.title}</div>
               <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
