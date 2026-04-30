@@ -8,7 +8,8 @@ const allPosts = await getCollection("posts");
 const tags = getAllUniqueTags(allPosts).sort();
 
 const title = "Tags";
-const description = "All tags used across writing on this site.";
+const description =
+  "Browse Jubayer Al Mamun's writing by topic — JavaScript, TypeScript, Astro, CSS, and more.";
 ---
 
 <Layout {title} {description} activeRoute="writings">

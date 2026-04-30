@@ -7,7 +7,14 @@ type Props = {
   title: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   keywords?: string[];
+  type?: "website" | "article" | "profile";
+  pubDate?: string | Date;
+  updatedDate?: string | Date;
+  tags?: string[];
+  canonical?: string;
+  noindex?: boolean;
   /**
    * Mark which top-level route is active for the nav.
    * One of: "home" | "writings" | "about" | "contact".
@@ -15,10 +22,10 @@ type Props = {
   activeRoute?: string;
 };
 
-const { title, description, image, keywords, activeRoute } = Astro.props;
+const { activeRoute, ...seoProps } = Astro.props;
 ---
 
-<BaseLayout {title} {description} {image} {keywords}>
+<BaseLayout {...seoProps}>
   <div class="app">
     <Header activeRoute={activeRoute} />
     <main>

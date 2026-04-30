@@ -10,7 +10,7 @@ const {
   postData: { data: frontmatter, body },
 } = Astro.props;
 
-const { title, description, pubDate, tags, image } = frontmatter;
+const { title, description, pubDate, updatedDate, tags, image } = frontmatter;
 
 const wordCount = (body ?? "").split(/\s+/).filter(Boolean).length;
 const readingTime = Math.max(1, Math.ceil(wordCount / 220));
@@ -24,7 +24,11 @@ const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${ge
   {title}
   {description}
   image={image?.url || ogImage}
-  keywords={tags}
+  imageAlt={image?.alt || title}
+  type="article"
+  {pubDate}
+  {updatedDate}
+  {tags}
   activeRoute="writings"
 >
   <article class="page">

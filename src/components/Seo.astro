@@ -1,0 +1,286 @@
+---
+import { generateOgImage } from "@/utils";
+
+type Props = {
+  title: string;
+  description?: string;
+  image?: string;
+  imageAlt?: string;
+  keywords?: string[];
+  /** Page kind — drives canonical, og:type, JSON-LD shape */
+  type?: "website" | "article" | "profile";
+  /** Article only */
+  pubDate?: string | Date;
+  updatedDate?: string | Date;
+  tags?: string[];
+  /** Override canonical URL if needed */
+  canonical?: string;
+  /** Disable indexing for this page */
+  noindex?: boolean;
+};
+
+const {
+  title,
+  description = "Software engineer building things for the web — based in Dhaka, Bangladesh. Writing about TypeScript, React, and Astro.",
+  image,
+  imageAlt = "Jubayer Al Mamun",
+  keywords = [],
+  type = "website",
+  pubDate,
+  updatedDate,
+  tags = [],
+  canonical,
+  noindex = false,
+} = Astro.props;
+
+const SITE_URL = Astro.site?.toString().replace(/\/$/, "") ?? "https://jubayeramb.com";
+const SITE_NAME = "Jubayer Al Mamun";
+const AUTHOR_NAME = "Jubayer Al Mamun";
+const AUTHOR_TWITTER = "@jubayeramb";
+const AUTHOR_AVATAR = `${SITE_URL}/assets/images/og-image.png`;
+
+const fullTitle =
+  title === SITE_NAME ? title : `${title} — ${SITE_NAME}`;
+
+// Normalize canonical to always end with `/` so it matches sitemap entries
+// (Astro is configured with build.format = "directory").
+const normalizedPath = (() => {
+  let p = Astro.url.pathname;
+  if (!p.endsWith("/")) p += "/";
+  return p;
+})();
+const canonicalUrl =
+  canonical ?? new URL(normalizedPath, SITE_URL + "/").toString();
+
+// Build OG image URL — for articles, fall back to a per-title generated OG.
+const ogImage = image
+  ? new URL(image, SITE_URL).toString()
+  : type === "article"
+    ? `https://dynamic-og-image-generator.vercel.app/api/generate?${generateOgImage(title)}`
+    : `${SITE_URL}/assets/images/og-image.png`;
+
+const metaKeywords = [
+  ...keywords,
+  ...tags,
+  "Jubayer Al Mamun",
+  "jubayeramb",
+  "software engineer",
+  "full-stack developer",
+  "TypeScript",
+  "React",
+  "Next.js",
+  "Astro",
+  "Node.js",
+  "Dhaka",
+  "Bangladesh",
+].join(", ");
+
+const ogType = type === "article" ? "article" : type === "profile" ? "profile" : "website";
+
+// JSON-LD
+const websiteLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL + "/",
+  description,
+  inLanguage: "en-US",
+  author: {
+    "@type": "Person",
+    name: AUTHOR_NAME,
+    url: SITE_URL + "/",
+  },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${SITE_URL}/tags/{search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+};
+
+const personLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: AUTHOR_NAME,
+  url: SITE_URL + "/",
+  image: AUTHOR_AVATAR,
+  jobTitle: "Software Engineer",
+  worksFor: {
+    "@type": "Organization",
+    name: "WeCycle",
+    url: "https://getwecycle.com/",
+  },
+  alumniOf: {
+    "@type": "CollegeOrUniversity",
+    name: "Green University of Bangladesh",
+    url: "https://green.edu.bd/",
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Dhaka",
+    addressCountry: "BD",
+  },
+  sameAs: [
+    "https://github.com/jubayeramb",
+    "https://www.linkedin.com/in/jubayeramb/",
+    "https://twitter.com/jubayeramb",
+  ],
+};
+
+const articleLd =
+  type === "article"
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: title,
+        description,
+        image: ogImage,
+        datePublished: pubDate
+          ? new Date(pubDate).toISOString()
+          : undefined,
+        dateModified: updatedDate
+          ? new Date(updatedDate).toISOString()
+          : pubDate
+            ? new Date(pubDate).toISOString()
+            : undefined,
+        author: {
+          "@type": "Person",
+          name: AUTHOR_NAME,
+          url: SITE_URL + "/",
+        },
+        publisher: {
+          "@type": "Person",
+          name: AUTHOR_NAME,
+          url: SITE_URL + "/",
+        },
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": canonicalUrl,
+        },
+        keywords: tags.join(", "),
+        inLanguage: "en-US",
+      }
+    : null;
+
+// BreadcrumbList for non-home pages
+const segments = Astro.url.pathname
+  .replace(/\/$/, "")
+  .split("/")
+  .filter(Boolean);
+const breadcrumbLd =
+  segments.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: SITE_URL + "/",
+          },
+          ...segments.map((seg: string, i: number) => {
+            const path = "/" + segments.slice(0, i + 1).join("/") + "/";
+            const name =
+              type === "article" && i === segments.length - 1
+                ? title
+                : seg
+                    .replace(/-/g, " ")
+                    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+            return {
+              "@type": "ListItem",
+              position: i + 2,
+              name,
+              item: SITE_URL + path,
+            };
+          }),
+        ],
+      }
+    : null;
+---
+
+<title>{fullTitle}</title>
+<meta name="title" content={fullTitle} />
+<meta name="description" content={description} />
+<meta name="keywords" content={metaKeywords} />
+<meta name="author" content={AUTHOR_NAME} />
+<meta
+  name="robots"
+  content={noindex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"}
+/>
+<meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#131312" media="(prefers-color-scheme: dark)" />
+<meta name="color-scheme" content="light dark" />
+
+<link rel="canonical" href={canonicalUrl} />
+<link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Writing`} href={`${SITE_URL}/rss.xml`} />
+<link rel="sitemap" href="/sitemap-index.xml" />
+
+<!-- Open Graph -->
+<meta property="og:site_name" content={SITE_NAME} />
+<meta property="og:type" content={ogType} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:locale" content="en_US" />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+{
+  type === "article" && pubDate && (
+    <meta property="article:published_time" content={new Date(pubDate).toISOString()} />
+  )
+}
+{
+  type === "article" && updatedDate && (
+    <meta property="article:modified_time" content={new Date(updatedDate).toISOString()} />
+  )
+}
+{
+  type === "article" && (
+    <meta property="article:author" content={`${SITE_URL}/about/`} />
+  )
+}
+{
+  type === "article" &&
+    tags.map((tag: string) => <meta property="article:tag" content={tag} />)
+}
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content={AUTHOR_TWITTER} />
+<meta name="twitter:creator" content={AUTHOR_TWITTER} />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+<meta name="twitter:image:alt" content={imageAlt} />
+
+<!-- Structured data -->
+<script
+  is:inline
+  type="application/ld+json"
+  set:html={JSON.stringify(websiteLd)}
+/>
+<script
+  is:inline
+  type="application/ld+json"
+  set:html={JSON.stringify(personLd)}
+/>
+{
+  articleLd && (
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(articleLd)}
+    />
+  )
+}
+{
+  breadcrumbLd && (
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(breadcrumbLd)}
+    />
+  )
+}
