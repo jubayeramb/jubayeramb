@@ -12,7 +12,8 @@ const {
 
 const { title, description, pubDate, tags, image } = frontmatter;
 
-const readingTime = Math.ceil(body.split(/\s+/).length / 220);
+const wordCount = (body ?? "").split(/\s+/).filter(Boolean).length;
+const readingTime = Math.max(1, Math.ceil(wordCount / 220));
 
 const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${generateOgImage(
   title

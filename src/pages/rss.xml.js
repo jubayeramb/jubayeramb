@@ -15,8 +15,8 @@ export async function GET(context) {
     // Array of `<item>`s in output xml
     // See "Generating items" section for examples using content collections and glob imports
     items: posts.map((post) => ({
-      link: `/writings/${post.slug}`,
-      content: sanitizeHtml(post.body),
+      link: `/writings/${post.id}`,
+      content: sanitizeHtml(post.body ?? ""),
       ...post.data,
     })),
     stylesheet: "/rss/styles.xsl",

@@ -61,7 +61,7 @@ const description = `Posts tagged with #${tag}.`;
               delay={i * 30}
               as="a"
               class="list-item"
-              href={`/writings/${post.slug}`}
+              href={`/writings/${post.id}`}
             >
               <div class="list-title">{post.data.title}</div>
               <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
