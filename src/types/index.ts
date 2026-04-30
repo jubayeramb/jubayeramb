@@ -2,11 +2,11 @@ import type { CollectionEntry } from "astro:content";
 
 export type JobDescription = {
   company: string;
-  description: string;
   url: string;
   designation: string;
   startDate: string;
   endDate: string;
+  description: string;
   technologies: string[];
 };
 

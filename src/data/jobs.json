@@ -1,52 +1,37 @@
 {
   "1": {
-    "company": "HomePay",
-    "url": "https://homepay.io/",
-    "description": "HomePay is a Bangladesh-focussed real-time FinTech infrastructure company, providing 24 hours Cross-Border Payment Network and Local Payment Services",
-    "designation": "Software Developer",
-    "startDate": "2022-02-01",
-    "endDate": "2023-03-04",
+    "company": "WeCycle",
+    "url": "https://getwecycle.com/",
+    "designation": "Software Engineer",
+    "startDate": "2023-12-01",
+    "endDate": "",
+    "description": "Driving a phased Node.js monolith → microservices migration. Built an event-driven backend (Express + BullMQ + Redis), real-time booking APIs, and the React + Next.js frontend serving 2,000+ users. Mentor two junior engineers.",
     "technologies": [
-      "ASP .NET Core",
-      "MSSQL Server",
-      "Azure DevOps",
-      "React.js",
-      "TypeScript"
+      "TypeScript",
+      "Node.js",
+      "Next.js",
+      "MongoDB",
+      "Redis",
+      "BullMQ",
+      "Stripe"
     ]
   },
   "2": {
     "company": "Finding Healers",
-    "url": "https://findinghealers.com/",
-    "description": "Finding Healers is a marketplace for those looking for holistic healing services.",
+    "url": "https://www.instagram.com/findinghealers/",
     "designation": "Full Stack Developer",
     "startDate": "2022-12-15",
     "endDate": "2023-12-31",
-    "technologies": [
-      "React.js",
-      "Next.js",
-      "TypeScript",
-      "Node.js",
-      "PostgreSQL",
-      "Prisma",
-      "Digital Ocean"
-    ]
+    "description": "Built a marketplace for holistic healing services — REST APIs with Node.js + Postgres + Prisma, PayPal/Stripe payments, and the React + Next.js frontend. Cut page load time by ~30%.",
+    "technologies": ["TypeScript", "Next.js", "PostgreSQL", "Prisma", "Stripe"]
   },
   "3": {
-    "company": "WeCycle",
-    "url": "https://getwecycle.com/",
-    "description": "WeCycle provides premium on-demand junk removal services and recycling solutions.",
-    "designation": "Software Engineer",
-    "startDate": "2023-12-01",
-    "endDate": "",
-    "technologies": [
-      "Next.js",
-      "React Native",
-      "TypeScript",
-      "Node.js",
-      "MongoDB",
-      "Docker",
-      "Nginx",
-      "Digital Ocean"
-    ]
+    "company": "HomePay",
+    "url": "https://homepay.io/",
+    "designation": "Software Developer",
+    "startDate": "2022-02-01",
+    "endDate": "2023-03-31",
+    "description": "Built payment APIs (.NET Core + MSSQL) and the React merchant dashboard for real-time transaction monitoring. Led merchant onboarding for DeshiPay and ShopUp.",
+    "technologies": [".NET Core", "MSSQL Server", "React", "TypeScript"]
   }
 }
