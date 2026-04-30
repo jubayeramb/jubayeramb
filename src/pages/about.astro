@@ -1,51 +1,182 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import journey from "@data/journey.json";
+import FadeUp from "@/components/FadeUp.astro";
 import jobsHistory from "@data/jobs.json";
-import Flow from "@components/Flow.astro";
-import Section from "@components/Section.astro";
-import JobCard from "@components/JobCard.astro";
-import type { JobDescription } from "../types";
+import type { JobDescription } from "@/types";
+import { getMonthYear } from "@/utils";
 
-const journeyData: { [key: string]: string[] } = journey;
-const jobsData: { [key: string]: JobDescription } = jobsHistory;
+const jobsData: { [key: string]: JobDescription } = jobsHistory as any;
+
+const jobs = Object.keys(jobsData)
+  .map((k) => jobsData[k])
+  .sort(
+    (a, b) =>
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+  );
+
+const stack = [
+  "TypeScript",
+  "React",
+  "Next.js",
+  "Node.js",
+  "React Native",
+  "PostgreSQL",
+  "MongoDB",
+  "Redis",
+  "Prisma",
+  "Tailwind",
+  "Docker",
+];
 
 const title = "About";
+const description =
+  "Software engineer based in Dhaka, Bangladesh. Mostly self-taught.";
 ---
 
-<Layout {title}>
-  <div class="flex flex-col gap-10">
-    <p>
-      👋 Hi, I'm Jubayer Al Mamun, a Software Developer and CS Undergrad based
-      in Dhaka, Bangladesh. I currently work at{" "}
-      <a class="underline" href="https://getwecycle.com/">WeCycle</a> as a Software
-      Engineer. I have a keen interest in web technologies and love to work with
-      Javascript and Typescript. I also love to learn new things and share my learnings
-      with others.
-    </p>
-    <Section title="Working Experience 🧑‍💻">
-      {
-        Object.keys(jobsData)
-          .sort((a, b) => (a > b ? -1 : 1))
-          .map((year, idx) => (
-            <JobCard jobDescription={jobsData[year]} className="mb-6" />
-          ))
-      }
-    </Section>
-    <Section title="Education 📖">
-      <p>
-        Currently enrolling Bachelor of Computer Science and Engineering at
-        Greeen University of Bangladesh and expected to graduate in 2026.
+<Layout {title} {description} activeRoute="about">
+  <div class="page">
+    <FadeUp>
+      <h1 class="h1">About</h1>
+    </FadeUp>
+    <FadeUp delay={60}>
+      <p class="lead">
+        I'm a software engineer based in <strong>Dhaka, Bangladesh</strong> —
+        mostly self-taught, currently working at <a
+          href="https://getwecycle.com/"
+          target="_blank"
+          rel="noopener">WeCycle</a
+        >. I've spent the last few years shipping production software end-to-end
+        — services, schemas, and interfaces.
       </p>
-    </Section>
-    <Section title="My Journey 🚶">
-      {
-        Object.keys(journeyData)
-          .sort((a, b) => (a > b ? -1 : 1))
-          .map((year, idx) => (
-            <Flow year={year} story={journeyData[year]} className="mb-4" />
-          ))
-      }
-    </Section>
+    </FadeUp>
+
+    <section class="section about-section">
+      <FadeUp>
+        <div class="section-label">A little more</div>
+      </FadeUp>
+      <FadeUp delay={60}>
+        <p>
+          I started programming in 2020 — by accident, mostly. I opened a
+          stylesheet, and never really stopped. Since then I've shipped products
+          at small startups, contributed to open source, and helped a handful of
+          teams move faster without breaking things.
+        </p>
+        <p>
+          My work tends toward <strong>simple, fast, and considered</strong>.
+          I'm at my best when I can own a problem from data model to interaction
+          detail.
+        </p>
+      </FadeUp>
+    </section>
+
+    <section class="section about-section">
+      <FadeUp>
+        <div class="section-label">Experience</div>
+      </FadeUp>
+      <div class="work-list">
+        {
+          jobs.map((job, i) => {
+            const start = getMonthYear(job.startDate);
+            const end = job.endDate ? getMonthYear(job.endDate) : "Present";
+            const startYear = job.startDate.split("-")[0];
+            const endYear = job.endDate ? job.endDate.split("-")[0] : "";
+            const yearLabel = endYear
+              ? endYear === startYear
+                ? startYear
+                : `${startYear}—${endYear.slice(2)}`
+              : `${startYear}—`;
+            return (
+              <FadeUp delay={i * 40} class="work-item">
+                <div class="work-year">{yearLabel}</div>
+                <div>
+                  <div class="work-role">{job.designation}</div>
+                  <div class="work-co">
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noopener"
+                      style="border-bottom: 1px solid var(--line-2);"
+                    >
+                      {job.company}
+                    </a>{" "}
+                    · {start} — {end}
+                  </div>
+                  <div class="work-desc">{job.description}</div>
+                  <div class="work-tags">
+                    {job.technologies.map((t) => (
+                      <span>{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </FadeUp>
+            );
+          })
+        }
+      </div>
+    </section>
+
+    <section class="section about-section">
+      <FadeUp>
+        <div class="section-label">Recognition</div>
+      </FadeUp>
+      <div class="work-list">
+        <FadeUp class="work-item">
+          <div class="work-year">2025</div>
+          <div>
+            <div class="work-role">Verdicto — 1st Runner-Up</div>
+            <div class="work-co">National hackathon · 320 teams</div>
+            <div class="work-desc">
+              AI document review platform with automated captioning, sentiment
+              analysis, and a real-time review UI.
+            </div>
+          </div>
+        </FadeUp>
+        <FadeUp delay={40} class="work-item">
+          <div class="work-year">2024</div>
+          <div>
+            <div class="work-role">UniSync — 2nd Runner-Up</div>
+            <div class="work-co">National hackathon · 40+ finalists</div>
+            <div class="work-desc">
+              University companion app with live data feeds, AR navigation, and
+              an on-device AI assistant. Led a 3-person team.
+            </div>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+
+    <section class="section about-section">
+      <FadeUp>
+        <div class="section-label">Education</div>
+      </FadeUp>
+      <div class="work-list">
+        <FadeUp class="work-item">
+          <div class="work-year">2022—26</div>
+          <div>
+            <div class="work-role">B.Sc. in Computer Science & Engineering</div>
+            <div class="work-co">
+              <a
+                href="https://green.edu.bd/"
+                target="_blank"
+                rel="noopener"
+                style="border-bottom: 1px solid var(--line-2);"
+                >Green University of Bangladesh</a
+              > · Jan 2022 — Jan 2026
+            </div>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+
+    <section class="section about-section">
+      <FadeUp>
+        <div class="section-label">Stack</div>
+      </FadeUp>
+      <FadeUp delay={60}>
+        <div class="stack-list">
+          {stack.map((s) => <span>{s}</span>)}
+        </div>
+      </FadeUp>
+    </section>
   </div>
 </Layout>

@@ -1,0 +1,47 @@
+---
+type Props = {
+  delay?: number;
+  as?: string;
+  class?: string;
+  href?: string;
+  [key: string]: any;
+};
+
+const { delay = 0, as = "div", class: className = "", ...rest } = Astro.props;
+const Tag = as as any;
+const styleAttr = `transition-delay: ${delay}ms`;
+---
+
+<Tag class={`fade-up ${className}`.trim()} style={styleAttr} {...rest}>
+  <slot />
+</Tag>
+
+<script>
+  const reveal = () => {
+    const els = document.querySelectorAll<HTMLElement>(".fade-up:not(.in)");
+    if (!els.length) return;
+    if (typeof IntersectionObserver === "undefined") {
+      els.forEach((el) => el.classList.add("in"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).classList.add("in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -20px 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    // safety: ensure visibility after a beat
+    setTimeout(() => {
+      els.forEach((el) => el.classList.add("in"));
+    }, 800);
+  };
+  reveal();
+  document.addEventListener("astro:page-load", reveal);
+  document.addEventListener("astro:after-swap", reveal);
+</script>
