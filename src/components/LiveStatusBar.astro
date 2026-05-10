@@ -1,0 +1,588 @@
+---
+// Global "live voice mode is active" surface. Three pieces working
+// together to make the live-mode state unmistakable:
+//
+//   1. A backdrop tint over the page so existing chat bubbles dim into
+//      the background and the visitor's attention focuses on the orb.
+//   2. A floating glowing orb in the center of the viewport — Apple
+//      Siri-inspired. Pulses + scales with mic input level when the
+//      visitor is speaking; shifts hue + intensity when the assistant
+//      is speaking. Color/animation is the primary "live" signal.
+//   3. A small status pill at the top with state text and an End
+//      button so the visitor can always quit.
+//
+// We deliberately don't render live transcripts here — those write to
+// chat-store on `turnComplete` and surface as normal bubbles once the
+// session ends, so the conversation history is preserved without the
+// jumpy partial-update bubbles that distracted from the experience.
+---
+
+<div
+  class="live-surface"
+  id="live-surface"
+  data-state="idle"
+  hidden
+  aria-hidden="true"
+>
+  <div class="live-orb" id="live-orb">
+    <div class="live-orb-halo"></div>
+    <svg
+      class="live-orb-visualizer"
+      viewBox="-150 -150 300 300"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      <path id="live-orb-wave" />
+    </svg>
+    <div class="live-orb-sphere">
+      <div class="live-orb-gradient"></div>
+      <div class="live-orb-shimmer"></div>
+      <div class="live-orb-highlight"></div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="live-pill"
+  id="live-pill"
+  data-state="idle"
+  hidden
+  role="status"
+  aria-live="polite"
+>
+  <span class="live-pill-dot" aria-hidden="true"></span>
+  <span class="live-pill-status" id="live-pill-status">Listening</span>
+  <button
+    type="button"
+    class="live-pill-end"
+    id="live-pill-end"
+    aria-label="End voice session"
+  >
+    End
+  </button>
+</div>
+
+<script>
+  // Lazy reference to the live-session singleton — same instance the
+  // mic button uses. The SDK + worklet only ship to the bundle for
+  // visitors who actually press the mic.
+  let sessionPromise: Promise<import("../lib/live-session").LiveSession> | null = null;
+
+  async function getSession() {
+    if (!sessionPromise) {
+      sessionPromise = import("../lib/live-session").then((m) =>
+        m.createLiveSession(),
+      );
+    }
+    return sessionPromise;
+  }
+
+  const wireLiveSurface = () => {
+    const surface = document.getElementById("live-surface");
+    const orb = document.getElementById("live-orb");
+    const pill = document.getElementById("live-pill");
+    const statusEl = document.getElementById("live-pill-status");
+    const endBtn = document.getElementById("live-pill-end");
+    const wavePath = document.getElementById(
+      "live-orb-wave",
+    ) as unknown as SVGPathElement | null;
+    if (!surface || !orb || !pill || (surface as any).__wired) return;
+    (surface as any).__wired = true;
+
+    // Audio-reactive blob — N points around a circle, each radius
+    // modulated by a frequency bin so the perimeter bulges where energy
+    // lives. Combined with the rotating gradient inside the sphere it
+    // gives that "music visualizer" dance.
+    const POINTS = 64;
+    const BASE_R = 110;
+    const PEAK_BOOST = 50; // max radius extension at full bin energy
+    const angles: { cos: number; sin: number }[] = [];
+    for (let i = 0; i < POINTS; i++) {
+      const a = (i / POINTS) * Math.PI * 2 - Math.PI / 2;
+      angles.push({ cos: Math.cos(a), sin: Math.sin(a) });
+    }
+    // Offsets in [0..1] per point that smooth the FFT data circularly
+    // and add a tiny per-point organic wobble so even a quiet frame
+    // doesn't render a perfect circle.
+    let wobblePhase = 0;
+    const renderWave = (
+      freq: Uint8Array | null,
+      level: number,
+      assistantSpeaking: boolean,
+    ) => {
+      if (!wavePath) return;
+      wobblePhase += 0.04;
+      // Build smoothed bin values around the ring. We sample the FFT
+      // data with a small circular window so the perimeter stays
+      // continuous (no jagged jumps between adjacent points).
+      const radii: number[] = new Array(POINTS);
+      const baseExtra = level * 24; // larger overall radius at high level
+      for (let i = 0; i < POINTS; i++) {
+        let energy = 0;
+        if (freq && freq.length > 0) {
+          // Mirror the visualization across the vertical axis so it
+          // looks symmetric even though FFT data is asymmetric.
+          const mirroredI =
+            i < POINTS / 2 ? i : POINTS - 1 - (i - POINTS / 2);
+          const idx = Math.floor(
+            (mirroredI / (POINTS / 2)) * (freq.length - 1),
+          );
+          // 3-point smoothing window.
+          const a = freq[Math.max(0, idx - 1)] ?? 0;
+          const b = freq[idx] ?? 0;
+          const c = freq[Math.min(freq.length - 1, idx + 1)] ?? 0;
+          energy = (a + b + c) / 3 / 255; // 0..1
+        }
+        const wobble =
+          Math.sin(wobblePhase + i * 0.7) * 1.2 +
+          Math.sin(wobblePhase * 1.7 + i * 0.3) * 0.8;
+        const r = BASE_R + baseExtra + energy * PEAK_BOOST + wobble;
+        radii[i] = r;
+      }
+
+      // Construct an SVG path with cubic curves between points so the
+      // perimeter is smooth instead of jagged.
+      let d = "";
+      for (let i = 0; i < POINTS; i++) {
+        const r = radii[i];
+        const { cos, sin } = angles[i];
+        const x = cos * r;
+        const y = sin * r;
+        d += i === 0 ? `M${x.toFixed(2)},${y.toFixed(2)}` : `L${x.toFixed(2)},${y.toFixed(2)}`;
+      }
+      d += " Z";
+      wavePath.setAttribute("d", d);
+      wavePath.setAttribute(
+        "fill",
+        assistantSpeaking
+          ? "url(#live-orb-grad-assistant)"
+          : "url(#live-orb-grad-user)",
+      );
+    };
+
+    // Inject SVG gradient definitions once (idempotent).
+    const svg = wavePath?.ownerSVGElement;
+    if (svg && !svg.querySelector("defs")) {
+      const ns = "http://www.w3.org/2000/svg";
+      const defs = document.createElementNS(ns, "defs");
+      const makeGrad = (id: string, stops: { offset: string; color: string; opacity?: number }[]) => {
+        const g = document.createElementNS(ns, "radialGradient");
+        g.setAttribute("id", id);
+        g.setAttribute("cx", "50%");
+        g.setAttribute("cy", "50%");
+        g.setAttribute("r", "50%");
+        for (const s of stops) {
+          const stop = document.createElementNS(ns, "stop");
+          stop.setAttribute("offset", s.offset);
+          stop.setAttribute("stop-color", s.color);
+          if (s.opacity != null)
+            stop.setAttribute("stop-opacity", String(s.opacity));
+          g.appendChild(stop);
+        }
+        defs.appendChild(g);
+      };
+      // User-talking palette: cool blues.
+      makeGrad("live-orb-grad-user", [
+        { offset: "0%", color: "var(--accent)", opacity: 0.85 },
+        { offset: "60%", color: "var(--accent)", opacity: 0.35 },
+        { offset: "100%", color: "var(--accent)", opacity: 0.05 },
+      ]);
+      // Assistant-talking palette: shifted toward teal/violet.
+      makeGrad("live-orb-grad-assistant", [
+        { offset: "0%", color: "#9af5e6", opacity: 0.85 },
+        { offset: "55%", color: "var(--accent)", opacity: 0.45 },
+        { offset: "100%", color: "var(--accent)", opacity: 0.05 },
+      ]);
+      svg.insertBefore(defs, svg.firstChild);
+    }
+
+    const render = (
+      state: "idle" | "requesting" | "live" | "error",
+      level: number,
+      err: string | null,
+      assistantSpeaking: boolean,
+      freq: Uint8Array | null,
+    ) => {
+      surface.dataset.state = state;
+      surface.hidden = state === "idle";
+      surface.setAttribute("aria-hidden", state === "idle" ? "true" : "false");
+      pill.dataset.state = state;
+      pill.hidden = state === "idle";
+      pill.dataset.speaker = assistantSpeaking ? "assistant" : "user";
+
+      if (statusEl) {
+        if (state === "requesting") statusEl.textContent = "Connecting…";
+        else if (state === "error") statusEl.textContent = err ?? "Voice error";
+        else statusEl.textContent = assistantSpeaking ? "Speaking" : "Listening";
+      }
+
+      // Combined level (mic + playback) drives the orb's scale + halo
+      // intensity. Frequency bins drive the perimeter visualizer.
+      const intensity =
+        state === "live"
+          ? Math.min(1, 0.18 + level * 1.4)
+          : state === "requesting"
+            ? 0.22
+            : 0;
+      orb.style.setProperty("--intensity", String(intensity));
+      orb.dataset.speaker = assistantSpeaking ? "assistant" : "user";
+
+      if (state === "live") {
+        renderWave(freq, level, assistantSpeaking);
+      }
+    };
+
+    endBtn?.addEventListener("click", async () => {
+      const session = await getSession();
+      await session.stop();
+    });
+
+    // RAF loop — re-render every frame while live so the visualizer
+    // stays smooth even between subscriber notifications. The orb path
+    // morphs from the live frequency bins; without RAF it would only
+    // update when something else triggered a notify.
+    let raf = 0;
+    const tick = () => {
+      raf = 0;
+      sessionPromise?.then((session) => {
+        render(
+          session.state,
+          session.level,
+          session.errorMessage,
+          session.assistantSpeaking,
+          session.frequencyData,
+        );
+        if (session.state !== "idle") raf = requestAnimationFrame(tick);
+      });
+    };
+    const scheduleTick = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(tick);
+    };
+
+    getSession().then((session) => {
+      session.subscribe(() => {
+        render(
+          session.state,
+          session.level,
+          session.errorMessage,
+          session.assistantSpeaking,
+          session.frequencyData,
+        );
+        scheduleTick();
+      });
+      // Initial paint.
+      render(
+        session.state,
+        session.level,
+        session.errorMessage,
+        session.assistantSpeaking,
+        session.frequencyData,
+      );
+    });
+  };
+
+  wireLiveSurface();
+  document.addEventListener("astro:page-load", wireLiveSurface);
+</script>
+
+<style is:global>
+  /* ─────────── Backdrop + container ─────────── */
+  .live-surface {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    background: color-mix(in oklab, var(--bg) 50%, transparent);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    animation: live-surface-in 320ms var(--ease) both;
+  }
+  .live-surface[hidden] { display: none; }
+  [data-theme="dark"] .live-surface {
+    background: color-mix(in oklab, var(--bg) 65%, transparent);
+  }
+  @keyframes live-surface-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ─────────── Orb (ChatGPT-voice-mode inspired) ─────────── */
+  .live-orb {
+    --intensity: 0.2;
+    --orb-size: 240px;
+    position: relative;
+    width: var(--orb-size);
+    height: var(--orb-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  }
+
+  /* SVG audio-reactive perimeter — a smooth blob whose radius bulges
+     per frequency bin every animation frame. Sits behind the sphere,
+     so the rotating gradient inside the sphere remains the focal point
+     while the surrounding shape is what you watch dance with the audio
+     (mic in for "Listening", playback for "Speaking"). */
+  .live-orb-visualizer {
+    position: absolute;
+    inset: -25%;
+    width: 150%;
+    height: 150%;
+    pointer-events: none;
+    filter: blur(0.5px);
+    z-index: 1;
+  }
+  .live-orb-visualizer path {
+    transition: fill 220ms ease-out;
+  }
+
+  /* Outer halo — soft blurred glow that pulses with intensity. Sits
+     behind the sphere and scales generously so the orb feels like it's
+     emitting light into the surrounding blur. */
+  .live-orb-halo {
+    position: absolute;
+    inset: -20%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      color-mix(in oklab, var(--accent) calc(45% + var(--intensity) * 40%), transparent) 0%,
+      color-mix(in oklab, var(--accent) 25%, transparent) 35%,
+      transparent 70%
+    );
+    filter: blur(28px);
+    opacity: calc(0.55 + var(--intensity) * 0.45);
+    transform: scale(calc(0.95 + var(--intensity) * 0.25));
+    transition: opacity 140ms ease-out, transform 140ms ease-out;
+    will-change: transform, opacity;
+  }
+
+  /* The sphere itself — container for the rotating gradient + highlight.
+     Scaled by mic level + a subtle continuous "breathing" animation. */
+  .live-orb-sphere {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow:
+      0 30px 80px -20px color-mix(in oklab, var(--accent) 40%, transparent),
+      inset 0 -30px 60px -10px rgba(0, 0, 0, 0.25),
+      inset 0 8px 30px rgba(255, 255, 255, 0.18);
+    transform: scale(calc(0.92 + var(--intensity) * 0.16));
+    transition: transform 120ms ease-out;
+    animation: live-orb-breathe 4.6s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes live-orb-breathe {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.08); }
+  }
+
+  /* Slowly rotating multi-stop conic gradient — gives the orb that
+     "alive, liquid" quality without being garish. Tones biased toward
+     the site's accent so it still feels like part of the design. */
+  .live-orb-gradient {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      color-mix(in oklab, var(--accent) 75%, #c5b3ff 25%),
+      color-mix(in oklab, var(--accent) 60%, #b6e5ff 40%),
+      color-mix(in oklab, var(--accent) 50%, #ffd4ec 50%),
+      color-mix(in oklab, var(--accent) 70%, #b3e0ff 30%),
+      color-mix(in oklab, var(--accent) 75%, #c5b3ff 25%)
+    );
+    filter: blur(14px);
+    animation: live-orb-spin 14s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  @keyframes live-orb-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Counter-rotating shimmer layer — adds a second, slower hue motion
+     so the orb never reads as a flat rotating disc. */
+  .live-orb-shimmer {
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 180deg,
+      transparent 0deg,
+      color-mix(in oklab, white 70%, transparent) 60deg,
+      transparent 140deg,
+      color-mix(in oklab, var(--accent) 55%, transparent) 220deg,
+      transparent 320deg
+    );
+    filter: blur(18px);
+    mix-blend-mode: screen;
+    opacity: calc(0.55 + var(--intensity) * 0.4);
+    animation: live-orb-counter 22s linear infinite;
+  }
+  @keyframes live-orb-counter {
+    to { transform: rotate(-360deg); }
+  }
+
+  /* Bright spot at the top-left — gives the sphere a sense of physical
+     light source instead of looking flat. */
+  .live-orb-highlight {
+    position: absolute;
+    top: 8%;
+    left: 18%;
+    width: 40%;
+    height: 30%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.65) 0%,
+      rgba(255, 255, 255, 0.18) 45%,
+      transparent 75%
+    );
+    filter: blur(8px);
+    pointer-events: none;
+  }
+
+  /* Assistant-speaking variant — accelerate motion + saturate so it
+     visibly switches "who has the floor" without being distracting. */
+  .live-orb[data-speaker="assistant"] .live-orb-gradient {
+    animation-duration: 6s;
+    filter: blur(10px) saturate(1.25);
+  }
+  .live-orb[data-speaker="assistant"] .live-orb-shimmer {
+    animation-duration: 10s;
+  }
+  .live-orb[data-speaker="assistant"] .live-orb-halo {
+    background: radial-gradient(
+      circle at center,
+      color-mix(in oklab, var(--accent) 35%, #00d2c2 25%) 0%,
+      color-mix(in oklab, var(--accent) 25%, transparent) 35%,
+      transparent 70%
+    );
+  }
+
+  /* Requesting / error — subdued. */
+  .live-surface[data-state="requesting"] .live-orb-sphere {
+    animation-duration: 1.6s;
+  }
+  .live-surface[data-state="requesting"] .live-orb-gradient,
+  .live-surface[data-state="requesting"] .live-orb-shimmer {
+    filter: blur(20px) saturate(0.5);
+  }
+  .live-surface[data-state="error"] .live-orb-gradient {
+    background: conic-gradient(
+      from 0deg,
+      #b8612d,
+      #d88a55,
+      #8d3f12,
+      #b8612d
+    );
+  }
+
+  /* ─────────── Status pill (top) ─────────── */
+  .live-pill {
+    position: fixed;
+    top: max(env(safe-area-inset-top, 0), 16px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 80;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 6px 7px 12px;
+    border-radius: 999px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--fg);
+    pointer-events: auto;
+    animation: live-pill-in 220ms var(--ease) both;
+  }
+  .live-pill[hidden] { display: none; }
+  .live-pill[data-state="live"] {
+    border-color: color-mix(in oklab, var(--accent) 50%, transparent);
+  }
+  .live-pill[data-state="error"] {
+    border-color: color-mix(in oklab, #b8612d 60%, transparent);
+    color: #b8612d;
+  }
+  [data-theme="dark"] .live-pill[data-state="error"] {
+    color: #ffb098;
+    border-color: color-mix(in oklab, #ffb098 60%, transparent);
+  }
+  .live-pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: live-pill-pulse 1.4s ease-in-out infinite;
+  }
+  .live-pill[data-state="requesting"] .live-pill-dot {
+    background: var(--fg-3);
+    animation: live-pill-spin 1s linear infinite;
+  }
+  .live-pill[data-state="error"] .live-pill-dot {
+    background: currentColor;
+    animation: none;
+  }
+  .live-pill-status {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .live-pill-end {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--fg) 8%, transparent);
+    color: var(--fg-2);
+    font: inherit;
+    font-size: 11px;
+    border: 0;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .live-pill-end:hover {
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    color: var(--accent);
+  }
+
+  @keyframes live-pill-in {
+    from { opacity: 0; transform: translate(-50%, -8px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  @keyframes live-pill-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); }
+    50% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 0%, transparent); }
+  }
+  @keyframes live-pill-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 480px) {
+    .live-orb { --orb-size: 200px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-orb-sphere,
+    .live-orb-gradient,
+    .live-orb-shimmer,
+    .live-orb-halo,
+    .live-pill-dot,
+    .live-surface {
+      animation: none !important;
+      transition: none !important;
+    }
+    .live-orb-sphere,
+    .live-orb-halo { transform: none; }
+  }
+</style>
