@@ -1,8 +1,12 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import FadeUp from "@/components/FadeUp.astro";
+import HomeChatInput from "@/components/HomeChatInput.astro";
+import ChatOverlay from "@/components/ChatOverlay.astro";
 import { getCollection } from "astro:content";
 import { getFullDate } from "@/utils";
+
+const isProd = import.meta.env.PROD;
 
 const posts = await getCollection("posts");
 const sortedPosts = posts.sort((a, b) => {
@@ -11,6 +15,11 @@ const sortedPosts = posts.sort((a, b) => {
   );
 });
 const recent = sortedPosts.slice(0, 3);
+
+const selectedWork = (await getCollection("projects"))
+  .filter((p) => (isProd ? !p.data.draft : true))
+  .sort((a, b) => b.data.order - a.data.order)
+  .slice(0, 3);
 ---
 
 <Layout
@@ -19,7 +28,7 @@ const recent = sortedPosts.slice(0, 3);
   type="profile"
   activeRoute="home"
 >
-  <div class="page">
+  <div class="page page--with-floating-chat">
     <FadeUp>
       <h1 class="h1">
         Hi, I'm Jubayer — a software engineer building things for the <em
@@ -71,7 +80,9 @@ const recent = sortedPosts.slice(0, 3);
               class="list-item"
               href={`/writings/${post.id}`}
             >
-              <div class="list-title">{post.data.title}</div>
+              <div class="list-title" transition:name={`post-${post.id}`}>
+                {post.data.title}
+              </div>
               <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
             </FadeUp>
           ))
@@ -89,6 +100,48 @@ const recent = sortedPosts.slice(0, 3);
         </div>
       </FadeUp>
     </section>
+
+    {
+      selectedWork.length > 0 && (
+        <section class="section">
+          <FadeUp>
+            <div class="section-label">Selected work</div>
+          </FadeUp>
+          <div class="list">
+            {selectedWork.map((project, i) => (
+              <FadeUp
+                delay={i * 40}
+                as="a"
+                class="list-item"
+                href={`/projects/${project.id}`}
+              >
+                <div>
+                  <div
+                    class="list-title"
+                    transition:name={`project-${project.id}`}
+                  >
+                    {project.data.title}
+                  </div>
+                  <div class="list-desc">{project.data.summary}</div>
+                </div>
+                <div class="list-meta">{project.data.period}</div>
+              </FadeUp>
+            ))}
+          </div>
+          <FadeUp delay={200}>
+            <div
+              style="margin-top: 16px; font-family: var(--font-mono); font-size: 12px;"
+            >
+              <a
+                href="/projects"
+                style="color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
+                >All projects →</a
+              >
+            </div>
+          </FadeUp>
+        </section>
+      )
+    }
 
     <section class="section">
       <FadeUp>
@@ -114,4 +167,15 @@ const recent = sortedPosts.slice(0, 3);
       </FadeUp>
     </section>
   </div>
+  <HomeChatInput />
+  <ChatOverlay />
 </Layout>
+
+<style>
+  .page--with-floating-chat {
+    padding-bottom: 140px;
+  }
+  @media (max-width: 480px) {
+    .page--with-floating-chat { padding-bottom: 110px; }
+  }
+</style>

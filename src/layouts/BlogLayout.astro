@@ -2,28 +2,23 @@
 import Layout from "./Layout.astro";
 import FadeUp from "@/components/FadeUp.astro";
 import type { BlogPostType } from "@/types";
-import { generateOgImage, getFullDate } from "@/utils";
+import { getFullDate } from "@/utils";
 
 type Props = { postData: BlogPostType };
 
-const {
-  postData: { data: frontmatter, body },
-} = Astro.props;
+const { postData } = Astro.props;
+const { data: frontmatter, body } = postData;
 
 const { title, description, pubDate, updatedDate, tags, image } = frontmatter;
 
 const wordCount = (body ?? "").split(/\s+/).filter(Boolean).length;
 const readingTime = Math.max(1, Math.ceil(wordCount / 220));
-
-const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${generateOgImage(
-  title
-)}`;
 ---
 
 <Layout
   {title}
   {description}
-  image={image?.url || ogImage}
+  image={image?.url}
   imageAlt={image?.alt || title}
   type="article"
   {pubDate}
@@ -43,7 +38,13 @@ const ogImage = `https://dynamic-og-image-generator.vercel.app/api/generate?${ge
     </FadeUp>
 
     <FadeUp delay={40}>
-      <h1 class="h1" style="margin-bottom: 12px;">{title}</h1>
+      <h1
+        class="h1"
+        style="margin-bottom: 12px;"
+        transition:name={`post-${postData.id}`}
+      >
+        {title}
+      </h1>
     </FadeUp>
 
     <FadeUp delay={80}>

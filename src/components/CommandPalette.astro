@@ -1,0 +1,515 @@
+---
+import { buildPaletteIndex } from "@/lib/palette-index";
+
+const items = await buildPaletteIndex();
+const itemsJson = JSON.stringify(items);
+---
+
+<dialog
+  id="palette"
+  class="palette"
+  aria-label="Command menu"
+  transition:persist="palette"
+>
+  <div class="palette-card" role="combobox" aria-haspopup="listbox" aria-expanded="true">
+    <div class="palette-input-row">
+      <span class="palette-prompt" aria-hidden="true">⌘K</span>
+      <input
+        id="palette-input"
+        type="text"
+        placeholder="Search posts, projects, actions…"
+        autocomplete="off"
+        spellcheck="false"
+        aria-controls="palette-results"
+        aria-autocomplete="list"
+      />
+    </div>
+    <ul id="palette-results" class="palette-results" role="listbox"></ul>
+    <button
+      id="palette-ask"
+      type="button"
+      class="palette-ask"
+      aria-label="Ask AI about this query"
+    >
+      <span class="palette-ask-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"></path>
+          <circle cx="12" cy="12" r="4"></circle>
+        </svg>
+      </span>
+      <span class="palette-ask-text">
+        <span class="palette-ask-label">Ask AI</span>
+        <span class="palette-ask-query" id="palette-ask-query">anything</span>
+      </span>
+      <span class="palette-ask-arrow" aria-hidden="true">↵</span>
+    </button>
+    <div class="palette-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+      <span><kbd>↵</kbd> select</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</dialog>
+
+<script
+  is:inline
+  id="palette-data"
+  type="application/json"
+  set:html={itemsJson}
+></script>
+
+<script>
+  type Item = {
+    id: string;
+    group: "Navigate" | "Projects" | "Posts" | "Actions";
+    label: string;
+    href?: string;
+    action?: "toggle-theme" | "copy-email" | "random-article";
+    external?: boolean;
+    hint?: string;
+    keywords?: string;
+  };
+
+  const dataEl = document.getElementById("palette-data");
+  const ALL: Item[] = dataEl ? JSON.parse(dataEl.textContent || "[]") : [];
+
+  const palette = document.getElementById("palette") as HTMLDialogElement | null;
+  const input = document.getElementById("palette-input") as HTMLInputElement | null;
+  const list = document.getElementById("palette-results") as HTMLUListElement | null;
+  const askBtn = document.getElementById("palette-ask") as HTMLButtonElement | null;
+  const askQueryEl = document.getElementById("palette-ask-query") as HTMLElement | null;
+
+  if (palette && input && list && !(palette as any).__wired) {
+    (palette as any).__wired = true;
+
+    let active = 0;
+    let visible: Item[] = [];
+
+    const score = (q: string, item: Item): number => {
+      if (!q) return 1;
+      const hay = `${item.label} ${item.keywords ?? ""}`.toLowerCase();
+      const lower = item.label.toLowerCase();
+      if (lower.startsWith(q)) return 100;
+      const wordHit = new RegExp(`\\b${escapeRe(q)}`).test(lower);
+      if (wordHit) return 60;
+      if (hay.includes(q)) return 30;
+      return 0;
+    };
+
+    const escapeRe = (s: string) =>
+      s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const render = () => {
+      const q = input.value.trim().toLowerCase();
+      const ranked = ALL.map((it) => ({ it, s: score(q, it) }))
+        .filter((r) => r.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .map((r) => r.it);
+
+      visible = ranked.slice(0, 40);
+      if (active >= visible.length) active = 0;
+
+      const groups = new Map<string, Item[]>();
+      for (const it of visible) {
+        if (!groups.has(it.group)) groups.set(it.group, []);
+        groups.get(it.group)!.push(it);
+      }
+
+      list.innerHTML = "";
+      let flatIndex = 0;
+      for (const [group, gItems] of groups) {
+        const header = document.createElement("li");
+        header.className = "palette-group";
+        header.textContent = group;
+        header.setAttribute("aria-hidden", "true");
+        list.appendChild(header);
+
+        for (const it of gItems) {
+          const li = document.createElement("li");
+          li.className = "palette-item";
+          li.setAttribute("role", "option");
+          li.dataset.idx = String(flatIndex);
+          if (flatIndex === active) {
+            li.setAttribute("aria-selected", "true");
+            li.classList.add("active");
+          }
+
+          const labelEl = document.createElement("span");
+          labelEl.className = "palette-label";
+          labelEl.textContent = it.label;
+          li.appendChild(labelEl);
+
+          if (it.hint) {
+            const hint = document.createElement("span");
+            hint.className = "palette-hint";
+            hint.textContent = it.hint;
+            li.appendChild(hint);
+          } else if (it.external) {
+            const arr = document.createElement("span");
+            arr.className = "palette-hint";
+            arr.textContent = "↗";
+            li.appendChild(arr);
+          }
+
+          li.addEventListener("mouseenter", () => {
+            setActive(Number(li.dataset.idx));
+          });
+          li.addEventListener("click", () => execute(visible[Number(li.dataset.idx)]));
+          list.appendChild(li);
+          flatIndex++;
+        }
+      }
+
+      if (visible.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "palette-empty";
+        empty.textContent = q ? "No matches — Ask AI instead" : "No matches";
+        list.appendChild(empty);
+      }
+
+      if (askQueryEl) {
+        askQueryEl.textContent = q ? q : "anything";
+      }
+    };
+
+    const setActive = (i: number) => {
+      if (visible.length === 0) return;
+      active = (i + visible.length) % visible.length;
+      list
+        .querySelectorAll<HTMLLIElement>(".palette-item")
+        .forEach((el) => {
+          const idx = Number(el.dataset.idx);
+          if (idx === active) {
+            el.classList.add("active");
+            el.setAttribute("aria-selected", "true");
+            el.scrollIntoView({ block: "nearest" });
+          } else {
+            el.classList.remove("active");
+            el.removeAttribute("aria-selected");
+          }
+        });
+    };
+
+    const open = () => {
+      if (palette.open) return;
+      palette.showModal();
+      input.value = "";
+      active = 0;
+      render();
+      requestAnimationFrame(() => input.focus());
+    };
+
+    const close = () => {
+      if (!palette.open) return;
+      palette.close();
+    };
+
+    const execute = (item?: Item) => {
+      if (!item) return;
+      close();
+      if (item.action === "toggle-theme") {
+        (
+          document.getElementById("themeToggle") as HTMLButtonElement | null
+        )?.click();
+        return;
+      }
+      if (item.action === "copy-email") {
+        navigator.clipboard?.writeText("jubayeramb@gmail.com");
+        flash("Email copied");
+        return;
+      }
+      if (item.action === "random-article") {
+        const posts = ALL.filter((x) => x.group === "Posts");
+        const pick = posts[Math.floor(Math.random() * posts.length)];
+        if (pick?.href) navigateTo(pick.href, false);
+        return;
+      }
+      if (item.href) navigateTo(item.href, !!item.external);
+    };
+
+    const navigateTo = (href: string, external: boolean) => {
+      if (external) {
+        window.open(href, "_blank", "noopener");
+      } else {
+        window.location.href = href;
+      }
+    };
+
+    const flash = (msg: string) => {
+      const t = document.createElement("div");
+      t.className = "palette-toast";
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1400);
+    };
+
+    input.addEventListener("input", () => {
+      active = 0;
+      render();
+    });
+
+    const askAi = () => {
+      const q = input.value.trim();
+      close();
+      const url = q ? `/ask?q=${encodeURIComponent(q)}` : "/ask";
+      window.location.assign(url);
+    };
+
+    askBtn?.addEventListener("click", askAi);
+
+    palette.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActive(active + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActive(active - 1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (visible.length === 0) {
+          askAi();
+        } else if (e.metaKey || e.ctrlKey) {
+          // Cmd/Ctrl+Enter always routes to Ask AI for the current query.
+          askAi();
+        } else {
+          execute(visible[active]);
+        }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      }
+    });
+
+    palette.addEventListener("click", (e) => {
+      if (e.target === palette) close();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      const inField =
+        document.activeElement instanceof HTMLElement &&
+        (document.activeElement.tagName === "INPUT" ||
+          document.activeElement.tagName === "TEXTAREA" ||
+          (document.activeElement as HTMLElement).isContentEditable);
+
+      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        palette.open ? close() : open();
+        return;
+      }
+      if (e.key === "/" && !inField && !palette.open) {
+        e.preventDefault();
+        open();
+      }
+    });
+
+    window.addEventListener("palette:open", () => {
+      if (palette.open) close();
+      else open();
+    });
+  }
+</script>
+
+<style is:global>
+  .palette {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--fg);
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+  }
+  .palette::backdrop {
+    background: color-mix(in oklab, var(--bg), transparent 15%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .palette[open] {
+    display: grid;
+    place-items: start center;
+    padding-top: 14vh;
+    inset: 0;
+    height: 100vh;
+    width: 100vw;
+  }
+  .palette-card {
+    width: min(92vw, 540px);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 70vh;
+  }
+  .palette-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .palette-prompt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-3);
+    border: 1px solid var(--line-2);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .palette input#palette-input {
+    flex: 1;
+    border: 0;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    color: var(--fg);
+  }
+  .palette input#palette-input::placeholder {
+    color: var(--fg-3);
+  }
+  .palette-results {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .palette-group {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    padding: 10px 16px 4px;
+  }
+  .palette-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--fg);
+    font-size: 14px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .palette-item.active {
+    background: color-mix(in oklab, var(--bg), var(--fg) 6%);
+    color: var(--accent);
+  }
+  .palette-label {
+    font-family: var(--font-sans);
+  }
+  .palette-hint {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-3);
+  }
+  .palette-empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .palette-ask {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    border-top: 1px solid var(--line);
+    color: var(--fg);
+    background: color-mix(in oklab, var(--accent) 6%, var(--bg));
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .palette-ask:hover,
+  .palette-ask:focus-visible {
+    background: color-mix(in oklab, var(--accent) 14%, var(--bg));
+    outline: none;
+  }
+  .palette-ask-icon {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 16%, transparent);
+  }
+  .palette-ask-text {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+  .palette-ask-label {
+    font-size: 13.5px;
+    color: var(--fg);
+  }
+  .palette-ask-query {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .palette-ask-arrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-3);
+    background: var(--line);
+    border-radius: 3px;
+    padding: 1px 6px;
+  }
+  .palette-ask:hover .palette-ask-arrow {
+    color: var(--fg);
+  }
+
+  .palette-foot {
+    display: flex;
+    gap: 16px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-3);
+  }
+  .palette-foot kbd {
+    background: var(--line);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font: inherit;
+    color: var(--fg-2);
+    margin-right: 3px;
+  }
+  .palette-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--fg);
+    color: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    animation: paletteToast 1.4s var(--ease) forwards;
+  }
+  @keyframes paletteToast {
+    0% { opacity: 0; transform: translate(-50%, 8px); }
+    15% { opacity: 1; transform: translate(-50%, 0); }
+    80% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -4px); }
+  }
+</style>

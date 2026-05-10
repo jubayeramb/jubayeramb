@@ -1,4 +1,7 @@
 ---
+import Signature from "./Signature.astro";
+import SearchTrigger from "./SearchTrigger.astro";
+
 type Props = {
   activeRoute?: string;
 };
@@ -15,28 +18,55 @@ const inferred = (() => {
 const active = activeRoute || inferred;
 
 const NAV = [
-  { id: "writings", label: "Writings", href: "/writings" },
-  { id: "about", label: "About", href: "/about" },
-  { id: "contact", label: "Contact", href: "/contact" },
+  { id: "projects", label: "Projects", href: "/projects", priority: "primary" },
+  { id: "writings", label: "Writings", href: "/writings", priority: "primary" },
+  { id: "ask", label: "Ask", href: "/ask", priority: "primary" },
+  { id: "about", label: "About", href: "/about", priority: "secondary" },
+  { id: "contact", label: "Contact", href: "/contact", priority: "secondary" },
 ];
 ---
 
 <nav class="nav">
-  <a href="/" class="brand" aria-label="Jubayer Al Mamun, home">
-    <span class="brand-mark">J</span>
-    <span>Jubayer Al Mamun</span>
+  <a
+    href="/"
+    class="brand"
+    aria-label="Jubayer Al Mamun, home"
+  >
+    <Signature />
   </a>
   <div class="nav-links">
     {
       NAV.map((item) => (
         <a
           href={item.href}
-          class={`nav-link ${active === item.id ? "active" : ""}`}
+          class={`nav-link nav-link--${item.priority} ${active === item.id ? "active" : ""}`}
         >
           {item.label}
         </a>
       ))
     }
+    <SearchTrigger />
+    <button
+      id="navMenuToggle"
+      class="nav-hamburger"
+      aria-label="Open menu"
+      aria-expanded="false"
+      aria-controls="navMobileMenu"
+      type="button"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M4 7h16M4 12h16M4 17h16"></path>
+      </svg>
+    </button>
     <button
       id="themeToggle"
       class="theme-toggle"
@@ -75,6 +105,26 @@ const NAV = [
   </div>
 </nav>
 
+<div
+  id="navMobileMenu"
+  class="nav-mobile-menu"
+  role="menu"
+  aria-labelledby="navMenuToggle"
+  hidden
+>
+  {
+    NAV.map((item) => (
+      <a
+        href={item.href}
+        role="menuitem"
+        class={`nav-mobile-link ${active === item.id ? "active" : ""}`}
+      >
+        {item.label}
+      </a>
+    ))
+  }
+</div>
+
 <script>
   const syncIcon = () => {
     const theme = document.documentElement.getAttribute("data-theme") || "light";
@@ -110,7 +160,47 @@ const NAV = [
     }
   };
 
+  const wireMenu = () => {
+    const toggle = document.getElementById("navMenuToggle");
+    const menu = document.getElementById("navMobileMenu");
+    if (!toggle || !menu || (toggle as any).__wired) return;
+    (toggle as any).__wired = true;
+
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open));
+      menu.hidden = !open;
+      if (open) document.documentElement.style.overflow = "hidden";
+      else document.documentElement.style.overflow = "";
+    };
+
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      setOpen(!isOpen);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (menu.hidden) return;
+      const target = e.target as Node;
+      if (menu.contains(target) || toggle.contains(target)) return;
+      setOpen(false);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !menu.hidden) setOpen(false);
+    });
+
+    menu.addEventListener("click", (e) => {
+      const a = (e.target as HTMLElement)?.closest("a");
+      if (a) setOpen(false);
+    });
+  };
+
   wire();
-  document.addEventListener("astro:page-load", wire);
+  wireMenu();
+  document.addEventListener("astro:page-load", () => {
+    wire();
+    wireMenu();
+  });
   document.addEventListener("astro:after-swap", syncIcon);
 </script>

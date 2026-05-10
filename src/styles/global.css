@@ -1,6 +1,36 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap");
 
 @import "tailwindcss";
+
+/* Fallback fonts pre-shaped to match each Plex variant's metrics. The
+   browser uses these while the web fonts are still loading, so when Plex
+   arrives there's no perceptible reflow. Metrics derived from
+   industrialempathy.com/perfect-ish-font-fallback for IBM Plex Sans/Serif
+   over Arial / Times — close enough that nav widths don't jump. */
+@font-face {
+  font-family: "Plex Sans Fallback";
+  src: local("Arial"), local("Helvetica Neue"), local("system-ui");
+  size-adjust: 102%;
+  ascent-override: 88%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Plex Serif Fallback";
+  src: local("Georgia"), local("Times New Roman");
+  size-adjust: 100%;
+  ascent-override: 86%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Plex Mono Fallback";
+  src: local("Menlo"), local("Consolas"), local("Courier New");
+  size-adjust: 96%;
+  ascent-override: 86%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
 
 @theme {
   --color-bg: var(--bg);
@@ -10,58 +40,86 @@
   --color-line: var(--line);
   --color-line-2: var(--line-2);
   --color-accent: var(--accent);
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    sans-serif;
-  --font-serif: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "IBM Plex Sans", "Plex Sans Fallback", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "IBM Plex Serif", "Plex Serif Fallback", "Iowan Old Style",
+    Georgia, serif;
+  --font-mono: "IBM Plex Mono", "Plex Mono Fallback", ui-monospace, "SF Mono",
+    Menlo, monospace;
 }
 
 /* ====== Tokens ====== */
 :root {
-  --bg: #fbfaf7;
-  --fg: #1a1a1a;
-  --fg-2: #555;
-  --fg-3: #888;
-  --line: #e8e5df;
-  --line-2: #d4d0c8;
-  --accent: #b8612d;
-  --font-serif: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* Light — cool slate paper + deep cool ink + electric blue. Distinct
+     from any warm-cream / terracotta stack you've seen on a dev site. */
+  --bg: #eef1f5;
+  --fg: #0d1419;
+  --fg-2: #4a5562;
+  --fg-3: #7a8493;
+  --line: #d0d8e0;
+  --line-2: #b5bec8;
+  --accent: #2c5fed;
+  --font-serif: "IBM Plex Serif", "Plex Serif Fallback", "Iowan Old Style",
+    Georgia, serif;
+  --font-sans: "IBM Plex Sans", "Plex Sans Fallback", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "Plex Mono Fallback", ui-monospace, "SF Mono",
+    Menlo, monospace;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --glass-bg: color-mix(in oklab, var(--bg) 70%, transparent);
+  --glass-border: color-mix(in oklab, var(--fg) 12%, transparent);
+  --glass-shadow: 0 16px 48px -12px color-mix(in oklab, var(--fg) 22%, transparent);
 }
 
 [data-theme="dark"] {
-  --bg: #131312;
-  --fg: #e8e6e1;
-  --fg-2: #999692;
-  --fg-3: #6a6862;
-  --line: #2a2925;
-  --line-2: #3a3833;
-  --accent: #d4845a;
+  /* Dark — deep cool ink-blue, cool cream foreground, lighter blue
+     accent for contrast. Same temperature as light, just inverted. */
+  --bg: #0c1015;
+  --fg: #e8edf3;
+  --fg-2: #9aa4b3;
+  --fg-3: #5d6875;
+  --line: #1a212a;
+  --line-2: #2a3340;
+  --accent: #7aa6ff;
+  --glass-bg: color-mix(in oklab, var(--bg) 60%, transparent);
+  --glass-border: color-mix(in oklab, var(--fg) 16%, transparent);
+  --glass-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #131312;
-    --fg: #e8e6e1;
-    --fg-2: #999692;
-    --fg-3: #6a6862;
-    --line: #2a2925;
-    --line-2: #3a3833;
-    --accent: #d4845a;
+    --bg: #0c1015;
+    --fg: #e8edf3;
+    --fg-2: #9aa4b3;
+    --fg-3: #5d6875;
+    --line: #1a212a;
+    --line-2: #2a3340;
+    --accent: #7aa6ff;
   }
 }
 
 * { box-sizing: border-box; }
 
+/* Reserve the scrollbar gutter on every page so the centered shell doesn't
+   shift horizontally between pages with different content heights. Falls
+   back to overflow-y: scroll for browsers without scrollbar-gutter. */
+html {
+  scrollbar-gutter: stable;
+}
+@supports not (scrollbar-gutter: stable) {
+  html { overflow-y: scroll; }
+}
+
 html, body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.65;
+  font-variant-numeric: lining-nums;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background 0.3s var(--ease), color 0.3s var(--ease);
 }
 
@@ -97,17 +155,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   gap: 16px;
 }
 .brand {
-  font-weight: 500;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   white-space: nowrap;
-}
-.brand-mark {
-  font-family: var(--font-serif);
-  font-style: italic;
-  color: var(--accent);
-  font-size: 18px;
+  line-height: 0;
+  flex-shrink: 0;
 }
 .nav-links {
   display: flex;
@@ -115,6 +167,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
+  row-gap: 8px;
 }
 .nav-link {
   color: var(--fg-3);
@@ -140,14 +193,107 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   justify-content: center;
   color: var(--fg-3);
   transition: color 0.2s;
+  flex-shrink: 0;
 }
 .theme-toggle:hover { color: var(--fg); }
 .theme-toggle svg { width: 14px; height: 14px; }
 
-@media (max-width: 480px) {
-  .nav { padding-bottom: 40px; gap: 10px; }
-  .nav-links { gap: 14px; font-size: 13px; }
-  .brand span:not(.brand-mark) { display: none; }
+/* Hamburger — phone only. Hidden ≥541px. */
+.nav-hamburger {
+  display: none;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--fg-3);
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--bg), var(--fg) 1%);
+  transition: color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.nav-hamburger:hover { color: var(--fg); border-color: var(--line-2); }
+.nav-hamburger[aria-expanded="true"] {
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+}
+
+/* Mobile nav menu — sits below the navbar, slightly toward the logo
+   side (left), with a strong-readable card and an accent rail down
+   the active item. Strong opacity over the page so menu items stay
+   crisp without leaking page text through. */
+.nav-mobile-menu {
+  position: fixed;
+  top: 88px;
+  left: 22px;
+  right: 22px;
+  max-width: 320px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 24px 48px -16px color-mix(in oklab, var(--fg) 22%, transparent),
+    0 4px 12px -2px color-mix(in oklab, var(--fg) 10%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  transform-origin: top left;
+  animation: nav-menu-in 220ms var(--ease) both;
+}
+[data-theme="dark"] .nav-mobile-menu {
+  background: color-mix(in oklab, var(--bg) 92%, transparent);
+}
+.nav-mobile-menu[hidden] { display: none; }
+.nav-mobile-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px 11px 18px;
+  font-size: 14.5px;
+  color: var(--fg);
+  border-radius: 10px;
+  transition: background 0.2s, color 0.2s, padding-left 0.2s;
+}
+.nav-mobile-link::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  transition: height 0.2s var(--ease);
+}
+.nav-mobile-link:hover {
+  background: color-mix(in oklab, var(--fg) 5%, transparent);
+}
+.nav-mobile-link:hover::before { height: 14px; }
+.nav-mobile-link.active {
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+.nav-mobile-link.active::before { height: 18px; }
+@keyframes nav-menu-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 720px) {
+  .nav { gap: 12px; }
+  .nav-links { gap: 14px; }
+}
+@media (max-width: 540px) {
+  .nav { padding-bottom: 40px; gap: 10px; font-size: 13px; }
+  .nav-links { gap: 8px; font-size: 13px; }
+  /* On phones the inline nav links are replaced by a hamburger sheet. */
+  .nav-link { display: none; }
+  .nav-hamburger { display: inline-flex; }
 }
 
 /* ====== Page motion ====== */
@@ -155,6 +301,19 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ====== View transitions ====== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
 }
 
 .fade-up {
@@ -175,20 +334,28 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .h1 {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: 32px;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  margin-bottom: 16px;
+  font-size: 40px;
+  line-height: 1.15;
+  letter-spacing: -0.018em;
+  margin-bottom: 18px;
+  color: var(--fg);
 }
-.h1 em { color: var(--accent); font-style: italic; }
-@media (max-width: 480px) {
-  .h1 { font-size: 26px; }
+.h1 em {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 500;
+}
+@media (max-width: 600px) {
+  .h1 { font-size: 32px; line-height: 1.18; }
+}
+@media (max-width: 380px) {
+  .h1 { font-size: 28px; }
 }
 
 .lead {
   color: var(--fg-2);
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: 17px;
+  line-height: 1.7;
   margin-bottom: 8px;
 }
 .lead strong { color: var(--fg); font-weight: 500; }
@@ -196,10 +363,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .section-label {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--fg-3);
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .section { margin-top: 56px; }
@@ -212,9 +379,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   margin-top: 28px;
   display: flex;
   gap: 24px;
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--fg-3);
   flex-wrap: wrap;
+  letter-spacing: 0.01em;
 }
 .home-meta span { display: inline-flex; align-items: center; gap: 6px; }
 .home-meta span::before {
@@ -240,14 +408,16 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .list-item:hover { padding-left: 6px; }
 .list-item:last-child { border-bottom: 0; }
-.list-title { font-size: 15px; color: var(--fg); }
+.list-title { font-size: 16px; color: var(--fg); }
 .list-title em { color: var(--accent); font-style: normal; font-family: var(--font-serif); }
-.list-desc { font-size: 13px; color: var(--fg-2); margin-top: 3px; line-height: 1.5; }
+.list-desc { font-size: 14px; color: var(--fg-2); margin-top: 4px; line-height: 1.55; }
 .list-meta {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--fg-3);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.02em;
 }
 
 /* Title underline sweep on list items (writings + work + selected work) */
@@ -273,18 +443,24 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* ====== Writings page ====== */
 .write-year {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--fg-3);
-  letter-spacing: 0.06em;
-  margin-top: 28px;
-  margin-bottom: 8px;
+  letter-spacing: 0.09em;
+  margin-top: 32px;
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .write-year:first-of-type { margin-top: 0; }
 
 /* ====== About page ====== */
 .about-section { margin-top: 40px; }
 .about-section:first-of-type { margin-top: 0; }
-.about-section p { color: var(--fg-2); margin-bottom: 12px; }
+.about-section p {
+  color: var(--fg-2);
+  font-size: 17px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
 .about-section p strong { color: var(--fg); font-weight: 500; }
 .about-section a { color: var(--fg); border-bottom: 1px solid var(--line-2); transition: border-color 0.2s, color 0.2s; }
 .about-section a:hover { color: var(--accent); border-bottom-color: var(--accent); }
@@ -302,19 +478,22 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--fg-3);
-  padding-top: 2px;
+  padding-top: 3px;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.04em;
 }
-.work-role { color: var(--fg); font-size: 14px; }
-.work-co { color: var(--fg-2); font-size: 13px; margin-top: 2px; }
-.work-desc { color: var(--fg-2); font-size: 13px; margin-top: 6px; line-height: 1.55; }
+.work-role { color: var(--fg); font-size: 15px; }
+.work-co { color: var(--fg-2); font-size: 14px; margin-top: 3px; }
+.work-desc { color: var(--fg-2); font-size: 14.5px; margin-top: 8px; line-height: 1.6; }
 .work-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 14px;
-  margin-top: 8px;
+  margin-top: 10px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--fg-3);
+  letter-spacing: 0.02em;
 }
 .work-tags span::after { content: "·"; margin-left: 14px; color: var(--line-2); }
 .work-tags span:last-child::after { content: ""; }
@@ -334,6 +513,61 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .stack-list span::after { content: ","; color: var(--fg-3); }
 .stack-list span:last-child::after { content: ""; }
 
+/* ====== Project meta + metrics ====== */
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-3);
+}
+.project-meta .project-co {
+  color: var(--fg);
+  border-bottom: 1px solid var(--line-2);
+  padding-bottom: 1px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.project-meta a.project-co:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.project-meta .project-sep { color: var(--line-2); }
+
+.metric-grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.metric {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px 16px;
+  background: color-mix(in oklab, var(--bg), var(--fg) 2%);
+}
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+  margin-bottom: 6px;
+}
+.metric-value {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--fg);
+}
+@media (max-width: 540px) {
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 380px) {
+  .metric-grid { grid-template-columns: 1fr; }
+}
+
 /* ====== Contact ====== */
 .contact-list { display: flex; flex-direction: column; gap: 0; }
 .contact-row {
@@ -351,8 +585,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--fg-3);
+  letter-spacing: 0.04em;
 }
-.contact-val { color: var(--fg); font-size: 14px; word-break: break-all; }
+.contact-val { color: var(--fg); font-size: 15px; word-break: break-all; }
 .contact-arrow {
   color: var(--fg-3);
   font-family: var(--font-mono);
@@ -376,6 +611,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   gap: 8px 18px;
   font-family: var(--font-mono);
   font-size: 13px;
+  letter-spacing: 0.02em;
 }
 .tag-cloud a {
   color: var(--fg-3);
@@ -386,9 +622,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .tag-pill {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--fg-3);
   margin-right: 12px;
+  letter-spacing: 0.04em;
 }
 .tag-pill::before { content: "·"; margin-right: 8px; color: var(--line-2); }
 .tag-pill:first-child::before { content: ""; margin-right: 0; }
@@ -396,14 +633,16 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* ====== Footer ====== */
 .footer {
   margin-top: auto;
-  padding-top: 56px;
+  padding-top: 64px;
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--fg-3);
   flex-wrap: wrap;
   gap: 8px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .footer a { transition: color 0.2s; }
 .footer a:hover { color: var(--accent); }
@@ -411,8 +650,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* ====== Blog post content ====== */
 .blog-content {
   color: var(--fg);
-  font-size: 16px;
-  line-height: 1.75;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.72;
+  font-variant-numeric: lining-nums oldstyle-nums;
 }
 .blog-content > * + * { margin-top: 1.1em; }
 .blog-content h1,
@@ -421,17 +662,20 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .blog-content h4 {
   font-family: var(--font-serif);
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
   color: var(--fg);
-  margin-top: 2em;
-  margin-bottom: 0.4em;
-  line-height: 1.25;
+  margin-top: 1.9em;
+  margin-bottom: 0.35em;
+  line-height: 1.22;
 }
-.blog-content h1 { font-size: 28px; }
-.blog-content h2 { font-size: 22px; }
-.blog-content h3 { font-size: 18px; }
-.blog-content h4 { font-size: 16px; }
-.blog-content p { color: var(--fg-2); }
+.blog-content h1 { font-size: 30px; }
+.blog-content h2 { font-size: 24px; }
+.blog-content h3 { font-size: 20px; }
+.blog-content h4 { font-size: 17px; }
+.blog-content p {
+  color: var(--fg);
+  /* Slightly relaxed measure on serif body — improves saccade rhythm. */
+}
 .blog-content strong { color: var(--fg); font-weight: 500; }
 .blog-content em { font-style: italic; }
 .blog-content a {
@@ -442,19 +686,21 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .blog-content a:hover { color: var(--accent); }
 .blog-content ul,
 .blog-content ol {
-  padding-left: 1.4em;
-  color: var(--fg-2);
+  padding-left: 1.5em;
+  color: var(--fg);
 }
 .blog-content ul { list-style: disc; }
 .blog-content ol { list-style: decimal; }
 .blog-content li { margin-top: 0.4em; }
+.blog-content li::marker { color: var(--fg-3); }
 .blog-content blockquote {
   border-left: 2px solid var(--accent);
-  padding: 4px 16px;
+  padding: 4px 18px;
   color: var(--fg-2);
   font-style: italic;
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 20px;
+  line-height: 1.55;
 }
 .blog-content code {
   font-family: var(--font-mono);
@@ -465,14 +711,14 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   color: var(--fg);
 }
 .blog-content pre {
-  background: #0f1419;
-  color: #e8e6e1;
+  background: #070a10;
+  color: #e8edf3;
   padding: 16px 18px;
   border-radius: 8px;
   overflow-x: auto;
   font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 13.5px;
+  line-height: 1.65;
   border: 1px solid var(--line);
 }
 .blog-content pre code {
