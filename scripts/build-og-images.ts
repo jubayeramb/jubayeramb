@@ -17,7 +17,6 @@ import { createHash } from "node:crypto";
 import matter from "gray-matter";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
-// @ts-expect-error — wawoff2 ships no types
 import wawoff2 from "wawoff2";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");

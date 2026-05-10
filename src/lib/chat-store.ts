@@ -226,7 +226,7 @@ async function pumpSSE(
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
-    let idx;
+    let idx: number;
     while ((idx = buffer.indexOf("\n\n")) !== -1) {
       const block = buffer.slice(0, idx);
       buffer = buffer.slice(idx + 2);
