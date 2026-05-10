@@ -56,7 +56,9 @@ const description =
                   class="list-item"
                   href={`/writings/${post.id}`}
                 >
-                  <div class="list-title">{post.data.title}</div>
+                  <div class="list-title" transition:name={`post-${post.id}`}>
+                    {post.data.title}
+                  </div>
                   <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
                 </FadeUp>
               ))}
