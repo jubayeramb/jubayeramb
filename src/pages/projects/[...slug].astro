@@ -1,0 +1,22 @@
+---
+import { getCollection, render } from "astro:content";
+import ProjectLayout from "@/layouts/ProjectLayout.astro";
+
+export async function getStaticPaths() {
+  const isProd = import.meta.env.PROD;
+  const entries = (await getCollection("projects")).filter((entry) =>
+    isProd ? !entry.data.draft : true
+  );
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<ProjectLayout project={entry}>
+  <Content />
+</ProjectLayout>

@@ -18,6 +18,28 @@ const postsCollection = defineCollection({
   }),
 });
 
+const projectsCollection = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/projects" }),
+  schema: z.object({
+    title: z.string(),
+    company: z.string(),
+    role: z.string(),
+    period: z.string(),
+    summary: z.string(),
+    url: z.string().url().optional(),
+    metrics: z
+      .array(z.object({ label: z.string(), value: z.string() }))
+      .default([]),
+    technologies: z.array(z.string()),
+    cover: z
+      .object({ url: z.string(), alt: z.string() })
+      .optional(),
+    order: z.number().default(0),
+    draft: z.boolean().default(false),
+  }),
+});
+
 export const collections = {
   posts: postsCollection,
+  projects: projectsCollection,
 };
