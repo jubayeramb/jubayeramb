@@ -4,18 +4,8 @@ import FadeUp from "@/components/FadeUp.astro";
 
 const contacts = [
   {
-    label: "Email",
-    val: "jubayeramb@gmail.com",
-    href: "mailto:jubayeramb@gmail.com",
-  },
-  {
-    label: "GitHub",
-    val: "@jubayeramb",
-    href: "https://github.com/jubayeramb",
-  },
-  {
     label: "X (Twitter)",
-    val: "@jubayeramb",
+    val: "DM @jubayeramb — fastest",
     href: "https://twitter.com/jubayeramb",
   },
   {
@@ -23,12 +13,27 @@ const contacts = [
     val: "/in/jubayeramb",
     href: "https://www.linkedin.com/in/jubayeramb/",
   },
+  {
+    label: "Email",
+    val: "jubayeramb@gmail.com",
+    href: "mailto:jubayeramb@gmail.com",
+  },
+  {
+    label: "Ask my CV",
+    val: "Chat with the site",
+    href: "/ask",
+  },
+  {
+    label: "GitHub",
+    val: "@jubayeramb",
+    href: "https://github.com/jubayeramb",
+  },
   { label: "RSS", val: "/rss.xml", href: "/rss.xml" },
 ];
 
 const title = "Contact";
 const description =
-  "Get in touch with Jubayer Al Mamun. Open to freelance work and interesting collaborations. Email is the fastest way to reach me.";
+  "Get in touch with Jubayer Al Mamun. Fastest way to reach me is a DM on X or LinkedIn — I reply almost instantly.";
 ---
 
 <Layout {title} {description} activeRoute="contact">
@@ -38,8 +43,9 @@ const description =
     </FadeUp>
     <FadeUp delay={60}>
       <p class="lead">
-        I'm open to freelance work and interesting collaborations. The fastest
-        way to reach me is email — I usually reply within 48 hours.
+        Fastest way to reach me is a <strong>DM on X or LinkedIn</strong> — I
+        reply almost instantly. Email works for longer threads, but expect a
+        slower turnaround.
       </p>
     </FadeUp>
 
