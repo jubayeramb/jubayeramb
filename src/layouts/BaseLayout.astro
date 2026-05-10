@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import Seo from "@/components/Seo.astro";
+import CommandPalette from "@/components/CommandPalette.astro";
 import "../styles/global.css";
 
 interface Props {
@@ -79,5 +80,6 @@ const {
   </head>
   <body>
     <slot />
+    <CommandPalette />
   </body>
 </html>
