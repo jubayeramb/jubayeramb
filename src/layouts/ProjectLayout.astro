@@ -1,0 +1,130 @@
+---
+import Layout from "./Layout.astro";
+import FadeUp from "@/components/FadeUp.astro";
+import type { CollectionEntry } from "astro:content";
+
+type Props = { project: CollectionEntry<"projects"> };
+
+const { project } = Astro.props;
+const { data: frontmatter, body, id: projectId } = project;
+
+const {
+  title,
+  company,
+  role,
+  period,
+  summary,
+  url,
+  metrics,
+  technologies,
+  cover,
+} = frontmatter;
+
+const wordCount = (body ?? "").split(/\s+/).filter(Boolean).length;
+const readingTime = Math.max(1, Math.ceil(wordCount / 220));
+---
+
+<Layout
+  {title}
+  description={summary}
+  image={cover?.url}
+  imageAlt={cover?.alt || title}
+  type="article"
+  tags={technologies}
+  activeRoute="projects"
+>
+  <article class="page">
+    <FadeUp>
+      <div style="margin-bottom: 24px;">
+        <a
+          href="/projects"
+          style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
+          >← All projects</a
+        >
+      </div>
+    </FadeUp>
+
+    <FadeUp delay={40}>
+      <h1 class="h1" style="margin-bottom: 12px;" transition:name={`project-${projectId}`}>{title}</h1>
+    </FadeUp>
+
+    <FadeUp delay={80}>
+      <div class="project-meta">
+        {
+          url ? (
+            <a href={url} target="_blank" rel="noopener" class="project-co">
+              {company} ↗
+            </a>
+          ) : (
+            <span class="project-co">{company}</span>
+          )
+        }
+        <span class="project-sep">·</span>
+        <span>{role}</span>
+        <span class="project-sep">·</span>
+        <span>{period}</span>
+        <span class="project-sep">·</span>
+        <span>{readingTime} min read</span>
+      </div>
+    </FadeUp>
+
+    <FadeUp delay={120}>
+      <p class="lead" style="margin-top: 18px;">{summary}</p>
+    </FadeUp>
+
+    {
+      metrics.length > 0 && (
+        <FadeUp delay={160}>
+          <div class="metric-grid">
+            {metrics.map((m) => (
+              <div class="metric">
+                <div class="metric-label">{m.label}</div>
+                <div class="metric-value">{m.value}</div>
+              </div>
+            ))}
+          </div>
+        </FadeUp>
+      )
+    }
+
+    {
+      cover?.url && (
+        <FadeUp delay={200}>
+          <figure style="margin-top: 28px;">
+            <img
+              src={cover.url}
+              alt={cover.alt || title}
+              style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--line);"
+              loading="eager"
+            />
+          </figure>
+        </FadeUp>
+      )
+    }
+
+    <FadeUp delay={240}>
+      <div
+        id="article-content"
+        class="blog-content"
+        style="margin-top: 32px;"
+      >
+        <slot />
+      </div>
+    </FadeUp>
+
+    {
+      technologies.length > 0 && (
+        <FadeUp delay={280}>
+          <div class="section">
+            <div class="section-label">Stack</div>
+            <div class="stack-list">
+              {technologies.map((t) => (
+                <span>{t}</span>
+              ))}
+            </div>
+          </div>
+        </FadeUp>
+      )
+    }
+  </article>
+</Layout>

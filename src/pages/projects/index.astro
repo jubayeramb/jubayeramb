@@ -1,0 +1,56 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import FadeUp from "@/components/FadeUp.astro";
+import { getCollection } from "astro:content";
+
+const isProd = import.meta.env.PROD;
+
+const projects = (await getCollection("projects"))
+  .filter((p) => (isProd ? !p.data.draft : true))
+  .sort((a, b) => b.data.order - a.data.order);
+
+const title = "Projects";
+const description =
+  "Selected case studies — what shipped, what worked, and what I'd do differently. WeCycle, Finding Healers, and HomePay.";
+---
+
+<Layout {title} {description} activeRoute="projects">
+  <div class="page">
+    <FadeUp>
+      <h1 class="h1">Projects</h1>
+    </FadeUp>
+    <FadeUp delay={60}>
+      <p class="lead">
+        Selected work — production systems I've owned end-to-end. Each case
+        study covers the problem, the architecture, what shipped, the metrics,
+        and what I'd do differently.
+      </p>
+    </FadeUp>
+
+    <section class="section">
+      <div class="list">
+        {
+          projects.map((project, i) => (
+            <FadeUp
+              delay={i * 40}
+              as="a"
+              class="list-item"
+              href={`/projects/${project.id}`}
+            >
+              <div>
+                <div
+                  class="list-title"
+                  transition:name={`project-${project.id}`}
+                >
+                  {project.data.title}
+                </div>
+                <div class="list-desc">{project.data.summary}</div>
+              </div>
+              <div class="list-meta">{project.data.period}</div>
+            </FadeUp>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</Layout>
