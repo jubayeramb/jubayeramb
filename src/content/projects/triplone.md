@@ -2,8 +2,8 @@
 title: Triplone
 company: Triplone
 role: Engineer
-period: 2025 — Present
-summary: AI-driven travel platform — tour planning, marketing automation, and agency management for tourism, all under one roof.
+period: 2025 to Present
+summary: AI-driven travel platform for tour planning, marketing automation, and agency management for tourism, all under one roof.
 url: https://pre.triplone.com
 order: 80
 draft: false
@@ -22,7 +22,7 @@ metrics:
   - { label: Status, value: "Pre-launch" }
 cover:
   url: /projects/triplone.png
-  alt: Triplone — AI travel platform
+  alt: Triplone, AI travel platform
 ---
 
 ## The problem
@@ -30,8 +30,8 @@ cover:
 In Bangladesh, tour discovery happens on Facebook pages and a hundred
 half-broken agency websites. Travelers compare prices through DM screenshots;
 agencies run their entire operation on spreadsheets, manual posts, and
-WhatsApp threads. Both sides lose. Triplone collapses that into one place —
-for travelers, an AI trip planner with verified agencies; for agencies,
+WhatsApp threads. Both sides lose. Triplone collapses that into one place.
+For travelers, an AI trip planner with verified agencies. For agencies,
 an AI operating system that handles content, marketing, and customer ops.
 
 ## What shipped
