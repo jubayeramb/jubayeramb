@@ -16,6 +16,10 @@ export type Msg = {
   citations?: Citation[];
   error?: string;
   streaming?: boolean;
+  /** How the message was authored — text input or voice (Live API). */
+  via?: "text" | "voice";
+  /** Transient: assistant audio is currently playing. Not persisted. */
+  speaking?: boolean;
 };
 
 const STORAGE_KEY = "ask-chat-v1";
@@ -61,6 +65,9 @@ function load(): Msg[] {
             ? m.content.replace(STRIP_CITES, "")
             : m.content,
         streaming: false,
+        // `speaking` is transient (audio currently playing); never restore
+        // it from storage.
+        speaking: false,
       }));
   } catch {
     return [];
@@ -264,4 +271,65 @@ async function pumpSSE(
 
   // Stream ended without an explicit `done` event.
   patch(targetId, { streaming: false });
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Voice (Gemini Live) helpers
+//
+// Live sessions don't go through `/api/ask` SSE — they connect the
+// browser straight to Gemini Live via an ephemeral token, and the audio
+// path stays out of our server entirely. These helpers let the live
+// session manager append transcript turns into the same chat-store the
+// text path uses, so the unified timeline persists across both modes.
+
+/** Add a freshly-spoken user turn. Returns the message id for follow-up patches. */
+export function appendUserVoice(text: string): string {
+  ensureHydrated();
+  const msg: Msg = {
+    id: uid(),
+    role: "user",
+    content: text,
+    via: "voice",
+  };
+  messages = [...messages, msg];
+  emit();
+  return msg.id;
+}
+
+/** Add an assistant voice turn, optionally marked as currently speaking. */
+export function appendAssistantVoice(text: string, speaking = false): string {
+  ensureHydrated();
+  const msg: Msg = {
+    id: uid(),
+    role: "assistant",
+    content: text,
+    via: "voice",
+    speaking,
+  };
+  messages = [...messages, msg];
+  emit();
+  return msg.id;
+}
+
+/**
+ * Live API streams transcripts in `partial` chunks before finalizing.
+ * Patch the target message with the latest text. `final = true` clears
+ * any "this is partial" indicator.
+ */
+export function patchVoiceTranscript(id: string, text: string, _final = false) {
+  patch(id, { content: text });
+}
+
+/**
+ * Toggle the playing-now indicator on an assistant voice message. Not
+ * persisted — `emit()` will write current state to localStorage but
+ * `speaking` resets to false on hydrate (see `load()`).
+ */
+export function setSpeaking(id: string, speaking: boolean) {
+  patch(id, { speaking });
+}
+
+/** True iff a voice session has an in-flight assistant turn. */
+export function isLiveSpeaking(): boolean {
+  return messages.some((m) => m.speaking);
 }

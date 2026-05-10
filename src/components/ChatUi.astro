@@ -1,4 +1,6 @@
 ---
+import MicButton from "./MicButton.astro";
+
 type Props = {
   mode?: "page" | "overlay";
 };
@@ -47,6 +49,7 @@ const { mode = "page" } = Astro.props;
         maxlength="500"
         required
       />
+      <MicButton />
       <button class="chat-send" id="chat-send" type="submit" aria-label="Send">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M5 12h14M13 6l6 6-6 6"></path>
@@ -113,19 +116,33 @@ const { mode = "page" } = Astro.props;
       li.className = `bubble bubble--${m.role}`;
       li.dataset.id = m.id;
       if (m.streaming) li.classList.add("bubble--streaming");
+      if (m.via === "voice") li.classList.add("bubble--voice");
+      if (m.speaking) li.classList.add("bubble--speaking");
 
       const body = document.createElement("div");
       body.className = "bubble-body";
       if (m.error) {
         body.innerHTML = `<span class="bubble-error">${escape(m.error)}</span>`;
-      } else if (m.role === "assistant" && m.streaming && !m.content) {
-        // Typing indicator — three pulsing dots until first delta arrives.
+      } else if (
+        m.role === "assistant" &&
+        (m.streaming || m.speaking) &&
+        !m.content
+      ) {
+        // Typing indicator — three pulsing dots until first delta or
+        // first transcript chunk arrives.
         body.innerHTML =
           '<span class="bubble-typing" aria-label="Thinking"><span></span><span></span><span></span></span>';
       } else {
         body.textContent = cleanText(m.content);
       }
       li.appendChild(body);
+
+      if (m.via === "voice") {
+        const tag = document.createElement("div");
+        tag.className = "bubble-via";
+        tag.textContent = "🎤 voice";
+        li.appendChild(tag);
+      }
 
       if (m.role === "assistant" && m.citations?.length) {
         const sources = document.createElement("div");
@@ -319,6 +336,35 @@ const { mode = "page" } = Astro.props;
     animation: bubble-blink 1s infinite;
   }
   @keyframes bubble-blink { 50% { opacity: 0.2; } }
+
+  /* Voice metadata tag — small label so visitors can tell which turns
+     came from the live mic vs. typed text. */
+  .bubble-via {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fg-3);
+    opacity: 0.7;
+    letter-spacing: 0.04em;
+  }
+  .bubble--user .bubble-via {
+    align-self: flex-end;
+    color: color-mix(in oklab, #fff 72%, transparent);
+    opacity: 0.85;
+  }
+
+  /* Speaking: subtle accent ring so the visitor sees which assistant
+     bubble is currently producing audio. */
+  .bubble--speaking {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
+      0 0 18px -6px color-mix(in oklab, var(--accent) 35%, transparent);
+    animation: bubble-speaking-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes bubble-speaking-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent), 0 0 14px -8px color-mix(in oklab, var(--accent) 30%, transparent); }
+    50% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 50%, transparent), 0 0 22px -4px color-mix(in oklab, var(--accent) 45%, transparent); }
+  }
 
   /* Three-dot typing indicator before first delta arrives. */
   .bubble-typing {

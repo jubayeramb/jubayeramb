@@ -1,0 +1,198 @@
+---
+// Drop-in mic toggle for chat surfaces. Owns the lazy-loaded
+// LiveSession singleton (we don't want the @google/genai SDK or the
+// audio worklet shipping for visitors who never tap the mic).
+//
+// Renders four states off `data-state`:
+//   idle       — outline mic icon, ready
+//   requesting — dashed accent ring spinning
+//   live       — solid accent ring + pulsing radial driven by mic level
+//   error      — red outline + tooltip from data-error
+---
+
+<button
+  type="button"
+  class="mic-btn"
+  data-mic-btn
+  data-state="idle"
+  aria-label="Talk to the assistant"
+  aria-pressed="false"
+>
+  <span class="mic-btn-ring" aria-hidden="true"></span>
+  <svg
+    class="mic-btn-icon"
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+    <path d="M5 11a7 7 0 0 0 14 0"></path>
+    <path d="M12 18v3"></path>
+  </svg>
+</button>
+
+<script>
+  // Lazy-load the live-session module the first time the user clicks.
+  // Until then the SDK + worklet are not in the page bundle.
+  let liveSessionPromise: Promise<import("../lib/live-session").LiveSession> | null = null;
+
+  async function getSession() {
+    if (!liveSessionPromise) {
+      liveSessionPromise = import("../lib/live-session").then((m) =>
+        m.createLiveSession(),
+      );
+    }
+    return liveSessionPromise;
+  }
+
+  const wireMicButton = (btn: HTMLButtonElement) => {
+    if ((btn as any).__wired) return;
+    (btn as any).__wired = true;
+
+    const ring = btn.querySelector<HTMLElement>(".mic-btn-ring");
+
+    const render = (
+      state: "idle" | "requesting" | "live" | "error",
+      level: number,
+      err: string | null,
+    ) => {
+      btn.dataset.state = state;
+      btn.setAttribute("aria-pressed", state === "live" ? "true" : "false");
+      btn.setAttribute(
+        "aria-label",
+        state === "live"
+          ? "Stop voice chat"
+          : state === "requesting"
+            ? "Connecting…"
+            : state === "error"
+              ? `Voice error: ${err ?? "try again"}`
+              : "Talk to the assistant",
+      );
+      if (err) btn.dataset.error = err;
+      else delete btn.dataset.error;
+      if (ring) {
+        // Pulse strength tracks mic level (0..1).
+        ring.style.setProperty("--mic-level", String(Math.min(1, level * 2)));
+      }
+    };
+
+    btn.addEventListener("click", async () => {
+      const session = await getSession();
+      if (session.state === "live" || session.state === "requesting") {
+        await session.stop();
+      } else {
+        await session.start();
+      }
+    });
+
+    // Subscribe lazily — only after the first click do we have a session
+    // to subscribe to. We still want to reflect state on the button, so
+    // when the session is created we wire the subscription.
+    getSession().then((session) => {
+      const update = () =>
+        render(session.state, session.level, session.errorMessage);
+      session.subscribe(update);
+      update();
+    });
+  };
+
+  const wireAll = () => {
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-mic-btn]")
+      .forEach(wireMicButton);
+  };
+
+  wireAll();
+  document.addEventListener("astro:page-load", wireAll);
+</script>
+
+<style>
+  .mic-btn {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    margin: 4px 4px 4px 0;
+    border-radius: 999px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg-3);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+  }
+  .mic-btn:hover {
+    color: var(--fg);
+    background: color-mix(in oklab, var(--fg) 5%, transparent);
+  }
+
+  .mic-btn-ring {
+    position: absolute;
+    inset: 2px;
+    border-radius: 999px;
+    pointer-events: none;
+    border: 1px solid transparent;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s,
+      transform 0.2s;
+  }
+
+  /* Live: pulsing accent ring driven by --mic-level (0..1). */
+  .mic-btn[data-state="live"] {
+    color: var(--accent);
+  }
+  .mic-btn[data-state="live"] .mic-btn-ring {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 calc(var(--mic-level, 0) * 6px)
+        color-mix(in oklab, var(--accent) 22%, transparent),
+      inset 0 0 calc(4px + var(--mic-level, 0) * 6px)
+        color-mix(in oklab, var(--accent) 18%, transparent);
+    animation: mic-live-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes mic-live-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+
+  /* Requesting: dashed spinning ring. */
+  .mic-btn[data-state="requesting"] {
+    color: var(--fg-2);
+    cursor: progress;
+  }
+  .mic-btn[data-state="requesting"] .mic-btn-ring {
+    border: 1px dashed
+      color-mix(in oklab, var(--accent) 60%, transparent);
+    animation: mic-spin 1.1s linear infinite;
+  }
+  @keyframes mic-spin {
+    to { transform: rotate(1turn); }
+  }
+
+  /* Error: red outline. */
+  .mic-btn[data-state="error"] {
+    color: #b8612d;
+  }
+  [data-theme="dark"] .mic-btn[data-state="error"] {
+    color: #ffb098;
+  }
+  .mic-btn[data-state="error"] .mic-btn-ring {
+    border-color: currentColor;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mic-btn[data-state="live"] .mic-btn-ring,
+    .mic-btn[data-state="requesting"] .mic-btn-ring {
+      animation: none;
+    }
+  }
+</style>
