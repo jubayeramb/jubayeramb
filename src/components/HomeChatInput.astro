@@ -1,0 +1,355 @@
+---
+const SUGGESTIONS = [
+  "What is Jubayer working on right now?",
+  "Has Jubayer shipped payment infrastructure?",
+  "Walk me through WeCycle's monolith → microservices migration.",
+];
+---
+
+<div
+  class="home-chat"
+  id="home-chat"
+  data-state="idle"
+  data-history="false"
+  aria-label="Ask the assistant"
+>
+  <div class="home-chat-floats" id="home-chat-floats">
+    <div class="home-chat-chips" id="home-chat-chips" hidden>
+      {
+        SUGGESTIONS.map((s) => (
+          <button type="button" class="home-chat-chip" data-suggest={s}>
+            {s}
+          </button>
+        ))
+      }
+    </div>
+    <ol class="home-chat-preview chat-bubbles" id="home-chat-preview" hidden></ol>
+  </div>
+
+  <form class="home-chat-form" id="home-chat-form" autocomplete="off">
+    <svg
+      class="home-chat-icon"
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+    </svg>
+    <input
+      class="home-chat-input"
+      id="home-chat-input"
+      type="text"
+      placeholder="Ask anything about Jubayer…"
+      autocomplete="off"
+      spellcheck="false"
+      maxlength="500"
+      required
+    />
+    <button class="home-chat-send" type="submit" aria-label="Send">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12h14M13 6l6 6-6 6"></path>
+      </svg>
+    </button>
+  </form>
+</div>
+
+<script>
+  import { getMessages, subscribe, send } from "../lib/chat-store";
+
+  const TRUNCATE = 140;
+  const STRIP = /\[\d+(?:\s*,\s*\d+)*\]/g;
+
+  const wireHomeChat = () => {
+    const root = document.getElementById("home-chat");
+    if (!root || (root as any).__wired) return;
+    (root as any).__wired = true;
+
+    const form = root.querySelector<HTMLFormElement>("#home-chat-form");
+    const input = root.querySelector<HTMLInputElement>("#home-chat-input");
+    const chips = root.querySelector<HTMLElement>("#home-chat-chips");
+    const preview = root.querySelector<HTMLOListElement>("#home-chat-preview");
+    if (!form || !input || !chips || !preview) return;
+
+    const truncate = (s: string, n: number) =>
+      s.length <= n ? s : s.slice(0, n - 1).trimEnd() + "…";
+
+    const renderPreview = () => {
+      const messages = getMessages();
+      // Last 3 turns, newest first in DOM. Combined with column-reverse,
+      // that puts newest flush above the input and older bubbles fading
+      // upward through the mask.
+      const last = messages
+        .slice(-3)
+        .filter((m) => m.content || m.error)
+        .reverse();
+      preview.innerHTML = "";
+      for (const m of last) {
+        const li = document.createElement("li");
+        li.className = `bubble bubble--${m.role} home-chat-preview-bubble`;
+        const body = document.createElement("div");
+        body.className = "bubble-body";
+        const text = m.error ?? m.content;
+        body.textContent = truncate(text.replace(STRIP, ""), TRUNCATE);
+        li.appendChild(body);
+        preview.appendChild(li);
+      }
+    };
+
+    const updateHistoryFlag = () => {
+      const has = getMessages().length > 0;
+      root.dataset.history = has ? "true" : "false";
+      input.placeholder = has
+        ? "Continue the chat…"
+        : "Ask anything about Jubayer…";
+    };
+
+    const expand = () => {
+      root.dataset.state = "expanded";
+      const has = root.dataset.history === "true";
+      if (has) {
+        chips.hidden = true;
+        preview.hidden = false;
+        renderPreview();
+      } else {
+        preview.hidden = true;
+        chips.hidden = false;
+        animateChips();
+      }
+    };
+
+    const collapse = () => {
+      if (document.activeElement === input) return;
+      if (input.value.trim()) return;
+      root.dataset.state = "idle";
+      chips.hidden = true;
+      preview.hidden = true;
+    };
+
+    const animateChips = () => {
+      const els = Array.from(chips.querySelectorAll<HTMLElement>(".home-chat-chip"));
+      els.forEach((el, i) => {
+        el.animate(
+          [
+            { opacity: 0, transform: "translateY(6px)" },
+            { opacity: 1, transform: "translateY(0)" },
+          ],
+          {
+            duration: 260,
+            delay: i * 60,
+            fill: "forwards",
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          }
+        );
+      });
+    };
+
+    input.addEventListener("focus", expand);
+    input.addEventListener("blur", () => {
+      // Slight delay so a chip click registers before collapse.
+      setTimeout(collapse, 120);
+    });
+
+    chips.addEventListener("click", (e) => {
+      const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>("[data-suggest]");
+      if (!target?.dataset.suggest) return;
+      input.value = target.dataset.suggest;
+      submit();
+    });
+
+    const submit = () => {
+      const text = input.value.trim();
+      if (!text) return;
+      send(text);
+      input.value = "";
+      window.dispatchEvent(new CustomEvent("chat:open"));
+      input.blur();
+      root.dataset.state = "idle";
+      chips.hidden = true;
+      preview.hidden = true;
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submit();
+    });
+
+    // Hide ourselves while overlay is open.
+    window.addEventListener("chat:opened", () => {
+      root.dataset.hidden = "true";
+    });
+    // On close, return to a fresh idle state — no preview/chips visible.
+    // The user has to click the input again to see the resume preview.
+    window.addEventListener("chat:closed", () => {
+      root.dataset.hidden = "false";
+      root.dataset.state = "idle";
+      chips.hidden = true;
+      preview.hidden = true;
+      input.value = "";
+      input.blur();
+    });
+
+    subscribe(updateHistoryFlag);
+    updateHistoryFlag();
+  };
+
+  wireHomeChat();
+  document.addEventListener("astro:page-load", wireHomeChat);
+</script>
+
+<style>
+  .home-chat {
+    position: fixed;
+    left: 50%;
+    bottom: max(env(safe-area-inset-bottom, 0), 24px);
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    width: min(440px, calc(100vw - 24px));
+    transition: width 280ms var(--ease), opacity 200ms var(--ease);
+    pointer-events: auto;
+  }
+  .home-chat[data-state="expanded"] {
+    width: min(680px, calc(100vw - 24px));
+  }
+  .home-chat[data-hidden="true"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .home-chat-floats {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  /* Suggestion chips — only when there is no history. */
+  .home-chat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .home-chat-chips[hidden] { display: none; }
+  .home-chat-chip {
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    color: var(--fg-2);
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    cursor: pointer;
+    opacity: 0;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .home-chat-chip:hover {
+    color: var(--fg);
+    border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  }
+
+  /* Preview reuses actual .bubble styles. column-reverse + reversed DOM
+     puts the newest bubble flush above the input (full opacity) and older
+     ones rise upward. overflow:hidden + mask fades the top. */
+  .home-chat-preview {
+    list-style: none;
+    margin: 0;
+    padding: 4px 2px 0;
+    max-height: 240px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+    mask-image: linear-gradient(to top, #000 0, #000 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0, #000 60%, transparent 100%);
+  }
+  .home-chat-preview[hidden] { display: none; }
+  /* DOM order is newest → oldest; with column-reverse the newest renders
+     last visually (at the bottom). Use :nth-child to fade older bubbles. */
+  .home-chat-preview .bubble { animation: none; }
+  .home-chat-preview .bubble:nth-child(1) { opacity: 0.95; }
+  .home-chat-preview .bubble:nth-child(2) { opacity: 0.55; }
+  .home-chat-preview .bubble:nth-child(3) { opacity: 0.3; }
+
+  /* Floating glass input */
+  .home-chat-form {
+    display: flex;
+    align-items: stretch;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .home-chat[data-state="expanded"] .home-chat-form {
+    border-color: color-mix(in oklab, var(--accent) 30%, var(--glass-border));
+  }
+  .home-chat-icon {
+    margin: 0 4px 0 16px;
+    align-self: center;
+    color: var(--fg-3);
+    flex-shrink: 0;
+  }
+  .home-chat-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    font-size: 14.5px;
+    padding: 14px 12px;
+  }
+  .home-chat-input::placeholder { color: var(--fg-3); }
+  .home-chat-send {
+    padding: 0 18px;
+    color: var(--fg-3);
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .home-chat-send:hover {
+    color: var(--accent);
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
+  }
+
+  @media (max-width: 480px) {
+    .home-chat {
+      bottom: max(env(safe-area-inset-bottom, 0), 12px);
+      /* Idle: comfortable thumb-reach pill, ~70% of viewport. */
+      width: min(280px, 75vw);
+    }
+    /* Focus: expand to nearly full width so typing has room. */
+    .home-chat[data-state="expanded"] {
+      width: calc(100vw - 16px);
+    }
+    .home-chat-icon { margin-left: 12px; }
+    .home-chat-input { padding: 12px 10px; font-size: 14px; }
+    .home-chat-send { padding: 0 14px; }
+    .home-chat-preview { max-height: 180px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-chat,
+    .home-chat-form { transition: none; }
+  }
+</style>

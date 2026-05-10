@@ -1,0 +1,527 @@
+---
+type Props = {
+  mode?: "page" | "overlay";
+};
+const { mode = "page" } = Astro.props;
+---
+
+<section class="chat" data-mode={mode} aria-label="Ask about Jubayer">
+  <div class="chat-scroll" id="chat-scroll">
+    <ol class="chat-bubbles" id="chat-stream" aria-live="polite"></ol>
+    {
+      mode === "page" && (
+        <div class="chat-seed" id="chat-seed">
+          <div class="chat-seed-label">Try</div>
+          <ul class="chat-seed-list">
+            <li>
+              <button type="button" data-suggest="What is Jubayer working on right now?">
+                What is Jubayer working on right now?
+              </button>
+            </li>
+            <li>
+              <button type="button" data-suggest="Has Jubayer shipped payment infrastructure?">
+                Has Jubayer shipped payment infrastructure?
+              </button>
+            </li>
+            <li>
+              <button type="button" data-suggest="Walk me through the WeCycle monolith → microservices migration.">
+                Walk me through the WeCycle monolith → microservices migration.
+              </button>
+            </li>
+          </ul>
+        </div>
+      )
+    }
+  </div>
+
+  <div class="chat-foot">
+    <form class="chat-form" id="chat-form" autocomplete="off">
+      <input
+        class="chat-input"
+        id="chat-input"
+        type="text"
+        name="q"
+        placeholder="Ask anything…"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="500"
+        required
+      />
+      <button class="chat-send" id="chat-send" type="submit" aria-label="Send">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"></path>
+        </svg>
+      </button>
+    </form>
+
+    <p class="chat-disclaimer">
+      AI-generated. Answers may be wrong — DM me to confirm. Stored locally only.
+      <button
+        type="button"
+        id="chat-clear"
+        class="chat-clear"
+        hidden
+        aria-label="Clear chat history"
+      >
+        Clear
+      </button>
+    </p>
+  </div>
+</section>
+
+<script>
+  import {
+    getMessages,
+    isStreaming,
+    subscribe,
+    send,
+    clear,
+    type Msg,
+  } from "../lib/chat-store";
+
+  const wireChat = () => {
+    document.querySelectorAll<HTMLElement>('section.chat[data-mode]').forEach(wireOne);
+  };
+
+  function wireOne(root: HTMLElement) {
+    if ((root as any).__wired) return;
+    (root as any).__wired = true;
+
+    const scroll = root.querySelector<HTMLElement>("#chat-scroll");
+    const stream = root.querySelector<HTMLOListElement>("#chat-stream");
+    const seed = root.querySelector<HTMLElement>("#chat-seed");
+    const form = root.querySelector<HTMLFormElement>("#chat-form");
+    const input = root.querySelector<HTMLInputElement>("#chat-input");
+    const sendBtn = root.querySelector<HTMLButtonElement>("#chat-send");
+    const clearBtn = root.querySelector<HTMLButtonElement>("#chat-clear");
+    if (!stream || !form || !input || !sendBtn || !scroll) return;
+
+    const escape = (s: string) =>
+      s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+    // Belt-and-suspenders: ensure no [n] markers ever reach the DOM,
+    // even if stale data sneaks past the store's strip.
+    const STRIP = /\[\d+(?:\s*,\s*\d+)*\]/g;
+    const cleanText = (s: string) => s.replace(STRIP, "");
+
+    const renderBubble = (m: Msg): HTMLLIElement => {
+      const li = document.createElement("li");
+      li.className = `bubble bubble--${m.role}`;
+      li.dataset.id = m.id;
+      if (m.streaming) li.classList.add("bubble--streaming");
+
+      const body = document.createElement("div");
+      body.className = "bubble-body";
+      if (m.error) {
+        body.innerHTML = `<span class="bubble-error">${escape(m.error)}</span>`;
+      } else if (m.role === "assistant" && m.streaming && !m.content) {
+        // Typing indicator — three pulsing dots until first delta arrives.
+        body.innerHTML =
+          '<span class="bubble-typing" aria-label="Thinking"><span></span><span></span><span></span></span>';
+      } else {
+        body.textContent = cleanText(m.content);
+      }
+      li.appendChild(body);
+
+      if (m.role === "assistant" && m.citations?.length) {
+        const sources = document.createElement("div");
+        sources.className = "bubble-sources";
+        sources.innerHTML =
+          `<span class="bubble-sources-label">Sources</span> ` +
+          m.citations
+            .map(
+              (c) =>
+                `<a href="${escape(c.url)}">${escape(c.title)}</a>`
+            )
+            .join('<span class="bubble-sources-sep">·</span>');
+        li.appendChild(sources);
+      }
+
+      return li;
+    };
+
+    const isAtBottom = () => {
+      return scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 80;
+    };
+
+    const render = () => {
+      const messages = getMessages();
+      const wasAtBottom = isAtBottom();
+
+      stream.innerHTML = "";
+      messages.forEach((m) => stream.appendChild(renderBubble(m)));
+
+      if (seed) seed.hidden = messages.length > 0;
+      if (clearBtn) clearBtn.hidden = messages.length === 0;
+
+      const streaming = isStreaming();
+      input.disabled = streaming;
+      sendBtn.disabled = streaming;
+
+      if (wasAtBottom) {
+        requestAnimationFrame(() => {
+          scroll.scrollTop = scroll.scrollHeight;
+        });
+      }
+    };
+
+    const submit = (q: string) => {
+      const text = q.trim();
+      if (!text || isStreaming()) return;
+      input.value = "";
+      send(text);
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submit(input.value);
+    });
+
+    if (seed) {
+      seed.addEventListener("click", (e) => {
+        const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>("[data-suggest]");
+        if (!target?.dataset.suggest) return;
+        submit(target.dataset.suggest);
+      });
+    }
+
+    clearBtn?.addEventListener("click", () => {
+      clear();
+      input.focus();
+    });
+
+    const unsub = subscribe(render);
+    render();
+    requestAnimationFrame(() => {
+      scroll.scrollTop = scroll.scrollHeight;
+    });
+
+    document.addEventListener(
+      "astro:before-swap",
+      () => unsub(),
+      { once: true }
+    );
+  }
+
+  wireChat();
+  document.addEventListener("astro:page-load", wireChat);
+</script>
+
+<style is:global>
+  /* Chat container */
+  section.chat {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+  }
+  section.chat[data-mode="page"] {
+    margin-top: 24px;
+    height: min(72vh, 640px);
+  }
+  section.chat[data-mode="overlay"] {
+    flex: 1;
+    height: 100%;
+  }
+
+  /* Scrollable region — bubbles anchor to the bottom (via margin-top: auto
+     on the inner list) so latest stays in view, but the user can scroll up
+     to read older messages. Scrollbar is hidden — chat-app convention. */
+  .chat-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 4px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .chat-scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+  section.chat[data-mode="overlay"] .chat-scroll {
+    /* Bubbles flow under the floating close/maximize buttons; the top
+       72px fade mask makes them dissolve as they approach the buttons. */
+    padding: 72px 8px 8px;
+    mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000);
+  }
+  /* Same dissolve treatment on the dedicated /ask page so older bubbles
+     fade as they scroll up. */
+  section.chat[data-mode="page"] .chat-scroll {
+    mask-image: linear-gradient(to bottom, transparent 0, #000 56px, #000);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 56px, #000);
+  }
+
+  .chat-bubbles {
+    list-style: none;
+    margin-top: auto;
+    margin-bottom: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* The actual bubbles — used here AND in HomeChatInput preview. */
+  .bubble {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: min(80%, 560px);
+    padding: 10px 14px;
+    border-radius: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    animation: bubble-in 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  }
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .bubble--user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14.5px;
+    border-bottom-right-radius: 6px;
+  }
+  [data-theme="dark"] .bubble--user {
+    color: #0c1015;
+  }
+  .bubble--assistant {
+    align-self: flex-start;
+    background: color-mix(in oklab, var(--bg), var(--fg) 6%);
+    color: var(--fg);
+    font-family: var(--font-serif);
+    font-size: 15.5px;
+    border: 1px solid color-mix(in oklab, var(--fg) 8%, transparent);
+    border-bottom-left-radius: 6px;
+  }
+
+  .bubble-body { white-space: pre-wrap; }
+  /* Caret blink while streaming text in (not the empty initial state). */
+  .bubble--assistant.bubble--streaming .bubble-body:not(:has(.bubble-typing))::after {
+    content: "▍";
+    margin-left: 1px;
+    font-weight: 100;
+    color: var(--fg-3);
+    animation: bubble-blink 1s infinite;
+  }
+  @keyframes bubble-blink { 50% { opacity: 0.2; } }
+
+  /* Three-dot typing indicator before first delta arrives. */
+  .bubble-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 2px;
+  }
+  .bubble-typing > span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--fg-3) 80%, transparent);
+    animation: bubble-typing 1.3s infinite ease-in-out both;
+  }
+  .bubble-typing > span:nth-child(2) { animation-delay: 0.18s; }
+  .bubble-typing > span:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes bubble-typing {
+    0%, 80%, 100% { transform: scale(0.55); opacity: 0.35; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  .bubble-error {
+    color: #b8612d;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  [data-theme="dark"] .bubble-error { color: #ffb098; }
+
+  /* Inline source footnote — small, low-opacity, separator dots. */
+  .bubble-sources {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--fg-3);
+    opacity: 0.7;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 6px;
+  }
+  .bubble-sources-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-right: 4px;
+  }
+  .bubble-sources a {
+    color: var(--fg-3);
+    border-bottom: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .bubble-sources a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .bubble-sources-sep { color: var(--fg-3); opacity: 0.5; }
+
+  /* Seed (page mode only, empty state) */
+  .chat-seed {
+    align-self: flex-start;
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    border: 1px dashed var(--line-2);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--bg), var(--fg) 1%);
+    max-width: min(86%, 540px);
+  }
+  .chat-seed[hidden] { display: none; }
+  .chat-seed-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    margin-bottom: 6px;
+  }
+  .chat-seed-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .chat-seed-list button {
+    text-align: left;
+    color: var(--fg-2);
+    font-family: var(--font-serif);
+    font-size: 14.5px;
+    line-height: 1.45;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--line);
+    transition: color 0.2s, border-color 0.2s;
+    width: 100%;
+    cursor: pointer;
+  }
+  .chat-seed-list li:last-child button { border-bottom: 0; }
+  .chat-seed-list button:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Footer (input + disclaimer) */
+  .chat-foot {
+    flex-shrink: 0;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  section.chat[data-mode="overlay"] .chat-foot {
+    padding-bottom: max(env(safe-area-inset-bottom, 0), 8px);
+  }
+
+  .chat-form {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  section.chat[data-mode="page"] .chat-form {
+    background: color-mix(in oklab, var(--bg), var(--fg) 1%);
+    border-color: var(--line);
+  }
+  .chat-form:focus-within {
+    border-color: color-mix(in oklab, var(--accent) 50%, var(--line));
+  }
+  .chat-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    font-size: 14.5px;
+    padding: 13px 16px;
+  }
+  .chat-input::placeholder { color: var(--fg-3); }
+  .chat-input:disabled { color: var(--fg-3); }
+  .chat-send {
+    padding: 0 18px;
+    color: var(--fg-3);
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .chat-send:hover:not(:disabled) {
+    color: var(--accent);
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
+  }
+  .chat-send:disabled { opacity: 0.4; cursor: progress; }
+
+  .chat-disclaimer {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fg-3);
+    line-height: 1.55;
+    text-align: center;
+    margin: 0;
+    padding: 0 8px;
+    opacity: 0.85;
+  }
+  .chat-clear {
+    display: inline;
+    font: inherit;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--line-2);
+    border-radius: 0;
+    color: var(--fg-2);
+    padding: 0 0 1px;
+    margin-left: 6px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .chat-clear:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .chat-clear[hidden] { display: none; }
+
+  @media (max-width: 480px) {
+    section.chat[data-mode="page"] {
+      height: min(70vh, 560px);
+    }
+    .bubble {
+      max-width: min(86%, 460px);
+      padding: 9px 12px;
+    }
+    .bubble--user { font-size: 14px; }
+    .bubble--assistant { font-size: 15px; }
+    .chat-input { padding: 12px 14px; font-size: 14px; }
+    .chat-send { padding: 0 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bubble { animation: none; }
+    .chat-scroll { scroll-behavior: auto; }
+  }
+</style>
