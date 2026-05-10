@@ -1,5 +1,10 @@
-# Force pages.dev preview hostname → custom domain (canonical)
-https://jubayeramb.pages.dev/*  https://jubayeramb.com/:splat  301
+# NOTE on hostname canonicalization: `_redirects` only accepts relative
+# paths on the LHS. Cloudflare Redirect Rules can't match `*.pages.dev`
+# either (that traffic flows through the pages.dev zone, which we don't
+# control). So pages.dev → apex relies on the `<link rel="canonical">`
+# tag emitted by Seo.astro — Google honors that as a consolidation
+# signal. See docs/deployment.md for the full reasoning and the
+# fallback (a Pages middleware) if direct hits become a problem.
 
 # Common sitemap aliases → the actual sitemap index
 /sitemap.xml      /sitemap-index.xml  301
