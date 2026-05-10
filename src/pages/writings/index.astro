@@ -26,9 +26,22 @@ for (const p of sortedPosts) {
 const title = "Writing";
 const description =
   "Notes on JavaScript, TypeScript, Astro, web development, and the occasional reflection by Jubayer Al Mamun.";
+
+const collectionItems = sortedPosts.map((p) => ({
+  title: p.data.title,
+  url: `/writings/${p.id}/`,
+  date: p.data.pubDate,
+  description: p.data.description,
+}));
 ---
 
-<Layout {title} {description} activeRoute="writings">
+<Layout
+  {title}
+  {description}
+  activeRoute="writings"
+  collectionItems={collectionItems}
+  collectionKind="Article"
+>
   <div class="page">
     <FadeUp>
       <h1 class="h1">Writing</h1>

@@ -12,9 +12,21 @@ const projects = (await getCollection("projects"))
 const title = "Projects";
 const description =
   "Selected case studies — what shipped, what worked, and what I'd do differently. WeCycle, Finding Healers, and HomePay.";
+
+const collectionItems = projects.map((p) => ({
+  title: p.data.title,
+  url: `/projects/${p.id}/`,
+  description: p.data.summary,
+}));
 ---
 
-<Layout {title} {description} activeRoute="projects">
+<Layout
+  {title}
+  {description}
+  activeRoute="projects"
+  collectionItems={collectionItems}
+  collectionKind="CreativeWork"
+>
   <div class="page">
     <FadeUp>
       <h1 class="h1">Projects</h1>

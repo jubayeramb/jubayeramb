@@ -10,9 +10,20 @@ const tags = getAllUniqueTags(allPosts).sort();
 const title = "Tags";
 const description =
   "Browse Jubayer Al Mamun's writing by topic — JavaScript, TypeScript, Astro, CSS, and more.";
+
+const collectionItems = tags.map((tag) => ({
+  title: `#${tag}`,
+  url: `/tags/${tag}/`,
+}));
 ---
 
-<Layout {title} {description} activeRoute="writings">
+<Layout
+  {title}
+  {description}
+  activeRoute="writings"
+  collectionItems={collectionItems}
+  collectionKind="WebPage"
+>
   <div class="page">
     <FadeUp>
       <h1 class="h1">Tags</h1>

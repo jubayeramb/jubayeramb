@@ -3,16 +3,34 @@ import BaseLayout from "./BaseLayout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 
+type CollectionItem = {
+  title: string;
+  url: string;
+  date?: string | Date;
+  description?: string;
+};
+
+type ProjectMeta = {
+  role?: string;
+  period?: string;
+  url?: string;
+  technologies?: string[];
+};
+
 type Props = {
   title: string;
   description?: string;
   image?: string;
   imageAlt?: string;
   keywords?: string[];
-  type?: "website" | "article" | "profile";
+  type?: "website" | "article" | "profile" | "project";
   pubDate?: string | Date;
   updatedDate?: string | Date;
   tags?: string[];
+  projectMeta?: ProjectMeta;
+  collectionItems?: CollectionItem[];
+  collectionKind?: "Article" | "CreativeWork" | "WebPage";
+  profilePage?: boolean;
   canonical?: string;
   noindex?: boolean;
   /**

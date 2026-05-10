@@ -29,8 +29,14 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 220));
   description={summary}
   image={cover?.url}
   imageAlt={cover?.alt || title}
-  type="article"
+  type="project"
   tags={technologies}
+  projectMeta={{
+    role,
+    period,
+    url,
+    technologies,
+  }}
   activeRoute="projects"
 >
   <article class="page">

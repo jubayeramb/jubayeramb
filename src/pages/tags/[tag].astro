@@ -29,6 +29,13 @@ const sortedPosts = posts.sort(
 );
 
 const description = `Posts by Jubayer Al Mamun tagged with #${tag} — ${sortedPosts.length} ${sortedPosts.length === 1 ? "post" : "posts"}.`;
+
+const collectionItems = sortedPosts.map((p) => ({
+  title: p.data.title,
+  url: `/writings/${p.id}/`,
+  date: p.data.pubDate,
+  description: p.data.description,
+}));
 ---
 
 <Layout
@@ -36,6 +43,8 @@ const description = `Posts by Jubayer Al Mamun tagged with #${tag} — ${sortedP
   {description}
   keywords={[tag as string]}
   activeRoute="writings"
+  collectionItems={collectionItems}
+  collectionKind="Article"
 >
   <div class="page">
     <FadeUp>
