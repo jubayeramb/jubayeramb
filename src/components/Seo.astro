@@ -1,6 +1,4 @@
 ---
-import { generateOgImage } from "@/utils";
-
 type Props = {
   title: string;
   description?: string;
@@ -52,12 +50,24 @@ const normalizedPath = (() => {
 const canonicalUrl =
   canonical ?? new URL(normalizedPath, SITE_URL + "/").toString();
 
-// Build OG image URL — for articles, fall back to a per-title generated OG.
-const ogImage = image
-  ? new URL(image, SITE_URL).toString()
-  : type === "article"
-    ? `https://dynamic-og-image-generator.vercel.app/api/generate?${generateOgImage(title)}`
-    : `${SITE_URL}/assets/images/og-image.png`;
+// Build OG image URL.
+//
+// - When the page passes its own `image` prop (e.g. a project's cover),
+//   honor it.
+// - Otherwise, derive the path of the matching pre-rendered OG card from
+//   `public/og/` (generated at build time by `scripts/build-og-images.ts`).
+//   The card filename mirrors the page path: `/` → `og/index.png`,
+//   `/about/` → `og/about.png`, `/writings/foo/` → `og/writings/foo.png`,
+//   etc. If no card was generated for this path, fall back to the static
+//   site OG.
+const ogImage = (() => {
+  if (image) return new URL(image, SITE_URL).toString();
+
+  const segments = normalizedPath.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+  const ogPath =
+    segments.length === 0 ? "og/index.png" : `og/${segments.join("/")}.png`;
+  return `${SITE_URL}/${ogPath}`;
+})();
 
 const metaKeywords = [
   ...keywords,
@@ -207,8 +217,8 @@ const breadcrumbLd =
   name="robots"
   content={noindex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"}
 />
-<meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#131312" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#eef1f5" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0c1015" media="(prefers-color-scheme: dark)" />
 <meta name="color-scheme" content="light dark" />
 
 <link rel="canonical" href={canonicalUrl} />
