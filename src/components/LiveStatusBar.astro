@@ -24,70 +24,101 @@
   hidden
   aria-hidden="true"
 >
-  <div class="live-orb" id="live-orb">
-    <div class="live-orb-halo"></div>
-    <svg
-      class="live-orb-visualizer"
-      viewBox="-150 -150 300 300"
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden="true"
-    >
-      <path id="live-orb-wave" />
-    </svg>
-    <div class="live-orb-sphere">
-      <div class="live-orb-gradient"></div>
-      <div class="live-orb-shimmer"></div>
-      <div class="live-orb-highlight"></div>
+  <div class="live-stage">
+    <div class="live-orb" id="live-orb">
+      <div class="live-orb-halo"></div>
+      <svg
+        class="live-orb-visualizer"
+        viewBox="-150 -150 300 300"
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+      >
+        <path id="live-orb-wave" />
+      </svg>
+      <div class="live-orb-sphere">
+        <div class="live-orb-gradient"></div>
+        <div class="live-orb-shimmer"></div>
+        <div class="live-orb-highlight"></div>
+      </div>
     </div>
+
+    <div class="live-caption" role="status" aria-live="polite">
+      <span class="live-caption-label" id="live-caption-label">Listening</span>
+      <span class="live-caption-hint" id="live-caption-hint">
+        Speak naturally — Jubayer's assistant is listening.
+      </span>
+    </div>
+
+    <button
+      type="button"
+      class="live-end"
+      id="live-end"
+      aria-label="End voice session"
+    >
+      <svg
+        class="live-end-icon"
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z" transform="rotate(135 12 12)"></path>
+      </svg>
+      <span>End call</span>
+    </button>
+  </div>
+
+  <div
+    class="live-pill"
+    id="live-pill"
+    data-state="idle"
+    aria-hidden="true"
+  >
+    <span class="live-pill-dot" aria-hidden="true"></span>
+    <span class="live-pill-status" id="live-pill-status">Listening</span>
   </div>
 </div>
 
-<div
-  class="live-pill"
-  id="live-pill"
-  data-state="idle"
-  hidden
-  role="status"
-  aria-live="polite"
->
-  <span class="live-pill-dot" aria-hidden="true"></span>
-  <span class="live-pill-status" id="live-pill-status">Listening</span>
-  <button
-    type="button"
-    class="live-pill-end"
-    id="live-pill-end"
-    aria-label="End voice session"
-  >
-    End
-  </button>
-</div>
-
 <script>
-  // Lazy reference to the live-session singleton — same instance the
-  // mic button uses. The SDK + worklet only ship to the bundle for
-  // visitors who actually press the mic.
-  let sessionPromise: Promise<import("../lib/live-session").LiveSession> | null = null;
-
-  async function getSession() {
-    if (!sessionPromise) {
-      sessionPromise = import("../lib/live-session").then((m) =>
-        m.createLiveSession(),
-      );
-    }
-    return sessionPromise;
-  }
+  // We deliberately do NOT dynamic-import live-session here. That
+  // would download the 290 KB Gemini SDK bundle on every page load,
+  // even for visitors who never tap the mic. Instead, MicButton owns
+  // the lazy import (triggered on first click) and fires a `live:ready`
+  // event with the freshly-created session. We listen for that event,
+  // then start subscribing + driving the visualizer RAF loop.
+  type Session = import("../lib/live-session").LiveSession;
+  let activeSession: Session | null = null;
 
   const wireLiveSurface = () => {
     const surface = document.getElementById("live-surface");
     const orb = document.getElementById("live-orb");
     const pill = document.getElementById("live-pill");
-    const statusEl = document.getElementById("live-pill-status");
-    const endBtn = document.getElementById("live-pill-end");
+    const pillStatusEl = document.getElementById("live-pill-status");
+    const captionLabel = document.getElementById("live-caption-label");
+    const captionHint = document.getElementById("live-caption-hint");
+    const endBtn = document.getElementById("live-end");
     const wavePath = document.getElementById(
       "live-orb-wave",
     ) as unknown as SVGPathElement | null;
     if (!surface || !orb || !pill || (surface as any).__wired) return;
     (surface as any).__wired = true;
+
+    // Exit animation timer — when state goes idle we keep the surface
+    // mounted for 280ms so the fade-out plays before display:none kicks
+    // in. Cleared on any state change so we don't fight against a
+    // re-entry mid-fadeout.
+    let exitTimer = 0;
+    const cancelExit = () => {
+      if (exitTimer) {
+        clearTimeout(exitTimer);
+        exitTimer = 0;
+      }
+    };
 
     // Audio-reactive blob — N points around a circle, each radius
     // modulated by a frequency bin so the perimeter bulges where energy
@@ -203,17 +234,57 @@
       assistantSpeaking: boolean,
       freq: Uint8Array | null,
     ) => {
+      const wasActive = !surface.hidden && surface.dataset.state !== "idle";
       surface.dataset.state = state;
-      surface.hidden = state === "idle";
-      surface.setAttribute("aria-hidden", state === "idle" ? "true" : "false");
+      surface.dataset.speaker = assistantSpeaking ? "assistant" : "user";
       pill.dataset.state = state;
-      pill.hidden = state === "idle";
       pill.dataset.speaker = assistantSpeaking ? "assistant" : "user";
 
-      if (statusEl) {
-        if (state === "requesting") statusEl.textContent = "Connecting…";
-        else if (state === "error") statusEl.textContent = err ?? "Voice error";
-        else statusEl.textContent = assistantSpeaking ? "Speaking" : "Listening";
+      // Mount/dismount with a clean exit fade. We tag the surface
+      // `data-exit="true"` so CSS runs the fade-out animation, then flip
+      // `hidden` once it's finished. Re-entries cancel the pending exit.
+      if (state === "idle") {
+        if (wasActive) {
+          cancelExit();
+          surface.dataset.exit = "true";
+          surface.setAttribute("aria-hidden", "true");
+          exitTimer = window.setTimeout(() => {
+            surface.hidden = true;
+            delete surface.dataset.exit;
+            exitTimer = 0;
+          }, 280);
+        } else {
+          surface.hidden = true;
+          surface.setAttribute("aria-hidden", "true");
+        }
+      } else {
+        cancelExit();
+        delete surface.dataset.exit;
+        surface.hidden = false;
+        surface.setAttribute("aria-hidden", "false");
+      }
+
+      // Captions — big primary label + hint line below. Drives the
+      // "I'm in a live call" framing more strongly than the small pill.
+      const primary =
+        state === "requesting"
+          ? "Connecting…"
+          : state === "error"
+            ? err ?? "Voice error"
+            : assistantSpeaking
+              ? "Speaking"
+              : "Listening";
+      if (captionLabel) captionLabel.textContent = primary;
+      if (pillStatusEl) pillStatusEl.textContent = primary;
+      if (captionHint) {
+        captionHint.textContent =
+          state === "requesting"
+            ? "Opening a live voice channel…"
+            : state === "error"
+              ? "Tap end and try again."
+              : assistantSpeaking
+                ? "Listening will resume in a moment."
+                : "Speak naturally — Jubayer's assistant is listening.";
       }
 
       // Combined level (mic + playback) drives the orb's scale + halo
@@ -233,8 +304,9 @@
     };
 
     endBtn?.addEventListener("click", async () => {
-      const session = await getSession();
-      await session.stop();
+      // The end button only ever appears once a session exists, so this
+      // is safe to read directly without falling back to a fresh import.
+      if (activeSession) await activeSession.stop();
     });
 
     // RAF loop — re-render every frame while live so the visualizer
@@ -244,23 +316,28 @@
     let raf = 0;
     const tick = () => {
       raf = 0;
-      sessionPromise?.then((session) => {
-        render(
-          session.state,
-          session.level,
-          session.errorMessage,
-          session.assistantSpeaking,
-          session.frequencyData,
-        );
-        if (session.state !== "idle") raf = requestAnimationFrame(tick);
-      });
+      if (!activeSession) return;
+      render(
+        activeSession.state,
+        activeSession.level,
+        activeSession.errorMessage,
+        activeSession.assistantSpeaking,
+        activeSession.frequencyData,
+      );
+      if (activeSession.state !== "idle") raf = requestAnimationFrame(tick);
     };
     const scheduleTick = () => {
       if (raf) return;
       raf = requestAnimationFrame(tick);
     };
 
-    getSession().then((session) => {
+    // Initial paint as idle — no session loaded yet. Surface stays
+    // hidden until MicButton fires `live:ready`.
+    render("idle", 0, null, false, null);
+
+    const attachSession = (session: Session) => {
+      if (activeSession === session) return;
+      activeSession = session;
       session.subscribe(() => {
         render(
           session.state,
@@ -271,7 +348,6 @@
         );
         scheduleTick();
       });
-      // Initial paint.
       render(
         session.state,
         session.level,
@@ -279,6 +355,10 @@
         session.assistantSpeaking,
         session.frequencyData,
       );
+    };
+
+    window.addEventListener("live:ready", (e) => {
+      attachSession((e as CustomEvent<Session>).detail);
     });
   };
 
@@ -295,25 +375,58 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
-    background: color-mix(in oklab, var(--bg) 50%, transparent);
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
-    animation: live-surface-in 320ms var(--ease) both;
+    /* Re-enable pointer events on the surface itself so the big End
+       call button is clickable. The orb stays decorative; the End
+       button below it owns the click. */
+    pointer-events: auto;
+    background: color-mix(in oklab, var(--bg) 62%, transparent);
+    backdrop-filter: blur(36px) saturate(170%);
+    -webkit-backdrop-filter: blur(36px) saturate(170%);
+    animation: live-surface-in 360ms var(--ease) both;
   }
   .live-surface[hidden] { display: none; }
   [data-theme="dark"] .live-surface {
-    background: color-mix(in oklab, var(--bg) 65%, transparent);
+    background: color-mix(in oklab, var(--bg) 75%, transparent);
+  }
+  /* Fade-out on End — runs for 280ms before display:none kicks in. */
+  .live-surface[data-exit="true"] {
+    animation: live-surface-out 280ms var(--ease) forwards;
+    pointer-events: none;
   }
   @keyframes live-surface-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; backdrop-filter: blur(0px) saturate(100%); }
+    to { opacity: 1; backdrop-filter: blur(36px) saturate(170%); }
+  }
+  @keyframes live-surface-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  /* Vertical stack: orb, caption, end button — gives the live mode a
+     clear "I'm in a call" framing rather than just a floating sphere. */
+  .live-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    animation: live-stage-in 480ms var(--ease) both;
+  }
+  .live-surface[data-exit="true"] .live-stage {
+    animation: live-stage-out 240ms var(--ease) forwards;
+  }
+  @keyframes live-stage-in {
+    from { opacity: 0; transform: scale(0.78) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes live-stage-out {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.92); }
   }
 
   /* ─────────── Orb (ChatGPT-voice-mode inspired) ─────────── */
   .live-orb {
     --intensity: 0.2;
-    --orb-size: 240px;
+    --orb-size: 320px;
     position: relative;
     width: var(--orb-size);
     height: var(--orb-size);
@@ -485,7 +598,89 @@
     );
   }
 
-  /* ─────────── Status pill (top) ─────────── */
+  /* ─────────── Caption (under the orb) ─────────── */
+  .live-caption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    pointer-events: none;
+    max-width: 380px;
+    padding: 0 24px;
+  }
+  .live-caption-label {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    line-height: 1.2;
+  }
+  .live-surface[data-state="error"] .live-caption-label {
+    color: #b8612d;
+  }
+  [data-theme="dark"] .live-surface[data-state="error"] .live-caption-label {
+    color: #ffb098;
+  }
+  .live-caption-hint {
+    font-size: 13px;
+    color: var(--fg-3);
+    line-height: 1.45;
+  }
+
+  /* ─────────── Big "End call" button below caption ─────────── */
+  .live-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, #d94c4c 45%, transparent);
+    background: color-mix(in oklab, #d94c4c 14%, var(--glass-bg));
+    color: #d94c4c;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    pointer-events: auto;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow:
+      0 8px 24px -8px color-mix(in oklab, #d94c4c 30%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.12s ease,
+      box-shadow 0.18s ease;
+  }
+  .live-end:hover {
+    background: color-mix(in oklab, #d94c4c 22%, var(--glass-bg));
+    border-color: color-mix(in oklab, #d94c4c 65%, transparent);
+    transform: translateY(-1px);
+    box-shadow:
+      0 12px 32px -10px color-mix(in oklab, #d94c4c 45%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  .live-end:active {
+    transform: translateY(0);
+  }
+  .live-end:focus-visible {
+    outline: 2px solid color-mix(in oklab, #d94c4c 70%, transparent);
+    outline-offset: 3px;
+  }
+  [data-theme="dark"] .live-end {
+    color: #ff8a8a;
+    border-color: color-mix(in oklab, #ff8a8a 50%, transparent);
+    background: color-mix(in oklab, #d94c4c 22%, var(--glass-bg));
+  }
+  [data-theme="dark"] .live-end:hover {
+    background: color-mix(in oklab, #d94c4c 32%, var(--glass-bg));
+  }
+  .live-end-icon { flex-shrink: 0; }
+
+  /* ─────────── Small status pill (top-center, secondary) ─────────── */
   .live-pill {
     position: fixed;
     top: max(env(safe-area-inset-top, 0), 16px);
@@ -494,8 +689,8 @@
     z-index: 80;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 6px 7px 12px;
+    gap: 8px;
+    padding: 6px 12px;
     border-radius: 999px;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
@@ -503,14 +698,15 @@
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: var(--fg);
-    pointer-events: auto;
+    font-size: 11px;
+    color: var(--fg-2);
+    pointer-events: none;
     animation: live-pill-in 220ms var(--ease) both;
   }
-  .live-pill[hidden] { display: none; }
+  .live-surface[hidden] .live-pill,
+  .live-surface[data-state="idle"] .live-pill { display: none; }
   .live-pill[data-state="live"] {
-    border-color: color-mix(in oklab, var(--accent) 50%, transparent);
+    border-color: color-mix(in oklab, var(--accent) 45%, transparent);
   }
   .live-pill[data-state="error"] {
     border-color: color-mix(in oklab, #b8612d 60%, transparent);
@@ -521,8 +717,8 @@
     border-color: color-mix(in oklab, #ffb098 60%, transparent);
   }
   .live-pill-dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--accent);
     animation: live-pill-pulse 1.4s ease-in-out infinite;
@@ -536,24 +732,9 @@
     animation: none;
   }
   .live-pill-status {
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     font-weight: 500;
-  }
-  .live-pill-end {
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--fg) 8%, transparent);
-    color: var(--fg-2);
-    font: inherit;
-    font-size: 11px;
-    border: 0;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-  }
-  .live-pill-end:hover {
-    background: color-mix(in oklab, var(--accent) 18%, transparent);
-    color: var(--accent);
   }
 
   @keyframes live-pill-in {
@@ -562,14 +743,23 @@
   }
   @keyframes live-pill-pulse {
     0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); }
-    50% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 0%, transparent); }
+    50% { box-shadow: 0 0 0 5px color-mix(in oklab, var(--accent) 0%, transparent); }
   }
   @keyframes live-pill-spin {
     to { transform: rotate(360deg); }
   }
 
+  @media (max-width: 768px) {
+    .live-orb { --orb-size: 260px; }
+    .live-stage { gap: 24px; }
+    .live-caption-label { font-size: 20px; }
+  }
   @media (max-width: 480px) {
-    .live-orb { --orb-size: 200px; }
+    .live-orb { --orb-size: 220px; }
+    .live-stage { gap: 20px; }
+    .live-caption-label { font-size: 18px; }
+    .live-caption-hint { font-size: 12px; }
+    .live-end { padding: 11px 18px; font-size: 13px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -578,7 +768,9 @@
     .live-orb-shimmer,
     .live-orb-halo,
     .live-pill-dot,
-    .live-surface {
+    .live-surface,
+    .live-stage,
+    .live-end {
       animation: none !important;
       transition: none !important;
     }

@@ -38,15 +38,25 @@
 </button>
 
 <script>
-  // Lazy-load the live-session module the first time the user clicks.
-  // Until then the SDK + worklet are not in the page bundle.
+  // Lazy-load the live-session module the FIRST time the user clicks
+  // the mic. Until then the @google/genai SDK (~290 KB) is not in the
+  // bundle, and on initial page load the network never sees it. We
+  // share the singleton with LiveStatusBar via a `live:ready` event so
+  // neither component triggers the import unprompted.
   let liveSessionPromise: Promise<import("../lib/live-session").LiveSession> | null = null;
 
   async function getSession() {
     if (!liveSessionPromise) {
-      liveSessionPromise = import("../lib/live-session").then((m) =>
-        m.createLiveSession(),
-      );
+      liveSessionPromise = import("../lib/live-session").then((m) => {
+        const s = m.createLiveSession();
+        // Hand the new session to anyone else who wants to observe it
+        // (currently: LiveStatusBar). One-shot event — only fires the
+        // first time the import resolves.
+        window.dispatchEvent(
+          new CustomEvent("live:ready", { detail: s }),
+        );
+        return s;
+      });
     }
     return liveSessionPromise;
   }
@@ -82,24 +92,32 @@
       }
     };
 
-    btn.addEventListener("click", async () => {
-      const session = await getSession();
-      if (session.state === "live" || session.state === "requesting") {
-        await session.stop();
-      } else {
-        await session.start();
-      }
-    });
+    // Default to idle state. We deliberately do NOT subscribe on wire —
+    // that would dynamic-import live-session.js and defeat lazy loading.
+    render("idle", 0, null);
 
-    // Subscribe lazily — only after the first click do we have a session
-    // to subscribe to. We still want to reflect state on the button, so
-    // when the session is created we wire the subscription.
-    getSession().then((session) => {
-      const update = () =>
-        render(session.state, session.level, session.errorMessage);
-      session.subscribe(update);
-      update();
-    });
+    btn.addEventListener(
+      "click",
+      async () => {
+        const session = await getSession();
+
+        // First-click subscribe — wire the button to the session once
+        // the module has loaded.
+        if (!(btn as any).__subscribed) {
+          (btn as any).__subscribed = true;
+          const update = () =>
+            render(session.state, session.level, session.errorMessage);
+          session.subscribe(update);
+          update();
+        }
+
+        if (session.state === "live" || session.state === "requesting") {
+          await session.stop();
+        } else {
+          await session.start();
+        }
+      },
+    );
   };
 
   const wireAll = () => {
@@ -117,7 +135,12 @@
     position: relative;
     width: 36px;
     height: 36px;
-    margin: 4px 4px 4px 0;
+    margin: 0 4px 0 0;
+    /* The parent forms use align-items: stretch, which leaves a fixed-
+       height child like this one stuck at the cross-axis start. Force
+       center so the icon sits on the same horizontal line as the input
+       text and the send button. */
+    align-self: center;
     border-radius: 999px;
     flex-shrink: 0;
     display: inline-flex;
