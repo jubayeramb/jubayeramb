@@ -1,0 +1,220 @@
+---
+import ChatUi from "./ChatUi.astro";
+---
+
+<dialog
+  id="chat-overlay"
+  class="chat-overlay"
+  aria-label="Chat with Jubayer's assistant"
+>
+  <button
+    type="button"
+    class="chat-overlay-btn chat-overlay-close"
+    id="chat-overlay-close"
+    aria-label="Close chat"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 6 6 18M6 6l12 12"></path>
+    </svg>
+  </button>
+  <button
+    type="button"
+    class="chat-overlay-btn chat-overlay-max"
+    id="chat-overlay-max"
+    aria-label="Open in /ask"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"></path>
+    </svg>
+  </button>
+  <div class="chat-overlay-frame">
+    <ChatUi mode="overlay" />
+  </div>
+</dialog>
+
+<script>
+  import { getMessages, subscribe } from "../lib/chat-store";
+
+  const wireOverlay = () => {
+    const dialog = document.getElementById(
+      "chat-overlay",
+    ) as HTMLDialogElement | null;
+    if (!dialog || (dialog as any).__wired) return;
+    (dialog as any).__wired = true;
+
+    const closeBtn = document.getElementById("chat-overlay-close");
+    const maxBtn = document.getElementById("chat-overlay-max");
+
+    const open = () => {
+      if (dialog.open) return;
+      dialog.showModal();
+      window.dispatchEvent(new CustomEvent("chat:opened"));
+      requestAnimationFrame(() => {
+        const scroll = dialog.querySelector<HTMLElement>(".chat-scroll");
+        if (scroll) scroll.scrollTop = scroll.scrollHeight;
+        const input = dialog.querySelector<HTMLInputElement>("#chat-input");
+        input?.focus();
+      });
+    };
+
+    const close = () => {
+      if (!dialog.open) return;
+      dialog.close();
+    };
+
+    closeBtn?.addEventListener("click", close);
+    maxBtn?.addEventListener("click", () => {
+      close();
+      window.location.assign("/ask");
+    });
+
+    // Click outside the inner frame closes the overlay.
+    dialog.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (target === dialog) close();
+    });
+
+    dialog.addEventListener("close", () => {
+      window.dispatchEvent(new CustomEvent("chat:closed"));
+    });
+
+    window.addEventListener("chat:open", open as EventListener);
+
+    // Auto-open exactly once when the user transitions from empty → first turn.
+    let prevLen = getMessages().length;
+    subscribe(() => {
+      const len = getMessages().length;
+      if (prevLen === 0 && len > 0 && !dialog.open) open();
+      prevLen = len;
+    });
+  };
+
+  wireOverlay();
+  document.addEventListener("astro:page-load", wireOverlay);
+</script>
+
+<style is:global>
+  /* Full-screen, no card. The dialog itself becomes the chat surface
+     and the page underneath is blurred via ::backdrop. */
+  dialog.chat-overlay {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--fg);
+    margin: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-width: 100vw;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+  dialog.chat-overlay::backdrop {
+    background: color-mix(in oklab, var(--bg) 12%, transparent);
+    backdrop-filter: blur(5px) saturate(170%);
+    -webkit-backdrop-filter: blur(5px) saturate(170%);
+  }
+  [data-theme="dark"] dialog.chat-overlay::backdrop {
+    background: color-mix(in oklab, var(--bg) 38%, transparent);
+  }
+  dialog.chat-overlay[open] {
+    display: flex;
+    flex-direction: column;
+    inset: 0;
+    z-index: 60;
+    animation: chat-overlay-fade-in 220ms var(--ease) both;
+  }
+  @keyframes chat-overlay-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Floating top buttons — outside the chat frame. */
+  .chat-overlay-btn {
+    position: fixed;
+    top: max(env(safe-area-inset-top, 0), 14px);
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg-2);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    transition:
+      color 0.2s,
+      background 0.2s,
+      transform 0.2s;
+    z-index: 70;
+  }
+  .chat-overlay-close {
+    left: max(env(safe-area-inset-left, 0), 16px);
+  }
+  .chat-overlay-max {
+    right: max(env(safe-area-inset-right, 0), 16px);
+  }
+  .chat-overlay-btn:hover {
+    color: var(--fg);
+    transform: scale(1.04);
+  }
+  .chat-overlay-btn:active {
+    transform: scale(0.96);
+  }
+
+  /* The chat frame fills the full screen — bubbles flow under the floating
+     close/max buttons and dissolve into a top fade (defined on the chat's
+     overlay-mode .chat-scroll). No reserved top space. */
+  .chat-overlay-frame {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 480px) {
+    .chat-overlay-frame {
+      padding: 0 12px 12px;
+    }
+    .chat-overlay-btn {
+      width: 34px;
+      height: 34px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    dialog.chat-overlay[open] {
+      animation: none;
+    }
+  }
+</style>

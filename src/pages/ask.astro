@@ -1,0 +1,67 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import ChatUi from "@/components/ChatUi.astro";
+
+const title = "Ask my CV";
+const description =
+  "A small RAG chat that answers questions about Jubayer Al Mamun's work, projects, and writing — citing sources from this site.";
+---
+
+<Layout {title} {description} activeRoute="ask" noindex>
+  <div class="ask-shell">
+    <ChatUi mode="page" />
+  </div>
+</Layout>
+
+<script>
+  import { send } from "@/lib/chat-store";
+
+  const handleAskQueryParam = () => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q")?.trim();
+    if (!q) return;
+    history.replaceState({}, "", "/ask");
+    requestAnimationFrame(() => send(q));
+  };
+
+  handleAskQueryParam();
+  document.addEventListener("astro:page-load", handleAskQueryParam);
+</script>
+
+<style is:global>
+  /* /ask is a dedicated chat page — lock the page to viewport height,
+     hide the footer, let the chat fill main. The shell's outer padding
+     and the nav stay at site defaults so the layout doesn't shift. */
+  body:has(.ask-shell) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body:has(.ask-shell) .app {
+    height: 100dvh;
+    min-height: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  body:has(.ask-shell) main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  body:has(.ask-shell) .footer {
+    display: none;
+  }
+  .ask-shell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    animation: pageIn 0.4s var(--ease);
+  }
+  .ask-shell > section.chat[data-mode="page"] {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+    margin-top: 0;
+  }
+</style>
