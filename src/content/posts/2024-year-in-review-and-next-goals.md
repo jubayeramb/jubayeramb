@@ -30,7 +30,7 @@ An assessment of the goals set for 2024:
 
 I couldn’t accomplish most of the goals I set for 2024. Although I tried, I wasn’t able to fix my sleep schedule properly. I also tried to stay consistent with coding, but it wasn’t possible to code every day. The biggest [Student Movement](https://en.wikipedia.org/wiki/2024_Bangladesh_quota_reform_movement) in Bangladesh left us mentally exhausted; the internet was shut down for a long time, and I couldn’t work properly.
 
-I failed to start any side projects or contribute to OSS. I didn’t even write a single blog post this year—I almost forgot about this blog site! Other goals, like going to the gym, losing weight, and learning to recite the Quran with proper tajweed, were also left unaccomplished.
+I failed to start any side projects or contribute to OSS. I didn’t even write a single blog post this year; I almost forgot about this blog site! Other goals, like going to the gym, losing weight, and learning to recite the Quran with proper tajweed, were also left unaccomplished.
 
 These unachieved goals will be carried forward to my next year’s checklist. Let’s see if I can turn them into reality this time.
 
@@ -54,7 +54,7 @@ I’ve contributed a negligible amount to OSS in the past, and I must do more. I
 
 ## 4. Write at least 5-10 blog posts
 
-To build a regular writing habit, I planned and launched this blog site in November 2023. So far, I’ve written three blog posts. My goal is to write at least 5–10 blog posts in 2025. I already have some ideas—I just need to work on them incrementally.
+To build a regular writing habit, I planned and launched this blog site in November 2023. So far, I’ve written three blog posts. My goal is to write at least 5 to 10 blog posts in 2025. I already have some ideas; I just need to work on them incrementally.
 
 ## 5. Regularly engage in physical exercise, preferably at a gym
 

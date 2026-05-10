@@ -11,7 +11,7 @@ const projects = (await getCollection("projects"))
 
 const title = "Projects";
 const description =
-  "Selected case studies — what shipped, what worked, and what I'd do differently. WeCycle, Finding Healers, and HomePay.";
+  "Selected case studies: what shipped, what worked, and what I'd do differently. WeCycle, Finding Healers, and HomePay.";
 
 const collectionItems = projects.map((p) => ({
   title: p.data.title,
@@ -33,7 +33,7 @@ const collectionItems = projects.map((p) => ({
     </FadeUp>
     <FadeUp delay={60}>
       <p class="lead">
-        Selected work — production systems I've owned end-to-end. Each case
+        Selected work: production systems I've owned end to end. Each case
         study covers the problem, the architecture, what shipped, the metrics,
         and what I'd do differently.
       </p>

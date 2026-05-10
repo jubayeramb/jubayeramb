@@ -30,7 +30,7 @@ const stack = [
 
 const title = "About";
 const description =
-  "About Jubayer Al Mamun — software engineer based in Dhaka, Bangladesh. CS graduate from Green University of Bangladesh, mostly self-taught. Currently at WeCycle.";
+  "About Jubayer Al Mamun, software engineer based in Dhaka, Bangladesh. CS graduate from Green University of Bangladesh, mostly self-taught. Currently at WeCycle.";
 ---
 
 <Layout {title} {description} type="profile" profilePage activeRoute="about">
@@ -40,13 +40,13 @@ const description =
     </FadeUp>
     <FadeUp delay={60}>
       <p class="lead">
-        I'm a software engineer based in <strong>Dhaka, Bangladesh</strong> —
+        I'm a software engineer based in <strong>Dhaka, Bangladesh</strong>,
         mostly self-taught, currently working at <a
           href="https://getwecycle.com/"
           target="_blank"
           rel="noopener">WeCycle</a
-        >. I've spent the last few years shipping production software end-to-end
-        — services, schemas, and interfaces.
+        >. I've spent the last few years shipping production software end to
+        end: services, schemas, and interfaces.
       </p>
     </FadeUp>
 
@@ -56,7 +56,7 @@ const description =
       </FadeUp>
       <FadeUp delay={60}>
         <p>
-          I started programming in 2020 — by accident, mostly. I opened a
+          I started programming in 2020, by accident, mostly. I opened a
           stylesheet, and never really stopped. Since then I've shipped products
           at small startups, contributed to open source, and helped a handful of
           teams move faster without breaking things.
@@ -83,8 +83,8 @@ const description =
             const yearLabel = endYear
               ? endYear === startYear
                 ? startYear
-                : `${startYear}—${endYear.slice(2)}`
-              : `${startYear}—`;
+                : `${startYear}–${endYear.slice(2)}`
+              : `${startYear}–`;
             return (
               <FadeUp delay={i * 40} class="work-item">
                 <div class="work-year">{yearLabel}</div>
@@ -99,7 +99,7 @@ const description =
                     >
                       {job.company}
                     </a>{" "}
-                    · {start} — {end}
+                    · {start} – {end}
                   </div>
                   <div class="work-desc">{job.description}</div>
                   <div class="work-tags">
@@ -123,7 +123,7 @@ const description =
         <FadeUp class="work-item">
           <div class="work-year">2025</div>
           <div>
-            <div class="work-role">Verdicto — 1st Runner-Up</div>
+            <div class="work-role">Verdicto, 1st Runner-Up</div>
             <div class="work-co">National hackathon · 320 teams</div>
             <div class="work-desc">
               AI document review platform with automated captioning, sentiment
@@ -134,7 +134,7 @@ const description =
         <FadeUp delay={40} class="work-item">
           <div class="work-year">2024</div>
           <div>
-            <div class="work-role">UniSync — 2nd Runner-Up</div>
+            <div class="work-role">UniSync, 2nd Runner-Up</div>
             <div class="work-co">National hackathon · 40+ finalists</div>
             <div class="work-desc">
               University companion app with live data feeds, AR navigation, and
@@ -151,7 +151,7 @@ const description =
       </FadeUp>
       <div class="work-list">
         <FadeUp class="work-item">
-          <div class="work-year">2022—26</div>
+          <div class="work-year">2022–26</div>
           <div>
             <div class="work-role">B.Sc. in Computer Science & Engineering</div>
             <div class="work-co">
@@ -161,7 +161,7 @@ const description =
                 rel="noopener"
                 style="border-bottom: 1px solid var(--line-2);"
                 >Green University of Bangladesh</a
-              > · Jan 2022 — Jan 2026
+              > · Jan 2022 – Jan 2026
             </div>
           </div>
         </FadeUp>
