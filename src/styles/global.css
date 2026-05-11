@@ -305,13 +305,17 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   align-items: stretch;
   justify-content: stretch;
   padding: 0;
-  background: color-mix(in oklab, var(--bg) 68%, transparent);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  /* Default base bg is mostly opaque so the menu text stays readable
+     even when backdrop-filter isn't applied — Astro's Lightning CSS
+     was dropping the unprefixed `backdrop-filter` declaration in
+     prod builds based on its target browsers (Firefox-only paths
+     lost the blur, leaving the previous 68% bg too transparent to
+     read against the page). Browsers that DO support backdrop-filter
+     get the lighter tint via the @supports block below, where the
+     blur fills in the remaining contrast. */
+  background: color-mix(in oklab, var(--bg) 92%, transparent);
   opacity: 0;
-  transition:
-    opacity 220ms var(--ease),
-    backdrop-filter 220ms var(--ease);
+  transition: opacity 220ms var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
 .nav-sheet[hidden] { display: none; }
@@ -319,7 +323,23 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   opacity: 1;
 }
 [data-theme="dark"] .nav-sheet {
-  background: color-mix(in oklab, var(--bg) 80%, transparent);
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+}
+
+/* Progressive enhancement: where backdrop-filter is supported we
+   lighten the bg tint and add the frosted-glass blur. The @supports
+   query covers both the unprefixed (Firefox 103+, Chrome 76+) and
+   the WebKit-prefixed form (Safari) so Lightning CSS can't dedupe
+   either path out of existence. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav-sheet {
+    background: color-mix(in oklab, var(--bg) 70%, transparent);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
+  }
+  [data-theme="dark"] .nav-sheet {
+    background: color-mix(in oklab, var(--bg) 82%, transparent);
+  }
 }
 
 .nav-sheet-inner {
