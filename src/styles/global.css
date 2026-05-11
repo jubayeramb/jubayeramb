@@ -186,102 +186,312 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   background: var(--accent);
 }
 .theme-toggle {
-  width: 26px;
-  height: 26px;
-  display: flex;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--fg-3);
-  transition: color 0.2s;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
   flex-shrink: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
 }
-.theme-toggle:hover { color: var(--fg); }
+.theme-toggle:hover { color: var(--fg); border-color: var(--line-2); }
 .theme-toggle svg { width: 14px; height: 14px; }
 
-/* Hamburger — phone only. Hidden ≥541px. */
-.nav-hamburger {
+/* On phones the theme toggle joins the search + nav toggle as a row
+   of matched 28x28 glass chips. Outside that breakpoint it stays a
+   bare icon so it doesn't visually compete with the inline nav links. */
+@media (max-width: 720px) {
+  .theme-toggle {
+    border-color: var(--line);
+    background: color-mix(in oklab, var(--bg), var(--fg) 1%);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Mobile nav toggle — modern two-line glyph (not a generic hamburger).
+   Two asymmetric lines that morph into an X when the sheet is open.
+   Sits inside a soft circular glass pill so it visually pairs with
+   the search trigger + theme toggle on its row.
+   ───────────────────────────────────────────────────────────────── */
+.nav-toggle {
   display: none;
+  position: relative;
   width: 28px;
   height: 28px;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 999px;
   color: var(--fg-3);
   border: 1px solid var(--line);
   background: color-mix(in oklab, var(--bg), var(--fg) 1%);
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
   flex-shrink: 0;
+  z-index: 60;
+  cursor: pointer;
+  padding: 0;
 }
-.nav-hamburger:hover { color: var(--fg); border-color: var(--line-2); }
-.nav-hamburger[aria-expanded="true"] {
+.nav-toggle:hover {
+  color: var(--fg);
+  border-color: var(--line-2);
+}
+.nav-toggle[aria-expanded="true"] {
   color: var(--accent);
-  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg));
 }
 
-/* Mobile nav menu — sits below the navbar, slightly toward the logo
-   side (left), with a strong-readable card and an accent rail down
-   the active item. Strong opacity over the page so menu items stay
-   crisp without leaking page text through. */
-.nav-mobile-menu {
+/* Two-line glyph sized to match the 14px stroke artwork inside the
+   sibling search + theme icons. Asymmetric widths (top full, bottom
+   ~60%) read as a designed mark, not a generic three-line stack. */
+.nav-toggle-icon {
+  position: relative;
+  width: 14px;
+  height: 10px;
+  display: block;
+}
+.nav-toggle-line {
+  position: absolute;
+  left: 0;
+  height: 1.5px;
+  background: currentColor;
+  border-radius: 2px;
+  transition:
+    transform 260ms cubic-bezier(0.65, 0, 0.35, 1),
+    width 260ms cubic-bezier(0.65, 0, 0.35, 1),
+    top 260ms cubic-bezier(0.65, 0, 0.35, 1);
+  transform-origin: 50% 50%;
+}
+.nav-toggle-line--top {
+  top: 1px;
+  width: 100%;
+}
+.nav-toggle-line--bot {
+  top: 6px;
+  width: 62%;
+  left: auto;
+  right: 0;
+}
+.nav-toggle[aria-expanded="true"] .nav-toggle-line--top {
+  top: 4px;
+  width: 100%;
+  transform: rotate(45deg);
+}
+.nav-toggle[aria-expanded="true"] .nav-toggle-line--bot {
+  top: 4px;
+  width: 100%;
+  left: 0;
+  right: auto;
+  transform: rotate(-45deg);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Full-screen sheet. Backdrop blur covers the whole viewport so the
+   page recedes; the inner card holds the link list with numbered
+   labels and one-line hints. Sheet animates in (fade + scale) and
+   individual items stagger in via --i custom property.
+   ───────────────────────────────────────────────────────────────── */
+.nav-sheet {
   position: fixed;
-  top: 88px;
-  left: 22px;
-  right: 22px;
-  max-width: 320px;
-  z-index: 50;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  background: color-mix(in oklab, var(--bg) 68%, transparent);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  opacity: 0;
+  transition:
+    opacity 220ms var(--ease),
+    backdrop-filter 220ms var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-sheet[hidden] { display: none; }
+.nav-sheet[data-state="open"] {
+  opacity: 1;
+}
+[data-theme="dark"] .nav-sheet {
+  background: color-mix(in oklab, var(--bg) 80%, transparent);
+}
+
+.nav-sheet-inner {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  padding:
+    calc(env(safe-area-inset-top, 0) + 88px)
+    24px
+    calc(env(safe-area-inset-bottom, 0) + 28px);
   display: flex;
   flex-direction: column;
-  padding: 8px;
-  border-radius: 14px;
-  background: color-mix(in oklab, var(--bg) 96%, transparent);
-  border: 1px solid var(--line);
-  box-shadow:
-    0 24px 48px -16px color-mix(in oklab, var(--fg) 22%, transparent),
-    0 4px 12px -2px color-mix(in oklab, var(--fg) 10%, transparent);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  transform-origin: top left;
-  animation: nav-menu-in 220ms var(--ease) both;
+  gap: 18px;
+  opacity: 0;
+  transform: scale(0.985);
+  transition:
+    opacity 240ms var(--ease),
+    transform 280ms var(--ease);
 }
-[data-theme="dark"] .nav-mobile-menu {
-  background: color-mix(in oklab, var(--bg) 92%, transparent);
+.nav-sheet[data-state="open"] .nav-sheet-inner {
+  opacity: 1;
+  transform: scale(1);
 }
-.nav-mobile-menu[hidden] { display: none; }
-.nav-mobile-link {
-  position: relative;
+
+.nav-sheet-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.nav-sheet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 14px 11px 18px;
-  font-size: 14.5px;
-  color: var(--fg);
-  border-radius: 10px;
-  transition: background 0.2s, color 0.2s, padding-left 0.2s;
+  flex-direction: column;
+  gap: 4px;
 }
-.nav-mobile-link::before {
+.nav-sheet-item {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.nav-sheet[data-state="open"] .nav-sheet-item {
+  animation: nav-sheet-item-in 360ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* Stagger items with the inline --i prop set in markup. */
+  animation-delay: calc(80ms + var(--i, 0) * 50ms);
+}
+@keyframes nav-sheet-item-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nav-sheet-link {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 4px;
+  color: var(--fg);
+  border-bottom: 1px solid color-mix(in oklab, var(--fg) 8%, transparent);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: color 0.2s, padding-left 0.2s, border-color 0.2s;
+}
+.nav-sheet-link:hover,
+.nav-sheet-link:focus-visible {
+  padding-left: 14px;
+  color: var(--accent);
+  border-bottom-color: color-mix(in oklab, var(--accent) 30%, transparent);
+  outline: none;
+}
+.nav-sheet-link:hover .nav-sheet-arrow,
+.nav-sheet-link:focus-visible .nav-sheet-arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
+.nav-sheet-link.active {
+  color: var(--accent);
+}
+.nav-sheet-link.active .nav-sheet-num {
+  color: var(--accent);
+  opacity: 0.8;
+}
+.nav-sheet-link.active::after {
   content: "";
   position: absolute;
-  left: 8px;
+  left: -16px;
   top: 50%;
-  width: 3px;
-  height: 0;
-  background: var(--accent);
-  border-radius: 2px;
   transform: translateY(-50%);
-  transition: height 0.2s var(--ease);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 14%, transparent);
 }
-.nav-mobile-link:hover {
-  background: color-mix(in oklab, var(--fg) 5%, transparent);
+
+.nav-sheet-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--fg-3);
+  opacity: 0.7;
+  align-self: start;
+  padding-top: 6px;
+  transition: color 0.2s;
 }
-.nav-mobile-link:hover::before { height: 14px; }
-.nav-mobile-link.active {
-  color: var(--accent);
-  background: color-mix(in oklab, var(--accent) 8%, transparent);
+
+.nav-sheet-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
-.nav-mobile-link.active::before { height: 18px; }
-@keyframes nav-menu-in {
-  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+.nav-sheet-label {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.nav-sheet-hint {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--fg-3);
+  line-height: 1.4;
+}
+
+.nav-sheet-arrow {
+  color: var(--fg-3);
+  opacity: 0.5;
+  transition:
+    transform 0.2s var(--ease),
+    opacity 0.2s,
+    color 0.2s;
+  align-self: center;
+}
+
+.nav-sheet-footer {
+  margin-top: auto;
+  padding-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 320ms var(--ease) 320ms,
+    transform 320ms var(--ease) 320ms;
+}
+.nav-sheet[data-state="open"] .nav-sheet-footer {
+  opacity: 0.75;
+  transform: translateY(0);
+}
+.nav-sheet-footer-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2ec27e;
+  box-shadow: 0 0 0 3px color-mix(in oklab, #2ec27e 22%, transparent);
+  animation: nav-sheet-pulse 2.4s ease-in-out infinite;
+}
+.nav-sheet-footer-sep { opacity: 0.5; }
+@keyframes nav-sheet-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 @media (max-width: 720px) {
@@ -291,9 +501,30 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 @media (max-width: 540px) {
   .nav { padding-bottom: 40px; gap: 10px; font-size: 13px; }
   .nav-links { gap: 8px; font-size: 13px; }
-  /* On phones the inline nav links are replaced by a hamburger sheet. */
+  /* On phones the inline nav links are replaced by the sheet trigger. */
   .nav-link { display: none; }
-  .nav-hamburger { display: inline-flex; }
+  .nav-toggle { display: inline-flex; }
+}
+@media (max-width: 380px) {
+  .nav-sheet-label { font-size: 24px; }
+  .nav-sheet-link { padding: 16px 4px; gap: 12px; }
+  .nav-sheet-inner {
+    padding-top: calc(env(safe-area-inset-top, 0) + 80px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-sheet,
+  .nav-sheet-inner,
+  .nav-sheet-item,
+  .nav-sheet-footer,
+  .nav-toggle-line,
+  .nav-sheet-arrow {
+    transition: none !important;
+    animation: none !important;
+  }
+  .nav-sheet[data-state="open"] .nav-sheet-item { opacity: 1; transform: none; }
+  .nav-sheet[data-state="open"] .nav-sheet-footer { opacity: 0.75; transform: none; }
 }
 
 /* ====== Page motion ====== */

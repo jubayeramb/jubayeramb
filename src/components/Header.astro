@@ -18,11 +18,11 @@ const inferred = (() => {
 const active = activeRoute || inferred;
 
 const NAV = [
-  { id: "projects", label: "Projects", href: "/projects", priority: "primary" },
-  { id: "writings", label: "Writings", href: "/writings", priority: "primary" },
-  { id: "ask", label: "Ask", href: "/ask", priority: "primary" },
-  { id: "about", label: "About", href: "/about", priority: "secondary" },
-  { id: "contact", label: "Contact", href: "/contact", priority: "secondary" },
+  { id: "projects", label: "Projects", href: "/projects", priority: "primary", hint: "Selected case studies" },
+  { id: "writings", label: "Writings", href: "/writings", priority: "primary", hint: "Notes on engineering and craft" },
+  { id: "ask", label: "Ask", href: "/ask", priority: "primary", hint: "RAG chat grounded in this site" },
+  { id: "about", label: "About", href: "/about", priority: "secondary", hint: "Background and approach" },
+  { id: "contact", label: "Contact", href: "/contact", priority: "secondary", hint: "Get in touch" },
 ];
 ---
 
@@ -48,24 +48,16 @@ const NAV = [
     <SearchTrigger />
     <button
       id="navMenuToggle"
-      class="nav-hamburger"
+      class="nav-toggle"
       aria-label="Open menu"
       aria-expanded="false"
       aria-controls="navMobileMenu"
       type="button"
     >
-      <svg
-        viewBox="0 0 24 24"
-        width="14"
-        height="14"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        aria-hidden="true"
-      >
-        <path d="M4 7h16M4 12h16M4 17h16"></path>
-      </svg>
+      <span class="nav-toggle-icon" aria-hidden="true">
+        <span class="nav-toggle-line nav-toggle-line--top"></span>
+        <span class="nav-toggle-line nav-toggle-line--bot"></span>
+      </span>
     </button>
     <button
       id="themeToggle"
@@ -107,22 +99,59 @@ const NAV = [
 
 <div
   id="navMobileMenu"
-  class="nav-mobile-menu"
-  role="menu"
+  class="nav-sheet"
+  role="dialog"
+  aria-modal="true"
   aria-labelledby="navMenuToggle"
+  data-state="closed"
   hidden
 >
-  {
-    NAV.map((item) => (
-      <a
-        href={item.href}
-        role="menuitem"
-        class={`nav-mobile-link ${active === item.id ? "active" : ""}`}
-      >
-        {item.label}
-      </a>
-    ))
-  }
+  <div class="nav-sheet-inner">
+    <div class="nav-sheet-eyebrow" aria-hidden="true">Navigation</div>
+    <ul class="nav-sheet-list">
+      {
+        NAV.map((item, i) => (
+          <li
+            class="nav-sheet-item"
+            style={`--i:${i};`}
+          >
+            <a
+              href={item.href}
+              class={`nav-sheet-link ${active === item.id ? "active" : ""}`}
+            >
+              <span class="nav-sheet-num">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span class="nav-sheet-text">
+                <span class="nav-sheet-label">{item.label}</span>
+                <span class="nav-sheet-hint">{item.hint}</span>
+              </span>
+              <svg
+                class="nav-sheet-arrow"
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="nav-sheet-footer">
+      <span class="nav-sheet-footer-pulse" aria-hidden="true" />
+      <span>jubayeramb.com</span>
+      <span class="nav-sheet-footer-sep" aria-hidden="true">·</span>
+      <span>Dhaka, UTC+6</span>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -166,11 +195,50 @@ const NAV = [
     if (!toggle || !menu || (toggle as any).__wired) return;
     (toggle as any).__wired = true;
 
+    // CSS exit animation length — sheet & links fade/scale down before
+    // we flip `hidden`. Keep in sync with the .nav-sheet[data-state]
+    // keyframes in global.css.
+    const EXIT_MS = 240;
+    let exitTimer = 0;
+
     const setOpen = (open: boolean) => {
       toggle.setAttribute("aria-expanded", String(open));
-      menu.hidden = !open;
-      if (open) document.documentElement.style.overflow = "hidden";
-      else document.documentElement.style.overflow = "";
+      toggle.setAttribute(
+        "aria-label",
+        open ? "Close menu" : "Open menu",
+      );
+      if (exitTimer) {
+        clearTimeout(exitTimer);
+        exitTimer = 0;
+      }
+      if (open) {
+        menu.hidden = false;
+        // Two-step: paint hidden=false first, then flip data-state on
+        // the next frame so the enter animation actually runs (rather
+        // than the browser collapsing it because we transitioned from
+        // display:none → flex in the same frame).
+        requestAnimationFrame(() => {
+          menu.dataset.state = "open";
+        });
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+        // Move focus into the sheet so screen readers & keyboard users
+        // land on the first nav link.
+        const first = menu.querySelector<HTMLElement>(".nav-sheet-link");
+        first?.focus({ preventScroll: true });
+      } else {
+        menu.dataset.state = "closed";
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
+        exitTimer = window.setTimeout(() => {
+          menu.hidden = true;
+          exitTimer = 0;
+          // Return focus to the toggle if it's still in the DOM.
+          if (document.body.contains(toggle)) {
+            (toggle as HTMLElement).focus({ preventScroll: true });
+          }
+        }, EXIT_MS);
+      }
     };
 
     toggle.addEventListener("click", (e) => {
@@ -179,21 +247,64 @@ const NAV = [
       setOpen(!isOpen);
     });
 
-    document.addEventListener("click", (e) => {
-      if (menu.hidden) return;
-      const target = e.target as Node;
-      if (menu.contains(target) || toggle.contains(target)) return;
-      setOpen(false);
+    // Click outside the inner card (i.e. on the backdrop) closes.
+    menu.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      const a = target.closest("a");
+      if (a) {
+        setOpen(false);
+        return;
+      }
+      // The dialog itself is the backdrop; clicks on `.nav-sheet-inner`
+      // shouldn't bubble down to it.
+      if (target === menu) setOpen(false);
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !menu.hidden) setOpen(false);
+      if (menu.hidden) return;
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      // Simple focus trap — when tabbing past the last link, wrap to
+      // the first, and shift-tabbing past the first wraps to the last.
+      if (e.key === "Tab") {
+        const focusables = menu.querySelectorAll<HTMLElement>(
+          "a, button, [tabindex]:not([tabindex='-1'])",
+        );
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const activeEl = document.activeElement;
+        if (e.shiftKey && activeEl === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && activeEl === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     });
 
-    menu.addEventListener("click", (e) => {
-      const a = (e.target as HTMLElement)?.closest("a");
-      if (a) setOpen(false);
-    });
+    // Astro page transitions can swap pages while the sheet is open
+    // (e.g. clicking a nav link). Reset scroll lock + state so the new
+    // page isn't stuck behind a hidden=true menu with overflow locked.
+    document.addEventListener(
+      "astro:before-swap",
+      () => {
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
+        menu.dataset.state = "closed";
+        menu.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open menu");
+        if (exitTimer) {
+          clearTimeout(exitTimer);
+          exitTimer = 0;
+        }
+      },
+      { once: true },
+    );
   };
 
   wire();

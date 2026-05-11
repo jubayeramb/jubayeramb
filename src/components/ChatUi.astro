@@ -1,4 +1,6 @@
 ---
+import MicButton from "./MicButton.astro";
+
 type Props = {
   mode?: "page" | "overlay";
 };
@@ -14,17 +16,26 @@ const { mode = "page" } = Astro.props;
           <div class="chat-seed-label">Try</div>
           <ul class="chat-seed-list">
             <li>
-              <button type="button" data-suggest="What is Jubayer working on right now?">
+              <button
+                type="button"
+                data-suggest="What is Jubayer working on right now?"
+              >
                 What is Jubayer working on right now?
               </button>
             </li>
             <li>
-              <button type="button" data-suggest="Has Jubayer shipped payment infrastructure?">
+              <button
+                type="button"
+                data-suggest="Has Jubayer shipped payment infrastructure?"
+              >
                 Has Jubayer shipped payment infrastructure?
               </button>
             </li>
             <li>
-              <button type="button" data-suggest="Walk me through the WeCycle monolith → microservices migration.">
+              <button
+                type="button"
+                data-suggest="Walk me through the WeCycle monolith → microservices migration."
+              >
                 Walk me through the WeCycle monolith → microservices migration.
               </button>
             </li>
@@ -47,15 +58,27 @@ const { mode = "page" } = Astro.props;
         maxlength="500"
         required
       />
+      <MicButton />
       <button class="chat-send" id="chat-send" type="submit" aria-label="Send">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
           <path d="M5 12h14M13 6l6 6-6 6"></path>
         </svg>
       </button>
     </form>
 
     <p class="chat-disclaimer">
-      AI-generated. Answers may be wrong — DM me to confirm. Stored locally only.
+      AI-generated. Answers may be wrong — DM me to confirm. Stored locally
+      only.
       <button
         type="button"
         id="chat-clear"
@@ -80,7 +103,9 @@ const { mode = "page" } = Astro.props;
   } from "../lib/chat-store";
 
   const wireChat = () => {
-    document.querySelectorAll<HTMLElement>('section.chat[data-mode]').forEach(wireOne);
+    document
+      .querySelectorAll<HTMLElement>("section.chat[data-mode]")
+      .forEach(wireOne);
   };
 
   function wireOne(root: HTMLElement) {
@@ -108,52 +133,138 @@ const { mode = "page" } = Astro.props;
     const STRIP = /\[\d+(?:\s*,\s*\d+)*\]/g;
     const cleanText = (s: string) => s.replace(STRIP, "");
 
-    const renderBubble = (m: Msg): HTMLLIElement => {
+    // ── Incremental render ──────────────────────────────────────────
+    // Rebuilding `stream.innerHTML` on every SSE delta was retriggering
+    // the bubble-in animation, replaying the typing indicator, and
+    // letting the browser recompute layout for the whole list multiple
+    // times per second. The result was the "jumping / dancing" bubbles
+    // the user reported. We now mount each bubble once and patch the
+    // delta in place: only the streaming bubble's textContent updates,
+    // and only newly-arrived bubbles get the entrance animation.
+
+    const createBubble = (m: Msg): HTMLLIElement => {
       const li = document.createElement("li");
-      li.className = `bubble bubble--${m.role}`;
       li.dataset.id = m.id;
-      if (m.streaming) li.classList.add("bubble--streaming");
 
       const body = document.createElement("div");
       body.className = "bubble-body";
-      if (m.error) {
-        body.innerHTML = `<span class="bubble-error">${escape(m.error)}</span>`;
-      } else if (m.role === "assistant" && m.streaming && !m.content) {
-        // Typing indicator — three pulsing dots until first delta arrives.
-        body.innerHTML =
-          '<span class="bubble-typing" aria-label="Thinking"><span></span><span></span><span></span></span>';
-      } else {
-        body.textContent = cleanText(m.content);
-      }
       li.appendChild(body);
 
-      if (m.role === "assistant" && m.citations?.length) {
-        const sources = document.createElement("div");
-        sources.className = "bubble-sources";
-        sources.innerHTML =
-          `<span class="bubble-sources-label">Sources</span> ` +
-          m.citations
-            .map(
-              (c) =>
-                `<a href="${escape(c.url)}">${escape(c.title)}</a>`
-            )
-            .join('<span class="bubble-sources-sep">·</span>');
-        li.appendChild(sources);
+      // Voice tag + sources are appended/refreshed in updateBubble.
+      updateBubble(li, m, null);
+      return li;
+    };
+
+    const updateBubble = (
+      li: HTMLLIElement,
+      m: Msg,
+      prev: Msg | null,
+    ) => {
+      // Top-level class / flag updates.
+      const desired = `bubble bubble--${m.role}` +
+        (m.streaming ? " bubble--streaming" : "") +
+        (m.via === "voice" ? " bubble--voice" : "") +
+        (m.speaking ? " bubble--speaking" : "");
+      if (li.className !== desired) li.className = desired;
+
+      const body = li.querySelector<HTMLElement>(".bubble-body");
+      if (!body) return;
+
+      // Decide which view the body should be in: error / typing / text.
+      const showError = !!m.error;
+      const showTyping =
+        !showError &&
+        m.role === "assistant" &&
+        (m.streaming || m.speaking) &&
+        !m.content;
+
+      if (showError) {
+        const errText = `<span class="bubble-error">${escape(m.error!)}</span>`;
+        if (body.innerHTML !== errText) body.innerHTML = errText;
+      } else if (showTyping) {
+        if (!body.querySelector(".bubble-typing")) {
+          body.innerHTML =
+            '<span class="bubble-typing" aria-label="Thinking"><span></span><span></span><span></span></span>';
+        }
+      } else {
+        const next = cleanText(m.content);
+        // textContent diff — only writes when the value really changed,
+        // avoiding spurious layout work on identical-value updates.
+        if (body.textContent !== next) body.textContent = next;
       }
 
-      return li;
+      // Voice tag — append once, never re-create.
+      if (m.via === "voice") {
+        if (!li.querySelector(".bubble-via")) {
+          const tag = document.createElement("div");
+          tag.className = "bubble-via";
+          tag.textContent = "🎤 voice";
+          li.appendChild(tag);
+        }
+      } else {
+        li.querySelector(".bubble-via")?.remove();
+      }
+
+      // Sources — render once when they first arrive, replace only if
+      // the citation URLs change (rare; usually they appear in a single
+      // event then never mutate).
+      const newCites = m.citations ?? [];
+      const newKey = newCites.map((c) => c.url).join("|");
+      const prevKey = (prev?.citations ?? []).map((c) => c.url).join("|");
+      if (newKey !== prevKey) {
+        li.querySelector(".bubble-sources")?.remove();
+        if (m.role === "assistant" && newCites.length) {
+          const sources = document.createElement("div");
+          sources.className = "bubble-sources";
+          sources.innerHTML =
+            `<span class="bubble-sources-label">Sources</span> ` +
+            newCites
+              .map((c) => `<a href="${escape(c.url)}">${escape(c.title)}</a>`)
+              .join('<span class="bubble-sources-sep">·</span>');
+          li.appendChild(sources);
+        }
+      }
     };
 
     const isAtBottom = () => {
       return scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 80;
     };
 
+    // Keep a per-id snapshot of the last-rendered Msg so updateBubble
+    // can do precise diffs (especially for citations).
+    const rendered = new Map<string, { li: HTMLLIElement; msg: Msg }>();
+
     const render = () => {
       const messages = getMessages();
       const wasAtBottom = isAtBottom();
+      const seenIds = new Set<string>();
 
-      stream.innerHTML = "";
-      messages.forEach((m) => stream.appendChild(renderBubble(m)));
+      // Pass 1: ensure every current message has a bubble in the DOM
+      // in the correct position, and is up to date.
+      messages.forEach((m, i) => {
+        seenIds.add(m.id);
+        const existing = rendered.get(m.id);
+        if (existing) {
+          updateBubble(existing.li, m, existing.msg);
+          existing.msg = m;
+          // Position correction (rare — only on reorder or clear+rebuild).
+          const at = stream.children[i];
+          if (at !== existing.li) stream.insertBefore(existing.li, at ?? null);
+        } else {
+          const li = createBubble(m);
+          rendered.set(m.id, { li, msg: m });
+          const at = stream.children[i];
+          stream.insertBefore(li, at ?? null);
+        }
+      });
+
+      // Pass 2: drop any bubbles that no longer exist (e.g. after clear).
+      for (const [id, { li }] of rendered) {
+        if (!seenIds.has(id)) {
+          li.remove();
+          rendered.delete(id);
+        }
+      }
 
       if (seed) seed.hidden = messages.length > 0;
       if (clearBtn) clearBtn.hidden = messages.length === 0;
@@ -183,7 +294,9 @@ const { mode = "page" } = Astro.props;
 
     if (seed) {
       seed.addEventListener("click", (e) => {
-        const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>("[data-suggest]");
+        const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>(
+          "[data-suggest]",
+        );
         if (!target?.dataset.suggest) return;
         submit(target.dataset.suggest);
       });
@@ -200,11 +313,9 @@ const { mode = "page" } = Astro.props;
       scroll.scrollTop = scroll.scrollHeight;
     });
 
-    document.addEventListener(
-      "astro:before-swap",
-      () => unsub(),
-      { once: true }
-    );
+    document.addEventListener("astro:before-swap", () => unsub(), {
+      once: true,
+    });
   }
 
   wireChat();
@@ -253,13 +364,23 @@ const { mode = "page" } = Astro.props;
        72px fade mask makes them dissolve as they approach the buttons. */
     padding: 72px 8px 8px;
     mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 72px,
+      #000
+    );
   }
   /* Same dissolve treatment on the dedicated /ask page so older bubbles
      fade as they scroll up. */
   section.chat[data-mode="page"] .chat-scroll {
     mask-image: linear-gradient(to bottom, transparent 0, #000 56px, #000);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 56px, #000);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 56px,
+      #000
+    );
   }
 
   .chat-bubbles {
@@ -283,11 +404,15 @@ const { mode = "page" } = Astro.props;
     line-height: 1.5;
     word-wrap: break-word;
     overflow-wrap: anywhere;
-    animation: bubble-in 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+    /* Fade-in only — no translate. We mount each bubble exactly once
+       now (see incremental render in ChatUi.astro <script>), so this
+       animation runs on entrance and never re-fires while text streams
+       in. The bubble's own block layout handles smooth height growth. */
+    animation: bubble-in 240ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
   }
   @keyframes bubble-in {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   .bubble--user {
     align-self: flex-end;
@@ -301,7 +426,7 @@ const { mode = "page" } = Astro.props;
   }
   .bubble--assistant {
     align-self: flex-start;
-    background: color-mix(in oklab, var(--bg), var(--fg) 6%);
+    background: color-mix(in oklab, var(--bg), var(--fg) 2%);
     color: var(--fg);
     font-family: var(--font-serif);
     font-size: 15.5px;
@@ -309,16 +434,61 @@ const { mode = "page" } = Astro.props;
     border-bottom-left-radius: 6px;
   }
 
-  .bubble-body { white-space: pre-wrap; }
+  .bubble-body {
+    white-space: pre-wrap;
+  }
   /* Caret blink while streaming text in (not the empty initial state). */
-  .bubble--assistant.bubble--streaming .bubble-body:not(:has(.bubble-typing))::after {
+  .bubble--assistant.bubble--streaming
+    .bubble-body:not(:has(.bubble-typing))::after {
     content: "▍";
     margin-left: 1px;
     font-weight: 100;
     color: var(--fg-3);
     animation: bubble-blink 1s infinite;
   }
-  @keyframes bubble-blink { 50% { opacity: 0.2; } }
+  @keyframes bubble-blink {
+    50% {
+      opacity: 0.2;
+    }
+  }
+
+  /* Voice metadata tag — small label so visitors can tell which turns
+     came from the live mic vs. typed text. */
+  .bubble-via {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--fg-3);
+    opacity: 0.7;
+    letter-spacing: 0.04em;
+  }
+  .bubble--user .bubble-via {
+    align-self: flex-end;
+    color: color-mix(in oklab, #fff 72%, transparent);
+    opacity: 0.85;
+  }
+
+  /* Speaking: subtle accent ring so the visitor sees which assistant
+     bubble is currently producing audio. */
+  .bubble--speaking {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
+      0 0 18px -6px color-mix(in oklab, var(--accent) 35%, transparent);
+    animation: bubble-speaking-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes bubble-speaking-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
+        0 0 14px -8px color-mix(in oklab, var(--accent) 30%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--accent) 50%, transparent),
+        0 0 22px -4px color-mix(in oklab, var(--accent) 45%, transparent);
+    }
+  }
 
   /* Three-dot typing indicator before first delta arrives. */
   .bubble-typing {
@@ -334,11 +504,23 @@ const { mode = "page" } = Astro.props;
     background: color-mix(in oklab, var(--fg-3) 80%, transparent);
     animation: bubble-typing 1.3s infinite ease-in-out both;
   }
-  .bubble-typing > span:nth-child(2) { animation-delay: 0.18s; }
-  .bubble-typing > span:nth-child(3) { animation-delay: 0.36s; }
+  .bubble-typing > span:nth-child(2) {
+    animation-delay: 0.18s;
+  }
+  .bubble-typing > span:nth-child(3) {
+    animation-delay: 0.36s;
+  }
   @keyframes bubble-typing {
-    0%, 80%, 100% { transform: scale(0.55); opacity: 0.35; }
-    40% { transform: scale(1); opacity: 1; }
+    0%,
+    80%,
+    100% {
+      transform: scale(0.55);
+      opacity: 0.35;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
   .bubble-error {
@@ -346,7 +528,9 @@ const { mode = "page" } = Astro.props;
     font-family: var(--font-mono);
     font-size: 13px;
   }
-  [data-theme="dark"] .bubble-error { color: #ffb098; }
+  [data-theme="dark"] .bubble-error {
+    color: #ffb098;
+  }
 
   /* Inline source footnote — small, low-opacity, separator dots. */
   .bubble-sources {
@@ -369,13 +553,18 @@ const { mode = "page" } = Astro.props;
   .bubble-sources a {
     color: var(--fg-3);
     border-bottom: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
-    transition: color 0.2s, border-color 0.2s;
+    transition:
+      color 0.2s,
+      border-color 0.2s;
   }
   .bubble-sources a:hover {
     color: var(--accent);
     border-bottom-color: var(--accent);
   }
-  .bubble-sources-sep { color: var(--fg-3); opacity: 0.5; }
+  .bubble-sources-sep {
+    color: var(--fg-3);
+    opacity: 0.5;
+  }
 
   /* Seed (page mode only, empty state) */
   .chat-seed {
@@ -387,7 +576,9 @@ const { mode = "page" } = Astro.props;
     background: color-mix(in oklab, var(--bg), var(--fg) 1%);
     max-width: min(86%, 540px);
   }
-  .chat-seed[hidden] { display: none; }
+  .chat-seed[hidden] {
+    display: none;
+  }
   .chat-seed-label {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -412,11 +603,15 @@ const { mode = "page" } = Astro.props;
     line-height: 1.45;
     padding: 6px 0;
     border-bottom: 1px dashed var(--line);
-    transition: color 0.2s, border-color 0.2s;
+    transition:
+      color 0.2s,
+      border-color 0.2s;
     width: 100%;
     cursor: pointer;
   }
-  .chat-seed-list li:last-child button { border-bottom: 0; }
+  .chat-seed-list li:last-child button {
+    border-bottom: 0;
+  }
   .chat-seed-list button:hover {
     color: var(--accent);
     border-bottom-color: var(--accent);
@@ -463,19 +658,28 @@ const { mode = "page" } = Astro.props;
     font-size: 14.5px;
     padding: 13px 16px;
   }
-  .chat-input::placeholder { color: var(--fg-3); }
-  .chat-input:disabled { color: var(--fg-3); }
+  .chat-input::placeholder {
+    color: var(--fg-3);
+  }
+  .chat-input:disabled {
+    color: var(--fg-3);
+  }
   .chat-send {
     padding: 0 18px;
     color: var(--fg-3);
-    transition: color 0.2s, background 0.2s;
+    transition:
+      color 0.2s,
+      background 0.2s;
     flex-shrink: 0;
   }
   .chat-send:hover:not(:disabled) {
     color: var(--accent);
     background: color-mix(in oklab, var(--fg) 6%, transparent);
   }
-  .chat-send:disabled { opacity: 0.4; cursor: progress; }
+  .chat-send:disabled {
+    opacity: 0.4;
+    cursor: progress;
+  }
 
   .chat-disclaimer {
     font-family: var(--font-mono);
@@ -498,13 +702,17 @@ const { mode = "page" } = Astro.props;
     padding: 0 0 1px;
     margin-left: 6px;
     cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
+    transition:
+      color 0.2s,
+      border-color 0.2s;
   }
   .chat-clear:hover {
     color: var(--accent);
     border-bottom-color: var(--accent);
   }
-  .chat-clear[hidden] { display: none; }
+  .chat-clear[hidden] {
+    display: none;
+  }
 
   @media (max-width: 480px) {
     section.chat[data-mode="page"] {
@@ -514,14 +722,27 @@ const { mode = "page" } = Astro.props;
       max-width: min(86%, 460px);
       padding: 9px 12px;
     }
-    .bubble--user { font-size: 14px; }
-    .bubble--assistant { font-size: 15px; }
-    .chat-input { padding: 12px 14px; font-size: 14px; }
-    .chat-send { padding: 0 14px; }
+    .bubble--user {
+      font-size: 14px;
+    }
+    .bubble--assistant {
+      font-size: 15px;
+    }
+    .chat-input {
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+    .chat-send {
+      padding: 0 14px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bubble { animation: none; }
-    .chat-scroll { scroll-behavior: auto; }
+    .bubble {
+      animation: none;
+    }
+    .chat-scroll {
+      scroll-behavior: auto;
+    }
   }
 </style>

@@ -2,6 +2,7 @@
 import { ClientRouter } from "astro:transitions";
 import Seo from "@/components/Seo.astro";
 import CommandPalette from "@/components/CommandPalette.astro";
+import LiveStatusBar from "@/components/LiveStatusBar.astro";
 import "../styles/global.css";
 
 type CollectionItem = {
@@ -121,5 +122,6 @@ const {
   <body>
     <slot />
     <CommandPalette />
+    <LiveStatusBar />
   </body>
 </html>
