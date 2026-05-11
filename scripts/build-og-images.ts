@@ -9,7 +9,7 @@
  * No browser, no external service, no runtime cost — runs once at `pnpm
  * prebuild` and ships the generated PNGs as static assets.
  */
-import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
+import { readFile, readdir, writeFile, mkdir, copyFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,6 +26,11 @@ const OUT_DIR = join(ROOT, "public/og");
 const FONT_CACHE_DIR = join(ROOT, "node_modules/.cache/og-fonts");
 // Manifest lives in node_modules cache so it never ships in `public/`.
 const MANIFEST_PATH = join(ROOT, "node_modules/.cache/og-manifest.json");
+// Cached PNG copies, mirrored at the same relative paths as OUT_DIR.
+// Cloudflare Pages preserves `node_modules` between builds (keyed on the
+// lockfile) but wipes `public/`, so without this mirror every CI build
+// re-renders every card.
+const PNG_CACHE_DIR = join(ROOT, "node_modules/.cache/og-pngs");
 
 const SITE = "jubayeramb.com";
 const SIZE = { width: 1200, height: 630 };
@@ -461,12 +466,29 @@ async function main() {
 
   for (const card of cards) {
     const outPath = join(OUT_DIR, card.out);
+    const cachePath = join(PNG_CACHE_DIR, card.out);
     next.hashes[card.out] = card.hashKey;
 
     const cachedHash = prev.hashes[card.out];
-    if (cachedHash === card.hashKey && existsSync(outPath)) {
-      reused++;
-      continue;
+    if (cachedHash === card.hashKey) {
+      // Hydrate the public output from the cached copy when needed
+      // (typical CI case: cache survives, public/ is empty).
+      if (!existsSync(outPath) && existsSync(cachePath)) {
+        const outDir = dirname(outPath);
+        if (!existsSync(outDir)) await mkdir(outDir, { recursive: true });
+        await copyFile(cachePath, outPath);
+      }
+      if (existsSync(outPath)) {
+        // Backfill the cache copy if it's missing — keeps the cache
+        // warm even when prior builds rendered straight to public/.
+        if (!existsSync(cachePath)) {
+          const cacheDir = dirname(cachePath);
+          if (!existsSync(cacheDir)) await mkdir(cacheDir, { recursive: true });
+          await copyFile(outPath, cachePath);
+        }
+        reused++;
+        continue;
+      }
     }
 
     if (!fonts) fonts = await loadFonts();
@@ -474,6 +496,9 @@ async function main() {
     if (!existsSync(dir)) await mkdir(dir, { recursive: true });
     const png = await renderCard(card, fonts);
     await writeFile(outPath, png);
+    const cacheDir = dirname(cachePath);
+    if (!existsSync(cacheDir)) await mkdir(cacheDir, { recursive: true });
+    await writeFile(cachePath, png);
     rendered++;
   }
 

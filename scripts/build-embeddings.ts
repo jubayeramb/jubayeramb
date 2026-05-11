@@ -60,6 +60,12 @@ const CV_PATH = join(ROOT, "src/data/cv.md");
 const JOBS_PATH = join(ROOT, "src/data/jobs.json");
 const OUT_DIR = join(ROOT, "public");
 const OUT_PATH = join(OUT_DIR, "embeddings.json");
+// Mirror the manifest into node_modules/.cache so it survives Cloudflare
+// Pages builds — CF restores `node_modules` between runs based on the
+// lockfile, while `public/` is wiped. Without this, every CI build pays
+// the full embedding cost (0 reused).
+const CACHE_DIR = join(ROOT, "node_modules/.cache");
+const CACHE_PATH = join(CACHE_DIR, "embeddings.json");
 
 type ChunkSource = "post" | "project" | "cv" | "jobs";
 
@@ -177,23 +183,29 @@ async function loadJobs(): Promise<Chunk[]> {
 
 async function loadCachedEmbeddings(): Promise<Map<string, number[]>> {
   const cache = new Map<string, number[]>();
-  if (!existsSync(OUT_PATH)) return cache;
-  try {
-    const prev = JSON.parse(await readFile(OUT_PATH, "utf8")) as Manifest;
-    // Vectors only line up across builds when the embedding model matches.
-    // If the previous build used a different model (or "none"), throw the
-    // cache away — those vectors live in a different space.
-    if (prev.vectorMode !== EMBED_MODEL) {
-      console.log(
-        `[embeddings] previous manifest used ${prev.vectorMode}; current is ${EMBED_MODEL} — invalidating cache.`
-      );
-      return cache;
+  // Prefer the node_modules cache (survives Cloudflare builds), fall back
+  // to the shipped output (useful locally on first run after a clean).
+  const sources = [CACHE_PATH, OUT_PATH];
+  for (const path of sources) {
+    if (!existsSync(path)) continue;
+    try {
+      const prev = JSON.parse(await readFile(path, "utf8")) as Manifest;
+      // Vectors only line up across builds when the embedding model matches.
+      // If the previous build used a different model (or "none"), throw the
+      // cache away — those vectors live in a different space.
+      if (prev.vectorMode !== EMBED_MODEL) {
+        console.log(
+          `[embeddings] cached manifest at ${path} used ${prev.vectorMode}; current is ${EMBED_MODEL} — skipping.`
+        );
+        continue;
+      }
+      for (const c of prev.chunks ?? []) {
+        if (c.embedding && c.hash) cache.set(c.hash, c.embedding);
+      }
+      if (cache.size > 0) break;
+    } catch {
+      // ignore — regenerating from scratch is safe
     }
-    for (const c of prev.chunks ?? []) {
-      if (c.embedding && c.hash) cache.set(c.hash, c.embedding);
-    }
-  } catch {
-    // ignore — regenerating from scratch is safe
   }
   return cache;
 }
@@ -267,7 +279,11 @@ async function main() {
 
 async function writeManifest(m: Manifest) {
   if (!existsSync(OUT_DIR)) await mkdir(OUT_DIR, { recursive: true });
-  await writeFile(OUT_PATH, JSON.stringify(m), "utf8");
+  const payload = JSON.stringify(m);
+  await writeFile(OUT_PATH, payload, "utf8");
+  // Also write to the persistent cache so subsequent CI runs reuse vectors.
+  if (!existsSync(CACHE_DIR)) await mkdir(CACHE_DIR, { recursive: true });
+  await writeFile(CACHE_PATH, payload, "utf8");
   console.log(
     `[embeddings] wrote ${OUT_PATH} · mode=${m.vectorMode} · chunks=${m.chunkCount}`
   );
