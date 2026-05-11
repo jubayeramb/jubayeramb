@@ -99,6 +99,10 @@ import ChatUi from "./ChatUi.astro";
     });
 
     window.addEventListener("chat:open", open as EventListener);
+    // Live voice mode dispatches `chat:close` when starting up so it
+    // can render its full-takeover surface without the chat dialog
+    // sitting in front of it (top-layer beats z-index).
+    window.addEventListener("chat:close", close as EventListener);
 
     // Auto-open exactly once when the user transitions from empty → first turn.
     let prevLen = getMessages().length;

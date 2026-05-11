@@ -50,8 +50,14 @@
       liveSessionPromise = import("../lib/live-session").then((m) => {
         const s = m.createLiveSession();
         // Hand the new session to anyone else who wants to observe it
-        // (currently: LiveStatusBar). One-shot event — only fires the
-        // first time the import resolves.
+        // (currently: LiveStatusBar). We do TWO things here so late
+        // wire-ups (e.g. after an Astro page swap) don't miss the
+        // session:
+        //   1. Cache the resolved session on window so anyone wiring
+        //      AFTER this import can find it synchronously.
+        //   2. Fire a one-shot event for anyone who was already
+        //      listening when the click happened.
+        (window as any).__liveSession = s;
         window.dispatchEvent(
           new CustomEvent("live:ready", { detail: s }),
         );
@@ -114,6 +120,14 @@
         if (session.state === "live" || session.state === "requesting") {
           await session.stop();
         } else {
+          // Voice mode is a focused full-takeover surface. If the chat
+          // overlay is currently open, the browser puts the <dialog>
+          // in its top layer, which renders ABOVE every other element
+          // regardless of z-index. So we politely ask the overlay to
+          // close before starting the live session — the chat-store
+          // keeps the transcript, the user can re-open it after the
+          // call ends.
+          window.dispatchEvent(new CustomEvent("chat:close"));
           await session.start();
         }
       },

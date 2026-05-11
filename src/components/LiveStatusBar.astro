@@ -88,11 +88,31 @@
   // We deliberately do NOT dynamic-import live-session here. That
   // would download the 290 KB Gemini SDK bundle on every page load,
   // even for visitors who never tap the mic. Instead, MicButton owns
-  // the lazy import (triggered on first click) and fires a `live:ready`
-  // event with the freshly-created session. We listen for that event,
-  // then start subscribing + driving the visualizer RAF loop.
+  // the lazy import (triggered on first click) and:
+  //   - assigns the resolved session to `window.__liveSession`
+  //   - dispatches a `live:ready` CustomEvent on window
+  //
+  // Both signals are accepted here. The listener and the cache check
+  // live at MODULE scope (not inside wireLiveSurface) so they survive
+  // for the script's whole lifetime — Astro ClientRouter swaps the DOM
+  // but the hoisted module script keeps running, which means we don't
+  // race with the swap and we don't lose the session if the click
+  // happens before the new surface element is wired.
   type Session = import("../lib/live-session").LiveSession;
-  let activeSession: Session | null = null;
+  let cachedSession: Session | null = null;
+  let activeAttach: ((s: Session) => void) | null = null;
+
+  // Picked up if the SDK was already loaded on a previous page (the
+  // user clicked the mic, then navigated). MicButton stashes the
+  // resolved session on window for late subscribers like this one.
+  const winCached = (window as any).__liveSession as Session | undefined;
+  if (winCached) cachedSession = winCached;
+
+  window.addEventListener("live:ready", (e) => {
+    const detail = (e as CustomEvent<Session>).detail;
+    cachedSession = detail;
+    if (activeAttach) activeAttach(detail);
+  });
 
   const wireLiveSurface = () => {
     const surface = document.getElementById("live-surface");
@@ -107,6 +127,11 @@
     ) as unknown as SVGPathElement | null;
     if (!surface || !orb || !pill || (surface as any).__wired) return;
     (surface as any).__wired = true;
+
+    // Per-surface session reference. Bound by the end-call handler and
+    // the RAF tick. Defined here at the top so both closures see the
+    // same binding regardless of where in the function they're set up.
+    let activeSession: Session | null = null;
 
     // Exit animation timer — when state goes idle we keep the surface
     // mounted for 280ms so the fade-out plays before display:none kicks
@@ -127,14 +152,15 @@
     const POINTS = 64;
     const BASE_R = 110;
     const PEAK_BOOST = 50; // max radius extension at full bin energy
+    const HALF = POINTS / 2;
     const angles: { cos: number; sin: number }[] = [];
     for (let i = 0; i < POINTS; i++) {
       const a = (i / POINTS) * Math.PI * 2 - Math.PI / 2;
       angles.push({ cos: Math.cos(a), sin: Math.sin(a) });
     }
-    // Offsets in [0..1] per point that smooth the FFT data circularly
-    // and add a tiny per-point organic wobble so even a quiet frame
-    // doesn't render a perfect circle.
+    // Per-point wobble phase. Tiny organic motion when there's actual
+    // audio; zero at rest so an idle "Listening" frame draws a clean
+    // circle instead of looking like a wonky polygon.
     let wobblePhase = 0;
     const renderWave = (
       freq: Uint8Array | null,
@@ -143,43 +169,83 @@
     ) => {
       if (!wavePath) return;
       wobblePhase += 0.04;
-      // Build smoothed bin values around the ring. We sample the FFT
-      // data with a small circular window so the perimeter stays
-      // continuous (no jagged jumps between adjacent points).
+
       const radii: number[] = new Array(POINTS);
-      const baseExtra = level * 24; // larger overall radius at high level
+
+      // How "alive" the data is — scales the per-point wobble and
+      // base-radius bump so a quiet frame draws a near-perfect circle
+      // but speech / playback gives the perimeter visible motion.
+      const liveness = Math.min(1, level * 2);
+      const baseExtra = liveness * 24;
+
+      // FFT bin window. Bin 0 covers DC + sub-bass at our 16 kHz mic
+      // context (~125 Hz per bin) which is dominated by mic-preamp hum,
+      // AGC noise, and room rumble that's basically always present —
+      // mapping it to the top points (i=0 and the mirror point) made
+      // the shape consistently bulge upward even in silence. Skip the
+      // first few bins and cap at the voice-band upper edge so only
+      // meaningful audio energy drives the perimeter.
+      const BIN_START = 3;
+      const BIN_END = freq ? Math.min(freq.length - 1, 50) : 0;
+      const binRange = Math.max(1, BIN_END - BIN_START);
+
+      // Bins below this fraction of 255 are treated as silence so
+      // ambient noise doesn't continuously deform the perimeter. Above
+      // the floor, energy is re-normalized to [0..1] for full range.
+      const NOISE_FLOOR = 0.18;
+
       for (let i = 0; i < POINTS; i++) {
         let energy = 0;
         if (freq && freq.length > 0) {
-          // Mirror the visualization across the vertical axis so it
-          // looks symmetric even though FFT data is asymmetric.
-          const mirroredI =
-            i < POINTS / 2 ? i : POINTS - 1 - (i - POINTS / 2);
-          const idx = Math.floor(
-            (mirroredI / (POINTS / 2)) * (freq.length - 1),
+          // Mirror across the vertical axis so left and right halves
+          // pulse symmetrically. mirroredI lives in [0..HALF-1].
+          const mirroredI = i < HALF ? i : POINTS - 1 - i;
+          const normalized = Math.min(
+            1,
+            mirroredI / Math.max(1, HALF - 1),
           );
-          // 3-point smoothing window.
-          const a = freq[Math.max(0, idx - 1)] ?? 0;
-          const b = freq[idx] ?? 0;
-          const c = freq[Math.min(freq.length - 1, idx + 1)] ?? 0;
-          energy = (a + b + c) / 3 / 255; // 0..1
+          const idx = Math.min(
+            BIN_END,
+            BIN_START + Math.floor(normalized * binRange),
+          );
+          // 3-bin smoothing window — averages neighbors so adjacent
+          // perimeter points don't jolt independently.
+          const a = freq[Math.max(BIN_START, idx - 1)];
+          const b = freq[idx];
+          const c = freq[Math.min(BIN_END, idx + 1)];
+          const raw = (a + b + c) / 3 / 255; // 0..1
+          energy =
+            raw < NOISE_FLOOR ? 0 : (raw - NOISE_FLOOR) / (1 - NOISE_FLOOR);
         }
         const wobble =
-          Math.sin(wobblePhase + i * 0.7) * 1.2 +
-          Math.sin(wobblePhase * 1.7 + i * 0.3) * 0.8;
+          (Math.sin(wobblePhase + i * 0.7) * 1.4 +
+            Math.sin(wobblePhase * 1.7 + i * 0.3) * 0.9) *
+          liveness;
         const r = BASE_R + baseExtra + energy * PEAK_BOOST + wobble;
         radii[i] = r;
       }
 
-      // Construct an SVG path with cubic curves between points so the
-      // perimeter is smooth instead of jagged.
-      let d = "";
+      // Render the path as quadratic-bezier segments running THROUGH the
+      // midpoint of each consecutive pair of points (control = the
+      // actual point). This produces a C1-continuous closed curve, so
+      // the perimeter reads as smooth smoke / liquid instead of a
+      // 64-sided polygon — that was the visible corner-edge the orb
+      // showed before, especially at the top arc.
+      const points: { x: number; y: number }[] = new Array(POINTS);
       for (let i = 0; i < POINTS; i++) {
         const r = radii[i];
-        const { cos, sin } = angles[i];
-        const x = cos * r;
-        const y = sin * r;
-        d += i === 0 ? `M${x.toFixed(2)},${y.toFixed(2)}` : `L${x.toFixed(2)},${y.toFixed(2)}`;
+        points[i] = { x: angles[i].cos * r, y: angles[i].sin * r };
+      }
+      const mx = (points[POINTS - 1].x + points[0].x) / 2;
+      const my = (points[POINTS - 1].y + points[0].y) / 2;
+      let d = `M${mx.toFixed(2)},${my.toFixed(2)}`;
+      for (let i = 0; i < POINTS; i++) {
+        const next = (i + 1) % POINTS;
+        const mxN = (points[i].x + points[next].x) / 2;
+        const myN = (points[i].y + points[next].y) / 2;
+        d +=
+          ` Q${points[i].x.toFixed(2)},${points[i].y.toFixed(2)} ` +
+          `${mxN.toFixed(2)},${myN.toFixed(2)}`;
       }
       d += " Z";
       wavePath.setAttribute("d", d);
@@ -284,7 +350,7 @@
               ? "Tap end and try again."
               : assistantSpeaking
                 ? "Listening will resume in a moment."
-                : "Speak naturally — Jubayer's assistant is listening.";
+                : "Speak naturally, Jubayer's assistant is listening.";
       }
 
       // Combined level (mic + playback) drives the orb's scale + halo
@@ -309,10 +375,6 @@
       if (activeSession) await activeSession.stop();
     });
 
-    // RAF loop — re-render every frame while live so the visualizer
-    // stays smooth even between subscriber notifications. The orb path
-    // morphs from the live frequency bins; without RAF it would only
-    // update when something else triggered a notify.
     let raf = 0;
     const tick = () => {
       raf = 0;
@@ -331,8 +393,8 @@
       raf = requestAnimationFrame(tick);
     };
 
-    // Initial paint as idle — no session loaded yet. Surface stays
-    // hidden until MicButton fires `live:ready`.
+    // Initial paint as idle. Surface stays hidden until a session
+    // attaches and reports a non-idle state.
     render("idle", 0, null, false, null);
 
     const attachSession = (session: Session) => {
@@ -357,9 +419,20 @@
       );
     };
 
-    window.addEventListener("live:ready", (e) => {
-      attachSession((e as CustomEvent<Session>).detail);
-    });
+    // Register THIS surface as the current attach target for the
+    // module-level `live:ready` listener. When MicButton finishes
+    // loading the SDK and dispatches the event, the listener calls
+    // whichever attach is currently registered — so we don't depend
+    // on the listener being installed inside this closure (which
+    // would race with the click on slow networks).
+    // Register THIS surface as the current attach target for the
+    // module-level `live:ready` listener. When MicButton finishes
+    // loading the SDK and dispatches the event, the listener calls
+    // whichever attach is currently registered — so we don't depend
+    // on the listener being installed inside this closure (which
+    // would race with the click on slow networks).
+    activeAttach = attachSession;
+    if (cachedSession) attachSession(cachedSession);
   };
 
   wireLiveSurface();
@@ -449,10 +522,22 @@
     pointer-events: none;
     filter: blur(0.5px);
     z-index: 1;
+    /* SVG elements clip to their CSS box by default. The audio-reactive
+       path's max radius extends well past the SVG's pixel bounds
+       (BASE_R + PEAK_BOOST in SVG units projects beyond 50% of the
+       visualizer element), so we'd see straight-line cuts at the
+       corners when energy peaks. `overflow: visible` lets the shape
+       extend cleanly into the surrounding blur. */
+    overflow: visible;
   }
   .live-orb-visualizer path {
-    transition: fill 220ms ease-out;
+    transition: fill 220ms ease-out, opacity 220ms ease-out;
   }
+  /* On dark the visualizer fill (built from var(--accent) at 0.85 alpha
+     inside the SVG defs) is a pretty light pastel blue, which reads as
+     "neon" rather than "atmospheric smoke" against the deep bg. Drop
+     its opacity so it blends into the halo more naturally. */
+  [data-theme="dark"] .live-orb-visualizer path { opacity: 0.7; }
 
   /* Outer halo — soft blurred glow that pulses with intensity. Sits
      behind the sphere and scales generously so the orb feels like it's
@@ -560,6 +645,71 @@
     );
     filter: blur(8px);
     pointer-events: none;
+  }
+
+  /* ─────────── Dark-theme overrides ───────────
+     Default orb tones use very bright pastels (#c5b3ff, #b6e5ff,
+     #ffd4ec, white shimmer at 70%) which were tuned against a light
+     bg. On the dark theme they read as harsh and disconnected from
+     the page palette. We darken / mute the layered gradients so the
+     orb feels like it belongs in the same color world as everything
+     else, while keeping enough luminance for the visualizer to be
+     readable. */
+  [data-theme="dark"] .live-orb-sphere {
+    box-shadow:
+      0 30px 80px -20px color-mix(in oklab, var(--accent) 55%, transparent),
+      inset 0 -30px 60px -10px rgba(0, 0, 0, 0.55),
+      inset 0 8px 30px rgba(255, 255, 255, 0.10);
+  }
+  [data-theme="dark"] .live-orb-gradient {
+    background: conic-gradient(
+      from 0deg,
+      color-mix(in oklab, var(--accent) 55%, #2a1d6b 45%),
+      color-mix(in oklab, var(--accent) 65%, #1b3d6e 35%),
+      color-mix(in oklab, var(--accent) 50%, #5e3aa8 50%),
+      color-mix(in oklab, var(--accent) 60%, #1d4a86 40%),
+      color-mix(in oklab, var(--accent) 55%, #2a1d6b 45%)
+    );
+    filter: blur(16px) brightness(0.92);
+  }
+  [data-theme="dark"] .live-orb-shimmer {
+    background: conic-gradient(
+      from 180deg,
+      transparent 0deg,
+      color-mix(in oklab, var(--accent) 70%, white 30%) 60deg,
+      transparent 140deg,
+      color-mix(in oklab, var(--accent) 80%, transparent) 220deg,
+      transparent 320deg
+    );
+    mix-blend-mode: screen;
+    opacity: calc(0.42 + var(--intensity) * 0.32);
+  }
+  [data-theme="dark"] .live-orb-highlight {
+    background: radial-gradient(
+      circle at center,
+      rgba(180, 210, 255, 0.45) 0%,
+      rgba(180, 210, 255, 0.12) 45%,
+      transparent 75%
+    );
+  }
+  [data-theme="dark"] .live-orb-halo {
+    background: radial-gradient(
+      circle at center,
+      color-mix(in oklab, var(--accent) calc(38% + var(--intensity) * 38%), transparent) 0%,
+      color-mix(in oklab, var(--accent) 18%, transparent) 35%,
+      transparent 70%
+    );
+    /* Lift halo a touch more on dark so the orb still feels luminous
+       without the bright pastel ring it had previously. */
+    opacity: calc(0.5 + var(--intensity) * 0.5);
+  }
+  [data-theme="dark"] .live-orb[data-speaker="assistant"] .live-orb-halo {
+    background: radial-gradient(
+      circle at center,
+      color-mix(in oklab, var(--accent) 32%, #00d2c2 28%) 0%,
+      color-mix(in oklab, var(--accent) 18%, transparent) 35%,
+      transparent 70%
+    );
   }
 
   /* Assistant-speaking variant — accelerate motion + saturate so it
