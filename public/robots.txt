@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /embeddings.json
 
 Sitemap: https://jubayeramb.com/sitemap-index.xml
