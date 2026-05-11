@@ -16,6 +16,9 @@ technologies:
   - Turborepo
   - Tailwind 4
   - shadcn/ui
+softwareApp:
+  applicationCategory: TravelApplication
+  operatingSystem: Web
 metrics:
   - { label: Surfaces, value: "Customer · Agency · API" }
   - { label: AI tools, value: "8+" }

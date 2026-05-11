@@ -11,6 +11,9 @@ technologies:
   - JavaScript
   - Chrome Extensions
   - Manifest V3
+softwareApp:
+  applicationCategory: BrowserApplication
+  operatingSystem: Chrome 145+
 metrics:
   - { label: Sync modes, value: "3" }
   - { label: Chrome target, value: "v145+" }

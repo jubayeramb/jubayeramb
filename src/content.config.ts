@@ -36,6 +36,18 @@ const projectsCollection = defineCollection({
       .optional(),
     order: z.number().default(0),
     draft: z.boolean().default(false),
+    // When present, the page emits SoftwareApplication JSON-LD instead of
+    // plain CreativeWork — required for Google's software-app rich result.
+    // applicationCategory accepts the schema.org enum strings (e.g.
+    // "BrowserApplication", "TravelApplication", "DesktopEnhancementApplication").
+    softwareApp: z
+      .object({
+        applicationCategory: z.string(),
+        operatingSystem: z.string(),
+        price: z.string().default("0"),
+        priceCurrency: z.string().default("USD"),
+      })
+      .optional(),
   }),
 });
 

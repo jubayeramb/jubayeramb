@@ -11,6 +11,16 @@ type ProjectMeta = {
   period?: string;
   url?: string;
   technologies?: string[];
+  /**
+   * Marks a project as a SoftwareApplication. Triggers the matching rich
+   * result schema (with offers) instead of plain CreativeWork.
+   */
+  softwareApp?: {
+    applicationCategory: string;
+    operatingSystem: string;
+    price?: string;
+    priceCurrency?: string;
+  };
 };
 
 type Props = {
@@ -193,31 +203,52 @@ const articleLd = type === "article"
   : null;
 
 const projectLd = type === "project"
-  ? {
-      "@context": "https://schema.org",
-      "@type": "CreativeWork",
-      name: title,
-      description,
-      image: ogImage,
-      url: canonicalUrl,
-      creator: { "@id": PERSON_ID },
-      author: { "@id": PERSON_ID },
-      mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
-      keywords: Array.from(
-        new Set([...(projectMeta?.technologies ?? []), ...tags])
-      ).join(", "),
-      ...(projectMeta?.url ? { sameAs: projectMeta.url } : {}),
-      ...(projectMeta?.period
-        ? {
-            // Loose date hint — period is "2025 — Present" or "2026"; Schema.org
-            // dateCreated wants ISO. Pull the leading 4-digit year if present.
-            dateCreated:
-              projectMeta.period.match(/\d{4}/)?.[0],
-          }
-        : {}),
-      inLanguage: "en-US",
-      isPartOf: { "@id": WEBSITE_ID },
-    }
+  ? (() => {
+      const baseProps = {
+        name: title,
+        description,
+        image: ogImage,
+        url: canonicalUrl,
+        creator: { "@id": PERSON_ID },
+        author: { "@id": PERSON_ID },
+        mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+        keywords: Array.from(
+          new Set([...(projectMeta?.technologies ?? []), ...tags])
+        ).join(", "),
+        ...(projectMeta?.url ? { sameAs: projectMeta.url } : {}),
+        ...(projectMeta?.period
+          ? {
+              // Loose date hint — period is "2025 — Present" or "2026";
+              // Schema.org dateCreated wants ISO. Pull the leading 4-digit
+              // year if present.
+              dateCreated: projectMeta.period.match(/\d{4}/)?.[0],
+            }
+          : {}),
+        inLanguage: "en-US",
+        isPartOf: { "@id": WEBSITE_ID },
+      };
+      // SoftwareApplication is rich-result eligible; plain CreativeWork is
+      // not. Switch types when the project marks itself as software.
+      if (projectMeta?.softwareApp) {
+        return {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          ...baseProps,
+          applicationCategory: projectMeta.softwareApp.applicationCategory,
+          operatingSystem: projectMeta.softwareApp.operatingSystem,
+          offers: {
+            "@type": "Offer",
+            price: projectMeta.softwareApp.price ?? "0",
+            priceCurrency: projectMeta.softwareApp.priceCurrency ?? "USD",
+          },
+        };
+      }
+      return {
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        ...baseProps,
+      };
+    })()
   : null;
 
 const profilePageLd = profilePage

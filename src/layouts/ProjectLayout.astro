@@ -18,6 +18,7 @@ const {
   metrics,
   technologies,
   cover,
+  softwareApp,
 } = frontmatter;
 
 const wordCount = (body ?? "").split(/\s+/).filter(Boolean).length;
@@ -36,6 +37,7 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 220));
     period,
     url,
     technologies,
+    softwareApp,
   }}
   activeRoute="projects"
 >

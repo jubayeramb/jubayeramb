@@ -15,6 +15,12 @@ type ProjectMeta = {
   period?: string;
   url?: string;
   technologies?: string[];
+  softwareApp?: {
+    applicationCategory: string;
+    operatingSystem: string;
+    price?: string;
+    priceCurrency?: string;
+  };
 };
 
 type Props = {

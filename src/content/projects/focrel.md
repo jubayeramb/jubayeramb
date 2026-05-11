@@ -14,6 +14,9 @@ technologies:
   - Rust
   - SQLite
   - Next.js 16
+softwareApp:
+  applicationCategory: DesktopEnhancementApplication
+  operatingSystem: macOS 14+
 metrics:
   - { label: Platform, value: "macOS native" }
   - { label: Data, value: "Local-first" }
