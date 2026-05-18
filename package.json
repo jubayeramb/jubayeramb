@@ -16,8 +16,8 @@
     "sync": "astro sync",
     "embed": "tsx scripts/build-embeddings.ts",
     "og": "tsx scripts/build-og-images.ts",
-    "fn": "wrangler pages dev dist",
-    "dev:fn": "pnpm build && wrangler pages dev dist",
+    "fn": "wrangler pages dev dist --compatibility-date=2026-05-14",
+    "dev:fn": "pnpm build && wrangler pages dev dist --compatibility-date=2026-05-14",
     "astro": "astro"
   },
   "dependencies": {
