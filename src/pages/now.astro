@@ -1,0 +1,90 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import FadeUp from "@/components/FadeUp.astro";
+
+const title = "Now";
+const description =
+  "What Jubayer is currently focused on — work, where in the world, what he's reading.";
+---
+
+<Layout {title} {description} activeRoute="now">
+  <div class="page">
+    <FadeUp>
+      <h1 class="h1">Now</h1>
+    </FadeUp>
+    <FadeUp delay={60}>
+      <p class="lead">
+        What I'm focused on right now. Borrowed from <a
+          href="https://nownownow.com/"
+          target="_blank"
+          rel="noopener"
+          style="border-bottom: 1px solid var(--line-2);">nownownow.com</a
+        >.
+      </p>
+    </FadeUp>
+
+    <section class="section">
+      <div
+        id="now-content"
+        class="now-content blog-content"
+        data-state="loading"
+      >
+        <p class="now-muted">Loading…</p>
+      </div>
+
+      <div class="now-footer" id="now-footer" hidden>
+        <span id="now-updated"></span>
+        <span aria-hidden="true">·</span>
+        <a href="https://nownownow.com/about" target="_blank" rel="noopener"
+          >There's a directory of these</a
+        >
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  // Client-side fetch — keeps the Notion token server-side and lets
+  // Cloudflare's edge cache absorb most of the traffic. Wired to
+  // astro:page-load so view-transition arrivals also kick off the fetch
+  // (hoisted module scripts only run once per source per session).
+  const loadNow = async () => {
+    const target = document.getElementById("now-content");
+    if (!target || target.dataset.loaded === "1") return;
+    target.dataset.loaded = "1";
+    const footer = document.getElementById("now-footer");
+    const updated = document.getElementById("now-updated");
+
+    try {
+      const res = await fetch("/api/now", {
+        headers: { accept: "application/json" },
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as {
+        html?: string;
+        lastEdited?: string;
+      };
+      target.innerHTML = data.html ?? "";
+      target.dataset.state = "ready";
+      if (data.lastEdited && updated && footer) {
+        const d = new Date(data.lastEdited);
+        updated.textContent =
+          "Last updated " +
+          d.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+        footer.hidden = false;
+      }
+    } catch {
+      target.innerHTML =
+        '<p class="now-muted">Couldn\'t load this right now. Try again in a minute.</p>';
+      target.dataset.state = "error";
+      target.dataset.loaded = "";
+    }
+  };
+
+  loadNow();
+  document.addEventListener("astro:page-load", loadNow);
+</script>

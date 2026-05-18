@@ -18,11 +18,12 @@ const inferred = (() => {
 const active = activeRoute || inferred;
 
 const NAV = [
+  { id: "now", label: "Now", href: "/now", priority: "primary", hint: "What I'm focused on right now" },
   { id: "projects", label: "Projects", href: "/projects", priority: "primary", hint: "Selected case studies" },
   { id: "writings", label: "Writings", href: "/writings", priority: "primary", hint: "Notes on engineering and craft" },
-  { id: "ask", label: "Ask", href: "/ask", priority: "primary", hint: "RAG chat grounded in this site" },
-  { id: "about", label: "About", href: "/about", priority: "secondary", hint: "Background and approach" },
-  { id: "contact", label: "Contact", href: "/contact", priority: "secondary", hint: "Get in touch" },
+  { id: "ask", label: "Ask", href: "/ask", priority: "sheet", hint: "RAG chat grounded in this site" },
+  { id: "about", label: "About", href: "/about", priority: "primary", hint: "Background and approach" },
+  { id: "contact", label: "Contact", href: "/contact", priority: "primary", hint: "Get in touch" },
 ];
 ---
 
@@ -36,7 +37,7 @@ const NAV = [
   </a>
   <div class="nav-links">
     {
-      NAV.map((item) => (
+      NAV.filter((item) => item.priority !== "sheet").map((item) => (
         <a
           href={item.href}
           class={`nav-link nav-link--${item.priority} ${active === item.id ? "active" : ""}`}

@@ -38,6 +38,7 @@ const priorityFor = (page) => {
   if (page === `${SITE}/`) return 1.0;
   if (page.startsWith(`${SITE}/writings/`)) return 0.9;
   if (page.startsWith(`${SITE}/projects/`)) return 0.9;
+  if (page.startsWith(`${SITE}/now/`)) return 0.8;
   if (page.startsWith(`${SITE}/about/`)) return 0.8;
   if (page.startsWith(`${SITE}/contact/`)) return 0.7;
   if (page.startsWith(`${SITE}/tags/`)) return 0.4;

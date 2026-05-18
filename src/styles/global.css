@@ -1019,3 +1019,42 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   color: #fff;
 }
 .copied.hidden { display: none; }
+
+/* ====== /now ====== */
+.now-content[data-state="loading"],
+.now-content[data-state="error"] { min-height: 120px; }
+.now-content .now-muted {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+/* Notion H2s back the page's section headings — render them in the
+   same small-mono-uppercase style as `.section-label` on /about so the
+   page reads as a list of sections, not a long-form essay. */
+.now-content h2 {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+  margin-top: 2.4em;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.now-content > h2:first-child { margin-top: 0; }
+.now-content .now-blank { min-height: 0.4em; }
+.now-footer {
+  margin-top: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-3);
+}
+.now-footer a {
+  color: var(--fg-3);
+  border-bottom: 1px solid var(--line-2);
+}
+.now-footer a:hover { color: var(--fg); }
