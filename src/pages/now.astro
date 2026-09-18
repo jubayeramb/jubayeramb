@@ -1,90 +1,109 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import { readNowSnapshot } from "@/lib/now-snapshot";
+import { getFullDate, isoDay } from "@/utils";
+import "../styles/prose.css";
+
+// Rendered from the build-time Notion snapshot (scripts/build-now.ts), so
+// the content is in the HTML for every crawler. The script below only
+// swaps in a newer version if the page was edited after this build.
+const now = readNowSnapshot();
 
 const title = "Now";
 const description =
-  "What Jubayer is currently focused on — work, where in the world, what he's reading.";
+  "What Jubayer Al Mamun is focused on right now: work, where in the world he is, what he's shipping and learning.";
 ---
 
-<Layout {title} {description} activeRoute="now">
-  <div class="page">
-    <FadeUp>
-      <h1 class="h1">Now</h1>
-    </FadeUp>
-    <FadeUp delay={60}>
-      <p class="lead">
-        What I'm focused on right now. Borrowed from <a
-          href="https://nownownow.com/"
-          target="_blank"
-          rel="noopener"
-          style="border-bottom: 1px solid var(--line-2);">nownownow.com</a
-        >.
+<Layout {title} {description} activeRoute="now" lastModified={now.lastEdited ?? undefined}>
+  <PageHeader title="Now" eyebrow="A /now page">
+    <p>
+      What I'm focused on right now. Borrowed from <a href="https://nownownow.com/" target="_blank" rel="noopener"
+        >nownownow.com</a
+      >.
+    </p>
+  </PageHeader>
+
+  <section class="band band--flush-top" aria-label="Current focus">
+    <div class="container container--prose">
+      <div id="now-content" class="prose now" data-last-edited={now.lastEdited ?? ""}>
+        {
+          now.html ? (
+            <Fragment set:html={now.html} />
+          ) : (
+            <p>
+              This page lists what I'm working on, where I am, and what I'm learning. It updates from a
+              note I keep, and that note couldn't be loaded for this version of the site. Try again in a
+              bit, or <a href="/contact/">get in touch</a>.
+            </p>
+          )
+        }
+      </div>
+
+      <p class="now-footer meta">
+        {
+          now.lastEdited && (
+            <span id="now-updated">
+              Last updated <time datetime={isoDay(now.lastEdited)}>{getFullDate(now.lastEdited)}</time>
+            </span>
+          )
+        }
+        <a href="https://nownownow.com/p/rC6A" target="_blank" rel="noopener">Listed on nownownow.com ↗</a>
       </p>
-    </FadeUp>
-
-    <section class="section">
-      <div
-        id="now-content"
-        class="now-content blog-content"
-        data-state="loading"
-      >
-        <p class="now-muted">Loading…</p>
-      </div>
-
-      <div class="now-footer" id="now-footer" hidden>
-        <span id="now-updated"></span>
-        <span aria-hidden="true">·</span>
-        <a href="https://nownownow.com/about" target="_blank" rel="noopener"
-          >There's a directory of these</a
-        >
-      </div>
-    </section>
-  </div>
+    </div>
+  </section>
 </Layout>
 
 <script>
-  // Client-side fetch — keeps the Notion token server-side and lets
-  // Cloudflare's edge cache absorb most of the traffic. Wired to
-  // astro:page-load so view-transition arrivals also kick off the fetch
-  // (hoisted module scripts only run once per source per session).
-  const loadNow = async () => {
+  // Progressive refresh: the build-time snapshot is already on the page.
+  // If Notion has a newer edit, swap it in; otherwise leave it alone.
+  const refreshNow = async () => {
     const target = document.getElementById("now-content");
-    if (!target || target.dataset.loaded === "1") return;
-    target.dataset.loaded = "1";
-    const footer = document.getElementById("now-footer");
-    const updated = document.getElementById("now-updated");
-
+    if (!target || target.dataset.checked === "1") return;
+    target.dataset.checked = "1";
     try {
-      const res = await fetch("/api/now", {
-        headers: { accept: "application/json" },
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as {
-        html?: string;
-        lastEdited?: string;
-      };
-      target.innerHTML = data.html ?? "";
-      target.dataset.state = "ready";
-      if (data.lastEdited && updated && footer) {
+      const res = await fetch("/api/now", { headers: { accept: "application/json" } });
+      if (!res.ok) return;
+      const data = (await res.json()) as { html?: string; lastEdited?: string };
+      const current = target.dataset.lastEdited || "";
+      if (!data.html || !data.lastEdited || data.lastEdited <= current) return;
+      target.innerHTML = data.html;
+      target.dataset.lastEdited = data.lastEdited;
+      const updated = document.getElementById("now-updated");
+      if (updated) {
         const d = new Date(data.lastEdited);
-        updated.textContent =
-          "Last updated " +
-          d.toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          });
-        footer.hidden = false;
+        updated.innerHTML = `Last updated <time datetime="${d.toISOString().split("T")[0]}">${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}</time>`;
       }
     } catch {
-      target.innerHTML =
-        '<p class="now-muted">Couldn\'t load this right now. Try again in a minute.</p>';
-      target.dataset.state = "error";
-      target.dataset.loaded = "";
+      // Keep the snapshot; it's already complete content.
     }
   };
-
-  loadNow();
-  document.addEventListener("astro:page-load", loadNow);
+  refreshNow();
+  document.addEventListener("astro:page-load", refreshNow);
 </script>
+
+<style>
+  /* Notion's section headings become the page's h2 outline. */
+  .now :global(h2) {
+    font-size: var(--text-xl);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--hairline);
+  }
+  .now :global(h2:first-child) {
+    margin-top: 0;
+  }
+  .now-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-6);
+    margin-top: var(--space-12);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--hairline);
+  }
+  .now-footer a {
+    color: var(--ink-2);
+  }
+  .now-footer a:hover {
+    color: var(--accent);
+  }
+</style>
