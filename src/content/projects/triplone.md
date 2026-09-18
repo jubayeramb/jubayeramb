@@ -24,7 +24,7 @@ metrics:
   - { label: AI tools, value: "8+" }
   - { label: Status, value: "Pre-launch" }
 cover:
-  url: /projects/triplone.png
+  src: ./images/triplone.png
   alt: Triplone, AI travel platform
 ---
 

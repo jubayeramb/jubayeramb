@@ -19,7 +19,7 @@ metrics:
   - { label: Chrome target, value: "v145+" }
   - { label: Pairs, value: "Cross-mode" }
 cover:
-  url: /projects/syncroll.png
+  src: ./images/syncroll.png
   alt: Syncroll, split-view scroll sync
 ---
 

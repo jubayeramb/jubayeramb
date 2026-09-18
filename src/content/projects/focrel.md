@@ -22,7 +22,7 @@ metrics:
   - { label: Data, value: "Local-first" }
   - { label: Status, value: "Free beta" }
 cover:
-  url: /projects/focrel.png
+  src: ./images/focrel.png
   alt: Focrel, context-switching focus app
 ---
 
