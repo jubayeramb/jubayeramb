@@ -16,7 +16,7 @@ export type Msg = {
   citations?: Citation[];
   error?: string;
   streaming?: boolean;
-  /** How the message was authored — text input or voice (Live API). */
+  /** How the message was authored - text input or voice (Live API). */
   via?: "text" | "voice";
   /** Transient: assistant audio is currently playing. Not persisted. */
   speaking?: boolean;
@@ -26,6 +26,19 @@ const STORAGE_KEY = "ask-chat-v1";
 const MAX_STORED = 40;
 const MAX_TURNS = 10;
 const STRIP_CITES = /\[\d+(?:\s*,\s*\d+)*\]/g;
+
+/**
+ * Bubbles render plain text, so undo the habits models slip into anyway:
+ * Markdown emphasis and bullets, dash asides, and the narrow no-break
+ * spaces some models put between numbers and units.
+ */
+const tidyReply = (s: string) =>
+  s
+    .replace(/[\u00a0\u2007\u202f]/g, " ")
+    .replace(/\*\*|__/g, "")
+    .replace(/^[ \t]*[*-][ \t]+/gm, "• ")
+    .replace(/[ \t]+[\u2013\u2014][ \t]+/g, ", ")
+    .replace(/[\u2010\u2011\u2013\u2014]/g, "-");
 
 let messages: Msg[] = [];
 let abortCtrl: AbortController | null = null;
@@ -59,7 +72,7 @@ function load(): Msg[] {
         ...m,
         id: m.id ?? uid(),
         // Strip any citation markers that slipped through earlier versions
-        // — defensive cleanup so stale localStorage doesn't show [1] [2].
+        // - defensive cleanup so stale localStorage doesn't show [1] [2].
         content:
           m.role === "assistant"
             ? m.content.replace(STRIP_CITES, "")
@@ -83,7 +96,7 @@ function persist() {
     const trimmed = cleaned.slice(-MAX_STORED);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
   } catch {
-    // localStorage may be unavailable (private mode, quota) — chat still
+    // localStorage may be unavailable (private mode, quota) - chat still
     // works in-memory; this turn just won't survive a refresh.
   }
 }
@@ -255,11 +268,10 @@ async function pumpSSE(
         citations = data as Citation[];
         patch(targetId, { citations });
       } else if (event === "delta") {
-        const cleaned = String(data.text ?? "").replace(STRIP_CITES, "");
-        text += cleaned;
-        patch(targetId, { content: text, citations, streaming: true });
+        text += String(data.text ?? "");
+        patch(targetId, { content: tidyReply(text.replace(STRIP_CITES, "")), citations, streaming: true });
       } else if (event === "done") {
-        patch(targetId, { streaming: false });
+        patch(targetId, text ? { streaming: false } : { streaming: false, error: "No answer came back. Try again." });
       } else if (event === "error") {
         patch(targetId, {
           error: data.message ?? "Stream error.",
@@ -276,7 +288,7 @@ async function pumpSSE(
 // ────────────────────────────────────────────────────────────────────────
 // Voice (Gemini Live) helpers
 //
-// Live sessions don't go through `/api/ask` SSE — they connect the
+// Live sessions don't go through `/api/ask` SSE - they connect the
 // browser straight to Gemini Live via an ephemeral token, and the audio
 // path stays out of our server entirely. These helpers let the live
 // session manager append transcript turns into the same chat-store the
@@ -322,7 +334,7 @@ export function patchVoiceTranscript(id: string, text: string, _final = false) {
 
 /**
  * Toggle the playing-now indicator on an assistant voice message. Not
- * persisted — `emit()` will write current state to localStorage but
+ * persisted - `emit()` will write current state to localStorage but
  * `speaking` resets to false on hydrate (see `load()`).
  */
 export function setSpeaking(id: string, speaking: boolean) {
