@@ -82,17 +82,39 @@ const description =
 </script>
 
 <style>
+  /* Phones: the label sits above its value so long values (the email,
+     the Bluesky handle) get the full row instead of breaking mid-word. */
   .contact-row {
     position: relative;
     display: grid;
-    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label label"
+      "value action";
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-1) var(--space-4);
     padding-block: var(--space-5);
     border-top: 1px solid var(--hairline);
   }
   .contact-row:last-child {
     border-bottom: 1px solid var(--hairline);
+  }
+  .contact-row__label {
+    grid-area: label;
+  }
+  .contact-row__link {
+    grid-area: value;
+  }
+  .contact-row__copy,
+  .contact-row__arrow {
+    grid-area: action;
+  }
+  @media (width >= 30rem) {
+    .contact-row {
+      grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+      grid-template-areas: "label value action";
+      gap: var(--space-4);
+    }
   }
   @media (width >= 48rem) {
     .contact-row {
@@ -108,7 +130,7 @@ const description =
     font-size: var(--text-lg);
     font-weight: 600;
     letter-spacing: -0.01em;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     transition: color var(--dur-fast) var(--ease);
   }
   .contact-row__link::after {
