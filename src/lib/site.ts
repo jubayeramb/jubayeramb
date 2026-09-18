@@ -37,7 +37,13 @@ export const AUTHOR = {
   country: "BD",
   location: "Dhaka, Bangladesh",
   timezone: "UTC+6",
-  employer: { name: "WeCycle", url: "https://getwecycle.com/" },
+  employer: {
+    name: "WeCycle",
+    url: "https://getwecycle.com/",
+    // WeCycle is a Tanbel company; Tanbel's GitHub org is the "company" on
+    // the GitHub profile, so naming it here keeps the two consistent.
+    parent: { name: "Tanbel", sameAs: ["https://github.com/tanbelinc"] },
+  },
   alumniOf: {
     name: "Green University of Bangladesh",
     url: "https://green.edu.bd/",
@@ -45,7 +51,7 @@ export const AUTHOR = {
 } as const;
 
 export type Social = {
-  id: "github" | "linkedin" | "x";
+  id: "github" | "linkedin" | "x" | "bluesky";
   label: string;
   handle: string;
   href: string;
@@ -69,6 +75,12 @@ export const SOCIALS: readonly Social[] = [
     label: "X (Twitter)",
     handle: "@jubayeramb",
     href: "https://twitter.com/jubayeramb",
+  },
+  {
+    id: "bluesky",
+    label: "Bluesky",
+    handle: "@jubayeramb.bsky.social",
+    href: "https://bsky.app/profile/jubayeramb.bsky.social",
   },
 ];
 

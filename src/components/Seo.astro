@@ -150,6 +150,11 @@ const personLd = {
     "@type": "Organization",
     name: AUTHOR.employer.name,
     url: AUTHOR.employer.url,
+    parentOrganization: {
+      "@type": "Organization",
+      name: AUTHOR.employer.parent.name,
+      sameAs: AUTHOR.employer.parent.sameAs,
+    },
   },
   alumniOf: {
     "@type": "CollegeOrUniversity",
