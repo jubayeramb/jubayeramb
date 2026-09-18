@@ -24,6 +24,7 @@ export type ProjectMeta = {
     operatingSystem: string;
     price?: string;
     priceCurrency?: string;
+    installUrl?: string;
   };
 };
 

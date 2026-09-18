@@ -12,7 +12,7 @@ self-taught, currently Software Engineer at WeCycle.
 
 ## Current role
 
-**Software Engineer, WeCycle (Dec 2023 to Present).**
+**Software Engineer, WeCycle, a Tanbel company (Dec 2023 to Present).**
 
 - Driving a phased Node.js monolith to microservices migration: defining
   service boundaries, designing inter-service contracts, and extracting
@@ -88,7 +88,16 @@ features to non-technical clients.
 - **Syncroll** (2026). Chrome MV3 extension that scroll-syncs two
   tabs in Chrome 145's native Split View, across standard pages,
   container-scroll SPAs (ChatGPT, Slack), and canvas/WebGL apps
-  (Figma, Miro, Excalidraw). Live at syncroll.jubayeramb.com.
+  (Figma, Miro, Excalidraw). Published on the Chrome Web Store; landing
+  page at syncroll.jubayeramb.com.
+- **Byakoron** (2025, alpha). Bangla grammar and spelling tool with
+  phonetic spelling suggestions, powered by BNTK. Next.js. Live at
+  byakaron.vercel.app.
+- **Trackrel** (in progress). Website change detection: monitors pages
+  and notifies on change. Turborepo monorepo with a Next.js 16 app, a
+  BullMQ worker driving playwright-core against LightPanda, Drizzle +
+  Postgres, Gemini for CSS selector generation, and a Chrome MV3
+  extension.
 
 ## Hackathon recognition
 
@@ -131,3 +140,4 @@ nobody runs in anger. Teams that ship and learn fast.
 Open to freelance work. Email: jubayeramb@gmail.com.
 GitHub: https://github.com/jubayeramb.
 LinkedIn: https://www.linkedin.com/in/jubayeramb/.
+Bluesky: https://bsky.app/profile/jubayeramb.bsky.social.

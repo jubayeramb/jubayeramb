@@ -267,6 +267,7 @@ const projectLd =
             ...base,
             applicationCategory: projectMeta.softwareApp.applicationCategory,
             operatingSystem: projectMeta.softwareApp.operatingSystem,
+            ...(projectMeta.softwareApp.installUrl ? { installUrl: projectMeta.softwareApp.installUrl } : {}),
             offers: {
               "@type": "Offer",
               price: projectMeta.softwareApp.price ?? "0",

@@ -68,6 +68,8 @@ const projectsCollection = defineCollection({
           operatingSystem: z.string(),
           price: z.string().default("0"),
           priceCurrency: z.string().default("USD"),
+          /** Store listing, e.g. the Chrome Web Store page. */
+          installUrl: z.url().optional(),
         })
         .optional(),
     }),
