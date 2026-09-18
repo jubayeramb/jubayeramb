@@ -1,0 +1,363 @@
+/* Live voice surface. Loaded with src/lib/live-surface.ts on the first mic
+   click. */
+
+@layer components {
+  .live-surface {
+    /* The orb's second hue: teal against the cobalt accent. */
+    --live-assistant: light-dark(#1fa493, #9af5e6);
+    --live-tint-a: light-dark(#cfdcff, #16264f);
+    --live-tint-b: light-dark(#dcecff, #173a5e);
+    --live-tint-c: light-dark(#d9d2ff, #251d57);
+
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-live);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: light-dark(
+      color-mix(in oklab, var(--canvas) 62%, transparent),
+      color-mix(in oklab, var(--canvas) 76%, transparent)
+    );
+    -webkit-backdrop-filter: blur(36px) saturate(160%);
+    backdrop-filter: blur(36px) saturate(160%);
+    animation: live-surface-in 360ms var(--ease) both;
+  }
+  .live-surface[data-exit="true"] {
+    animation: live-surface-out 280ms var(--ease) forwards;
+    pointer-events: none;
+  }
+  @keyframes live-surface-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes live-surface-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .live-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-8);
+    animation: live-stage-in 480ms var(--ease) both;
+  }
+  .live-surface[data-exit="true"] .live-stage {
+    animation: live-stage-out 240ms var(--ease) forwards;
+  }
+  @keyframes live-stage-in {
+    from {
+      opacity: 0;
+      transform: scale(0.8) translateY(20px);
+    }
+  }
+  @keyframes live-stage-out {
+    to {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+  }
+
+  .live-orb {
+    --intensity: 0.2;
+    --orb-size: 320px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--orb-size);
+    height: var(--orb-size);
+  }
+
+  /* SVG perimeter that bulges per frequency bin. Its path can extend past
+     the SVG box at peak energy, hence overflow: visible. */
+  .live-orb-visualizer {
+    position: absolute;
+    inset: -25%;
+    z-index: 1;
+    width: 150%;
+    height: 150%;
+    overflow: visible;
+    pointer-events: none;
+    filter: blur(0.5px);
+  }
+  .live-orb-visualizer path {
+    opacity: 0.85;
+    transition: fill 220ms ease-out;
+  }
+
+  .live-orb-halo {
+    position: absolute;
+    inset: -20%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      color-mix(in oklab, var(--accent) calc(40% + var(--intensity) * 40%), transparent) 0%,
+      color-mix(in oklab, var(--accent) 22%, transparent) 35%,
+      transparent 70%
+    );
+    filter: blur(28px);
+    opacity: calc(0.55 + var(--intensity) * 0.45);
+    transform: scale(calc(0.95 + var(--intensity) * 0.25));
+    transition:
+      opacity 140ms ease-out,
+      transform 140ms ease-out;
+  }
+  .live-orb[data-speaker="assistant"] .live-orb-halo {
+    background: radial-gradient(
+      circle,
+      color-mix(in oklab, var(--accent) 35%, var(--live-assistant) 30%) 0%,
+      color-mix(in oklab, var(--accent) 22%, transparent) 35%,
+      transparent 70%
+    );
+  }
+
+  .live-orb-sphere {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow:
+      0 30px 80px -20px color-mix(in oklab, var(--accent) 45%, transparent),
+      inset 0 -30px 60px -10px rgb(0 0 0 / 0.3),
+      inset 0 8px 30px rgb(255 255 255 / 0.16);
+    transform: scale(calc(0.92 + var(--intensity) * 0.16));
+    transition: transform 120ms ease-out;
+    animation: live-orb-breathe 4.6s ease-in-out infinite;
+  }
+  @keyframes live-orb-breathe {
+    50% {
+      filter: brightness(1.08);
+    }
+  }
+
+  .live-orb-gradient {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      color-mix(in oklab, var(--accent) 72%, var(--live-tint-a)),
+      color-mix(in oklab, var(--accent) 55%, var(--live-tint-b)),
+      color-mix(in oklab, var(--accent) 50%, var(--live-tint-c)),
+      color-mix(in oklab, var(--accent) 65%, var(--live-tint-b)),
+      color-mix(in oklab, var(--accent) 72%, var(--live-tint-a))
+    );
+    filter: blur(14px);
+    animation: live-orb-spin 14s linear infinite;
+  }
+  @keyframes live-orb-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .live-orb-shimmer {
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 180deg,
+      transparent 0deg,
+      light-dark(
+        color-mix(in oklab, white 70%, var(--accent)),
+        color-mix(in oklab, white 30%, var(--accent))
+      ) 60deg,
+      transparent 140deg,
+      color-mix(in oklab, var(--accent) 60%, transparent) 220deg,
+      transparent 320deg
+    );
+    filter: blur(18px);
+    mix-blend-mode: screen;
+    opacity: calc(0.5 + var(--intensity) * 0.4);
+    animation: live-orb-spin 22s linear infinite reverse;
+  }
+
+  .live-orb-highlight {
+    position: absolute;
+    top: 8%;
+    left: 18%;
+    width: 40%;
+    height: 30%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgb(255 255 255 / 0.55) 0%,
+      rgb(255 255 255 / 0.14) 45%,
+      transparent 75%
+    );
+    filter: blur(8px);
+    pointer-events: none;
+  }
+
+  .live-orb[data-speaker="assistant"] .live-orb-gradient {
+    animation-duration: 6s;
+    filter: blur(10px) saturate(1.25);
+  }
+  .live-orb[data-speaker="assistant"] .live-orb-shimmer {
+    animation-duration: 10s;
+  }
+  .live-surface[data-state="requesting"] .live-orb-sphere {
+    animation-duration: 1.6s;
+  }
+  .live-surface[data-state="requesting"] .live-orb-gradient,
+  .live-surface[data-state="requesting"] .live-orb-shimmer {
+    filter: blur(20px) saturate(0.5);
+  }
+  .live-surface[data-state="error"] .live-orb-gradient {
+    background: conic-gradient(
+      from 0deg,
+      var(--danger),
+      color-mix(in oklab, var(--danger) 60%, var(--canvas)),
+      var(--danger)
+    );
+  }
+
+  .live-caption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: 24rem;
+    padding-inline: var(--space-6);
+    text-align: center;
+    pointer-events: none;
+  }
+  .live-caption-label {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .live-surface[data-state="error"] .live-caption-label {
+    color: var(--danger);
+  }
+  .live-caption-hint {
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+
+  .live-end {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.75rem 1.4rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in oklab, var(--danger) 50%, transparent);
+    background: color-mix(in oklab, var(--danger) 14%, var(--surface));
+    color: var(--danger);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    box-shadow: 0 8px 24px -10px color-mix(in oklab, var(--danger) 35%, transparent);
+    transition:
+      background-color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease),
+      translate var(--dur-fast) var(--ease);
+  }
+  .live-end:hover {
+    background: color-mix(in oklab, var(--danger) 24%, var(--surface));
+    border-color: var(--danger);
+    translate: 0 -1px;
+  }
+  .live-end:focus-visible {
+    outline-color: var(--danger);
+  }
+
+  .live-pill {
+    position: fixed;
+    top: max(env(safe-area-inset-top, 0px), var(--space-4));
+    left: 50%;
+    translate: -50% 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--radius-pill);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-float);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--ink-2);
+    pointer-events: none;
+  }
+  .live-pill[data-state="live"] {
+    border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  }
+  .live-pill[data-state="error"] {
+    border-color: color-mix(in oklab, var(--danger) 60%, transparent);
+    color: var(--danger);
+  }
+  .live-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: live-pill-pulse 1.4s ease-in-out infinite;
+  }
+  .live-pill[data-state="requesting"] .live-pill-dot {
+    background: var(--ink-3);
+  }
+  .live-pill[data-state="error"] .live-pill-dot {
+    background: currentColor;
+    animation: none;
+  }
+  .live-pill-status {
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  @keyframes live-pill-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 5px transparent;
+    }
+  }
+
+  @media (width < 48rem) {
+    .live-orb {
+      --orb-size: 260px;
+    }
+    .live-stage {
+      gap: var(--space-6);
+    }
+  }
+  @media (width < 30rem) {
+    .live-orb {
+      --orb-size: 220px;
+    }
+    .live-caption-label {
+      font-size: 1.25rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-surface,
+    .live-stage,
+    .live-orb-sphere,
+    .live-orb-gradient,
+    .live-orb-shimmer,
+    .live-orb-halo,
+    .live-pill-dot,
+    .live-end {
+      animation: none !important;
+      transition: none !important;
+    }
+    .live-orb-sphere,
+    .live-orb-halo {
+      transform: none;
+    }
+  }
+}

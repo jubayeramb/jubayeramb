@@ -1,9 +1,7 @@
-import { getCollection } from "astro:content";
+import { AUTHOR, NAV, ASK_NAV, SOCIALS } from "./site";
+import { getProjects, getSortedPosts } from "./posts";
 
-export type PaletteAction =
-  | "toggle-theme"
-  | "copy-email"
-  | "random-article";
+export type PaletteAction = "toggle-theme" | "copy-email" | "random-article";
 
 export type PaletteItem = {
   id: string;
@@ -16,31 +14,25 @@ export type PaletteItem = {
   keywords?: string;
 };
 
+/** Served as /palette.json and fetched the first time the palette opens. */
 export async function buildPaletteIndex(): Promise<PaletteItem[]> {
-  const isProd = import.meta.env.PROD;
+  const [posts, projects] = await Promise.all([getSortedPosts(), getProjects()]);
 
-  const posts = (await getCollection("posts")).sort(
-    (a, b) =>
-      new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
-  );
-
-  const projects = (await getCollection("projects"))
-    .filter((p) => (isProd ? !p.data.draft : true))
-    .sort((a, b) => b.data.order - a.data.order);
-
-  const items: PaletteItem[] = [
+  return [
     { id: "nav-home", group: "Navigate", label: "Home", href: "/" },
-    { id: "nav-projects", group: "Navigate", label: "Projects", href: "/projects" },
-    { id: "nav-writings", group: "Navigate", label: "Writings", href: "/writings" },
-    { id: "nav-ask", group: "Navigate", label: "Ask my CV", href: "/ask" },
-    { id: "nav-about", group: "Navigate", label: "About", href: "/about" },
-    { id: "nav-contact", group: "Navigate", label: "Contact", href: "/contact" },
+    ...[...NAV, ASK_NAV].map<PaletteItem>((item) => ({
+      id: `nav-${item.id}`,
+      group: "Navigate",
+      label: item.id === "ask" ? "Ask my CV" : item.label,
+      href: item.href,
+      keywords: item.hint,
+    })),
 
     ...projects.map<PaletteItem>((p) => ({
       id: `project-${p.id}`,
       group: "Projects",
       label: p.data.title,
-      href: `/projects/${p.id}`,
+      href: `/projects/${p.id}/`,
       hint: p.data.period,
       keywords: [p.data.summary, ...p.data.technologies].join(" "),
     })),
@@ -49,58 +41,20 @@ export async function buildPaletteIndex(): Promise<PaletteItem[]> {
       id: `post-${p.id}`,
       group: "Posts",
       label: p.data.title,
-      href: `/writings/${p.id}`,
-      keywords: (p.data.tags ?? []).join(" "),
+      href: `/writings/${p.id}/`,
+      keywords: [p.data.description, ...p.data.tags].join(" "),
     })),
 
-    {
-      id: "act-theme",
+    { id: "act-theme", group: "Actions", label: "Toggle theme", action: "toggle-theme", keywords: "dark light mode" },
+    { id: "act-email", group: "Actions", label: "Copy email", action: "copy-email", hint: AUTHOR.email },
+    { id: "act-rss", group: "Actions", label: "Open RSS feed", href: "/rss.xml" },
+    { id: "act-random", group: "Actions", label: "Random article", action: "random-article" },
+    ...SOCIALS.map<PaletteItem>((s) => ({
+      id: `act-${s.id}`,
       group: "Actions",
-      label: "Toggle theme",
-      action: "toggle-theme",
-      keywords: "dark light mode",
-    },
-    {
-      id: "act-email",
-      group: "Actions",
-      label: "Copy email",
-      action: "copy-email",
-      hint: "jubayeramb@gmail.com",
-    },
-    {
-      id: "act-rss",
-      group: "Actions",
-      label: "Open RSS feed",
-      href: "/rss.xml",
-    },
-    {
-      id: "act-random",
-      group: "Actions",
-      label: "Random article",
-      action: "random-article",
-    },
-    {
-      id: "act-github",
-      group: "Actions",
-      label: "Open GitHub",
-      href: "https://github.com/jubayeramb",
+      label: `Open ${s.label}`,
+      href: s.href,
       external: true,
-    },
-    {
-      id: "act-x",
-      group: "Actions",
-      label: "Open X (Twitter)",
-      href: "https://twitter.com/jubayeramb",
-      external: true,
-    },
-    {
-      id: "act-linkedin",
-      group: "Actions",
-      label: "Open LinkedIn",
-      href: "https://www.linkedin.com/in/jubayeramb/",
-      external: true,
-    },
+    })),
   ];
-
-  return items;
 }
