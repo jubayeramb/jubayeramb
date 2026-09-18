@@ -77,8 +77,8 @@ const { mode = "page" } = Astro.props;
     </form>
 
     <p class="chat-disclaimer">
-      AI-generated. Answers may be wrong — DM me to confirm. Stored locally
-      only.
+      AI-generated. Answers may be wrong, so DM me to confirm. Stored
+      locally only.
       <button
         type="button"
         id="chat-clear"
@@ -188,12 +188,12 @@ const { mode = "page" } = Astro.props;
         }
       } else {
         const next = cleanText(m.content);
-        // textContent diff — only writes when the value really changed,
+        // textContent diff - only writes when the value really changed,
         // avoiding spurious layout work on identical-value updates.
         if (body.textContent !== next) body.textContent = next;
       }
 
-      // Voice tag — append once, never re-create.
+      // Voice tag - append once, never re-create.
       if (m.via === "voice") {
         if (!li.querySelector(".bubble-via")) {
           const tag = document.createElement("div");
@@ -205,7 +205,7 @@ const { mode = "page" } = Astro.props;
         li.querySelector(".bubble-via")?.remove();
       }
 
-      // Sources — render once when they first arrive, replace only if
+      // Sources - render once when they first arrive, replace only if
       // the citation URLs change (rare; usually they appear in a single
       // event then never mutate).
       const newCites = m.citations ?? [];
@@ -247,7 +247,7 @@ const { mode = "page" } = Astro.props;
         if (existing) {
           updateBubble(existing.li, m, existing.msg);
           existing.msg = m;
-          // Position correction (rare — only on reorder or clear+rebuild).
+          // Position correction (rare - only on reorder or clear+rebuild).
           const at = stream.children[i];
           if (at !== existing.li) stream.insertBefore(existing.li, at ?? null);
         } else {
@@ -339,9 +339,9 @@ const { mode = "page" } = Astro.props;
     height: 100%;
   }
 
-  /* Scrollable region — bubbles anchor to the bottom (via margin-top: auto
+  /* Scrollable region - bubbles anchor to the bottom (via margin-top: auto
      on the inner list) so latest stays in view, but the user can scroll up
-     to read older messages. Scrollbar is hidden — chat-app convention. */
+     to read older messages. Scrollbar is hidden - chat-app convention. */
   .chat-scroll {
     flex: 1;
     min-height: 0;
@@ -393,7 +393,7 @@ const { mode = "page" } = Astro.props;
     gap: 12px;
   }
 
-  /* The actual bubbles — used here AND in HomeChatInput preview. */
+  /* The actual bubbles - used here AND in HomeChatInput preview. */
   .bubble {
     display: flex;
     flex-direction: column;
@@ -404,7 +404,7 @@ const { mode = "page" } = Astro.props;
     line-height: 1.5;
     word-wrap: break-word;
     overflow-wrap: anywhere;
-    /* Fade-in only — no translate. We mount each bubble exactly once
+    /* Fade-in only - no translate. We mount each bubble exactly once
        now (see incremental render in ChatUi.astro <script>), so this
        animation runs on entrance and never re-fires while text streams
        in. The bubble's own block layout handles smooth height growth. */
@@ -417,20 +417,16 @@ const { mode = "page" } = Astro.props;
   .bubble--user {
     align-self: flex-end;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-size: 14.5px;
     border-bottom-right-radius: 6px;
   }
-  [data-theme="dark"] .bubble--user {
-    color: #0c1015;
-  }
   .bubble--assistant {
     align-self: flex-start;
-    background: color-mix(in oklab, var(--bg), var(--fg) 2%);
-    color: var(--fg);
-    font-family: var(--font-serif);
+    background: var(--surface);
+    color: var(--ink);
     font-size: 15.5px;
-    border: 1px solid color-mix(in oklab, var(--fg) 8%, transparent);
+    border: 1px solid var(--hairline);
     border-bottom-left-radius: 6px;
   }
 
@@ -443,7 +439,7 @@ const { mode = "page" } = Astro.props;
     content: "▍";
     margin-left: 1px;
     font-weight: 100;
-    color: var(--fg-3);
+    color: var(--ink-3);
     animation: bubble-blink 1s infinite;
   }
   @keyframes bubble-blink {
@@ -452,19 +448,19 @@ const { mode = "page" } = Astro.props;
     }
   }
 
-  /* Voice metadata tag — small label so visitors can tell which turns
+  /* Voice metadata tag - small label so visitors can tell which turns
      came from the live mic vs. typed text. */
   .bubble-via {
     margin-top: 4px;
     font-family: var(--font-mono);
     font-size: 10.5px;
-    color: var(--fg-3);
+    color: var(--ink-3);
     opacity: 0.7;
     letter-spacing: 0.04em;
   }
   .bubble--user .bubble-via {
     align-self: flex-end;
-    color: color-mix(in oklab, #fff 72%, transparent);
+    color: color-mix(in oklab, var(--on-accent) 75%, transparent);
     opacity: 0.85;
   }
 
@@ -501,7 +497,7 @@ const { mode = "page" } = Astro.props;
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: color-mix(in oklab, var(--fg-3) 80%, transparent);
+    background: color-mix(in oklab, var(--ink-3) 80%, transparent);
     animation: bubble-typing 1.3s infinite ease-in-out both;
   }
   .bubble-typing > span:nth-child(2) {
@@ -524,21 +520,18 @@ const { mode = "page" } = Astro.props;
   }
 
   .bubble-error {
-    color: #b8612d;
+    color: var(--danger);
     font-family: var(--font-mono);
     font-size: 13px;
   }
-  [data-theme="dark"] .bubble-error {
-    color: #ffb098;
-  }
 
-  /* Inline source footnote — small, low-opacity, separator dots. */
+  /* Inline source footnote - small, low-opacity, separator dots. */
   .bubble-sources {
     margin-top: 4px;
     font-family: var(--font-mono);
     font-size: 10.5px;
     line-height: 1.5;
-    color: var(--fg-3);
+    color: var(--ink-3);
     opacity: 0.7;
     display: flex;
     flex-wrap: wrap;
@@ -551,8 +544,8 @@ const { mode = "page" } = Astro.props;
     margin-right: 4px;
   }
   .bubble-sources a {
-    color: var(--fg-3);
-    border-bottom: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
+    color: var(--ink-3);
+    border-bottom: 1px solid color-mix(in oklab, var(--ink) 14%, transparent);
     transition:
       color 0.2s,
       border-color 0.2s;
@@ -562,7 +555,7 @@ const { mode = "page" } = Astro.props;
     border-bottom-color: var(--accent);
   }
   .bubble-sources-sep {
-    color: var(--fg-3);
+    color: var(--ink-3);
     opacity: 0.5;
   }
 
@@ -571,9 +564,9 @@ const { mode = "page" } = Astro.props;
     align-self: flex-start;
     margin-bottom: 12px;
     padding: 14px 16px;
-    border: 1px dashed var(--line-2);
-    border-radius: 12px;
-    background: color-mix(in oklab, var(--bg), var(--fg) 1%);
+    border: 1px dashed var(--hairline-strong);
+    border-radius: var(--radius-card);
+    background: var(--surface);
     max-width: min(86%, 540px);
   }
   .chat-seed[hidden] {
@@ -584,7 +577,7 @@ const { mode = "page" } = Astro.props;
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--fg-3);
+    color: var(--ink-3);
     margin-bottom: 6px;
   }
   .chat-seed-list {
@@ -597,12 +590,12 @@ const { mode = "page" } = Astro.props;
   }
   .chat-seed-list button {
     text-align: left;
-    color: var(--fg-2);
-    font-family: var(--font-serif);
+    color: var(--ink-2);
+    font-family: var(--font-body);
     font-size: 14.5px;
     line-height: 1.45;
     padding: 6px 0;
-    border-bottom: 1px dashed var(--line);
+    border-bottom: 1px dashed var(--hairline);
     transition:
       color 0.2s,
       border-color 0.2s;
@@ -641,11 +634,11 @@ const { mode = "page" } = Astro.props;
     transition: border-color 0.2s;
   }
   section.chat[data-mode="page"] .chat-form {
-    background: color-mix(in oklab, var(--bg), var(--fg) 1%);
-    border-color: var(--line);
+    background: var(--surface);
+    border-color: var(--hairline-strong);
   }
   .chat-form:focus-within {
-    border-color: color-mix(in oklab, var(--accent) 50%, var(--line));
+    border-color: color-mix(in oklab, var(--accent) 50%, var(--hairline));
   }
   .chat-input {
     flex: 1;
@@ -653,20 +646,20 @@ const { mode = "page" } = Astro.props;
     border: 0;
     outline: none;
     background: transparent;
-    color: var(--fg);
+    color: var(--ink);
     font: inherit;
     font-size: 14.5px;
     padding: 13px 16px;
   }
   .chat-input::placeholder {
-    color: var(--fg-3);
+    color: var(--ink-3);
   }
   .chat-input:disabled {
-    color: var(--fg-3);
+    color: var(--ink-3);
   }
   .chat-send {
     padding: 0 18px;
-    color: var(--fg-3);
+    color: var(--ink-3);
     transition:
       color 0.2s,
       background 0.2s;
@@ -674,7 +667,7 @@ const { mode = "page" } = Astro.props;
   }
   .chat-send:hover:not(:disabled) {
     color: var(--accent);
-    background: color-mix(in oklab, var(--fg) 6%, transparent);
+    background: color-mix(in oklab, var(--ink) 6%, transparent);
   }
   .chat-send:disabled {
     opacity: 0.4;
@@ -684,21 +677,20 @@ const { mode = "page" } = Astro.props;
   .chat-disclaimer {
     font-family: var(--font-mono);
     font-size: 10.5px;
-    color: var(--fg-3);
+    color: var(--ink-3);
     line-height: 1.55;
     text-align: center;
     margin: 0;
     padding: 0 8px;
-    opacity: 0.85;
   }
   .chat-clear {
     display: inline;
     font: inherit;
     background: none;
     border: 0;
-    border-bottom: 1px solid var(--line-2);
+    border-bottom: 1px solid var(--hairline-strong);
     border-radius: 0;
-    color: var(--fg-2);
+    color: var(--ink-2);
     padding: 0 0 1px;
     margin-left: 6px;
     cursor: pointer;

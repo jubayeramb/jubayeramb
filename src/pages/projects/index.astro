@@ -1,17 +1,14 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
-import { getCollection } from "astro:content";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import WorkRow from "@/components/ui/WorkRow.astro";
+import { getProjects } from "@/lib/posts";
 
-const isProd = import.meta.env.PROD;
-
-const projects = (await getCollection("projects"))
-  .filter((p) => (isProd ? !p.data.draft : true))
-  .sort((a, b) => b.data.order - a.data.order);
+const projects = await getProjects();
 
 const title = "Projects";
 const description =
-  "Selected case studies: what shipped, what worked, and what I'd do differently. WeCycle, Finding Healers, and HomePay.";
+  "Selected work by Jubayer Al Mamun: production systems owned end to end, with the problem, the architecture, what shipped, the metrics, and what I'd do differently.";
 
 const collectionItems = projects.map((p) => ({
   title: p.data.title,
@@ -20,49 +17,17 @@ const collectionItems = projects.map((p) => ({
 }));
 ---
 
-<Layout
-  {title}
-  {description}
-  activeRoute="projects"
-  collectionItems={collectionItems}
-  collectionKind="CreativeWork"
->
-  <div class="page">
-    <FadeUp>
-      <h1 class="h1">Projects</h1>
-    </FadeUp>
-    <FadeUp delay={60}>
-      <p class="lead">
-        Selected work: production systems I've owned end to end. Each case
-        study covers the problem, the architecture, what shipped, the metrics,
-        and what I'd do differently.
-      </p>
-    </FadeUp>
+<Layout {title} {description} activeRoute="projects" {collectionItems} collectionKind="CreativeWork">
+  <PageHeader title="Projects" eyebrow="Selected work">
+    <p>
+      Selected work: production systems I've owned end to end. Each case study covers the problem,
+      the architecture, what shipped, the metrics, and what I'd do differently.
+    </p>
+  </PageHeader>
 
-    <section class="section">
-      <div class="list">
-        {
-          projects.map((project, i) => (
-            <FadeUp
-              delay={i * 40}
-              as="a"
-              class="list-item"
-              href={`/projects/${project.id}`}
-            >
-              <div>
-                <div
-                  class="list-title"
-                  transition:name={`project-${project.id}`}
-                >
-                  {project.data.title}
-                </div>
-                <div class="list-desc">{project.data.summary}</div>
-              </div>
-              <div class="list-meta">{project.data.period}</div>
-            </FadeUp>
-          ))
-        }
-      </div>
-    </section>
-  </div>
+  <section class="band band--flush-top" aria-label="All projects">
+    <div class="container">
+      {projects.map((project) => <WorkRow project={project} headingLevel={2} thumbnail />)}
+    </div>
+  </section>
 </Layout>

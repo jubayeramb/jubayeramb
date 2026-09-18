@@ -1,0 +1,135 @@
+/* ==========================================================================
+   Design tokens
+
+   Every color is written once with light-dark(): the first value is the
+   light theme, the second the dark theme. Which one applies follows
+   `color-scheme` on <html>:
+
+     - no data-theme (no JS yet, or JS off): the OS preference
+     - data-theme="light" | "dark": the visitor's toggle, set by the inline
+       script in BaseLayout before first paint
+
+   Text pairs are checked against canvas, band and surface in both themes
+   and all clear WCAG AA (4.5:1). The accent is reserved for interactive
+   things: links, buttons, focus rings, the active nav item, and the one
+   signature in the hero.
+
+   Breakpoints (media queries can't read custom properties, so these are
+   the canonical values to write as `(width >= ...)`):
+     sm 30rem (480px)   md 48rem (768px)   lg 64rem (1024px)   xl 75rem (1200px)
+   ========================================================================== */
+
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* Surfaces: cool paper in light, deep ink-blue in dark. */
+    --canvas: light-dark(#f6f8fb, #0c1015);
+    --band: light-dark(#edf1f6, #11161d);
+    --surface: light-dark(#ffffff, #161c24);
+
+    /* Ink. --ink-3 is the floor for any text, including metadata. */
+    --ink: light-dark(#0f1720, #e8edf3);
+    --ink-2: light-dark(#465262, #a3adbb);
+    --ink-3: light-dark(#5b6778, #8793a3);
+
+    --hairline: light-dark(#dde3ea, #1e2630);
+    --hairline-strong: light-dark(#c5cdd8, #2c3642);
+    /* Borders on form controls need 3:1 against their background. */
+    --control: light-dark(#7b8696, #657083);
+
+    /* Cobalt, carried over from the previous site. Interactive only. */
+    --accent: light-dark(#2c5fed, #7aa6ff);
+    --accent-hover: light-dark(#1f4cc4, #9bbcff);
+    --on-accent: light-dark(#ffffff, #0c1015);
+    --accent-soft: color-mix(in oklab, var(--accent) 12%, var(--canvas));
+
+    /* Hero portrait block. Dark mode gets its own treatment (a soft glow),
+       not an inverted copy of the light one. */
+    --portrait-block: light-dark(#dfe6f0, #18202b);
+    --portrait-glow: light-dark(
+      rgb(255 255 255 / 0.85),
+      color-mix(in oklab, #7aa6ff 22%, transparent)
+    );
+
+    --success: light-dark(#1f6b3a, #7fd19b);
+    --danger: light-dark(#a3271b, #ff9a8f);
+
+    --code-surface: light-dark(#eef2f7, #0a0d12);
+    --code-ink: var(--ink);
+    --selection: light-dark(#cfdcff, #24407a);
+
+    /* Shadows are ink-tinted and only used on hover or floating UI. */
+    --shadow-color: light-dark(rgb(15 23 42 / 0.3), rgb(0 0 0 / 0.6));
+    --shadow-hover: 0 12px 28px -18px var(--shadow-color);
+    --shadow-float: 0 16px 48px -12px var(--shadow-color);
+
+    --glass-bg: color-mix(in oklab, var(--canvas) 78%, transparent);
+    --glass-border: color-mix(in oklab, var(--ink) 12%, transparent);
+
+    /* Type. --font-display / --font-body / --font-mono are defined by
+       Astro's Fonts API (astro.config.ts) together with their fallbacks. */
+    --text-2xs: 0.6875rem;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-md: 1.125rem;
+    --text-lg: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
+    --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+    --text-2xl: clamp(1.625rem, 1.4rem + 1vw, 2.25rem);
+    --text-3xl: clamp(2.25rem, 1.75rem + 2.2vw, 3.5rem);
+    --text-display: clamp(2.5rem, 1.6rem + 3.7vw, 4.25rem);
+
+    --leading-tight: 1.04;
+    --leading-snug: 1.22;
+    --leading-body: 1.65;
+    --leading-prose: 1.75;
+
+    --tracking-display: -0.03em;
+    --tracking-heading: -0.018em;
+    --tracking-eyebrow: 0.09em;
+
+    /* Space: 4px base. */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+    --space-20: 5rem;
+    --space-24: 6rem;
+    --band-pad: clamp(3.5rem, 2.25rem + 5vw, 6.5rem);
+
+    --radius-control: 6px;
+    --radius-card: 12px;
+    --radius-pill: 999px;
+
+    /* Containers. */
+    --w-wide: 70rem;
+    --w-reading: 45rem;
+    --w-prose: 42.5rem;
+    --w-form: 47.5rem;
+    --gutter: clamp(1rem, 0.4rem + 3vw, 2.5rem);
+
+    --z-nav: 50;
+    --z-float: 60;
+    --z-sheet: 80;
+    --z-dialog: 90;
+    --z-live: 100;
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur-fast: 150ms;
+    --dur: 220ms;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+}

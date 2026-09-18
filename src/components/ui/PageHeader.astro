@@ -1,0 +1,85 @@
+---
+/**
+ * Top band for inner pages: optional back link, eyebrow, the page's one
+ * <h1>, and a lead paragraph passed through the default slot.
+ */
+type Props = {
+  title: string;
+  eyebrow?: string;
+  back?: { href: string; label: string };
+  /** Adds a view-transition name to the h1 (post/project morphs). */
+  transitionName?: string;
+  size?: "wide" | "prose";
+};
+
+const { title, eyebrow, back, transitionName, size = "wide" } = Astro.props;
+---
+
+<section class="band page-header">
+  <div class:list={["container", size === "prose" && "container--prose"]}>
+    {
+      back && (
+        <a class="page-header__back" href={back.href}>
+          <span aria-hidden="true">←</span> {back.label}
+        </a>
+      )
+    }
+    {eyebrow && <p class="eyebrow page-header__eyebrow">{eyebrow}</p>}
+    <h1 class="page-title" transition:name={transitionName}>{title}</h1>
+    {
+      Astro.slots.has("default") && (
+        <div class="page-header__lead lead">
+          <slot />
+        </div>
+      )
+    }
+    <slot name="after" />
+  </div>
+</section>
+
+<style>
+  .page-header {
+    padding-top: clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+    padding-bottom: clamp(2.5rem, 1.75rem + 3vw, 4rem);
+  }
+  .page-header__back {
+    display: inline-flex;
+    gap: 0.4em;
+    margin-bottom: var(--space-8);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .page-header__back span {
+    transition: translate var(--dur) var(--ease);
+  }
+  .page-header__back:hover {
+    color: var(--accent);
+  }
+  .page-header__back:hover span {
+    translate: -3px 0;
+  }
+  .page-header__eyebrow {
+    margin-bottom: var(--space-4);
+  }
+  .page-title {
+    max-width: 22ch;
+  }
+  .page-header__lead {
+    margin-top: var(--space-5);
+  }
+  .page-header__lead :global(p + p) {
+    margin-top: var(--space-3);
+  }
+  .page-header__lead :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--hairline-strong);
+    text-underline-offset: 0.2em;
+    transition: color var(--dur-fast) var(--ease), text-decoration-color var(--dur-fast) var(--ease);
+  }
+  .page-header__lead :global(a:hover) {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+</style>

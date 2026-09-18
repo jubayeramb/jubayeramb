@@ -124,7 +124,7 @@ import ChatUi from "./ChatUi.astro";
     border: 0;
     padding: 0;
     background: transparent;
-    color: var(--fg);
+    color: var(--ink);
     margin: 0;
     width: 100vw;
     height: 100dvh;
@@ -133,18 +133,18 @@ import ChatUi from "./ChatUi.astro";
     overflow: hidden;
   }
   dialog.chat-overlay::backdrop {
-    background: color-mix(in oklab, var(--bg) 12%, transparent);
-    backdrop-filter: blur(5px) saturate(170%);
-    -webkit-backdrop-filter: blur(5px) saturate(170%);
-  }
-  [data-theme="dark"] dialog.chat-overlay::backdrop {
-    background: color-mix(in oklab, var(--bg) 38%, transparent);
+    background: light-dark(
+      color-mix(in oklab, var(--canvas) 55%, transparent),
+      color-mix(in oklab, var(--canvas) 70%, transparent)
+    );
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
   }
   dialog.chat-overlay[open] {
     display: flex;
     flex-direction: column;
     inset: 0;
-    z-index: 60;
+    z-index: var(--z-dialog);
     animation: chat-overlay-fade-in 220ms var(--ease) both;
   }
   @keyframes chat-overlay-fade-in {
@@ -156,7 +156,7 @@ import ChatUi from "./ChatUi.astro";
     }
   }
 
-  /* Floating top buttons — outside the chat frame. */
+  /* Floating top buttons - outside the chat frame. */
   .chat-overlay-btn {
     position: fixed;
     top: max(env(safe-area-inset-top, 0), 14px);
@@ -166,10 +166,10 @@ import ChatUi from "./ChatUi.astro";
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--fg-2);
+    color: var(--ink-2);
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--shadow-float);
     backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
     transition:
@@ -185,14 +185,14 @@ import ChatUi from "./ChatUi.astro";
     right: max(env(safe-area-inset-right, 0), 16px);
   }
   .chat-overlay-btn:hover {
-    color: var(--fg);
+    color: var(--ink);
     transform: scale(1.04);
   }
   .chat-overlay-btn:active {
     transform: scale(0.96);
   }
 
-  /* The chat frame fills the full screen — bubbles flow under the floating
+  /* The chat frame fills the full screen - bubbles flow under the floating
      close/max buttons and dissolve into a top fade (defined on the chat's
      overlay-mode .chat-scroll). No reserved top space. */
   .chat-overlay-frame {

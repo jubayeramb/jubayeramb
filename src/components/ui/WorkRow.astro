@@ -1,0 +1,193 @@
+---
+/**
+ * One project in a list: period, title with its summary and receipts
+ * (the project's own metrics), and an arrow. Same stretched-link pattern
+ * as PostRow.
+ */
+import { Picture } from "astro:assets";
+import type { Project } from "@/lib/posts";
+
+type Props = {
+  project: Project;
+  headingLevel?: 2 | 3;
+  /** Show the cover thumbnail on wider screens. */
+  thumbnail?: boolean;
+};
+
+const { project, headingLevel = 3, thumbnail = false } = Astro.props;
+const Heading = `h${headingLevel}` as "h2" | "h3";
+const { title, summary, period, metrics, cover, company, role } = project.data;
+---
+
+<article class:list={["work-row", thumbnail && cover && "work-row--thumb"]}>
+  <p class="work-row__period meta">{period}</p>
+  <div class="work-row__body">
+    <Heading class="work-row__title">
+      <a
+        href={`/projects/${project.id}/`}
+        class="work-row__link"
+        transition:name={`project-${project.id}`}>{title}</a
+      >
+    </Heading>
+    <p class="work-row__role meta">{role} · {company}</p>
+    <p class="work-row__summary">{summary}</p>
+    {
+      metrics.length > 0 && (
+        <dl class="work-row__metrics">
+          {metrics.map((m) => (
+            <div>
+              <dt>{m.label}</dt>
+              <dd>{m.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+  </div>
+  {
+    thumbnail && cover && (
+      <Picture
+        src={cover.src}
+        alt=""
+        widths={[240, 480]}
+        sizes="15rem"
+        formats={["avif", "webp"]}
+        class="work-row__thumb"
+        loading="lazy"
+        decoding="async"
+      />
+    )
+  }
+  <span class="work-row__arrow" aria-hidden="true">→</span>
+</article>
+
+<style>
+  .work-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "period period"
+      "body arrow";
+    gap: var(--space-2) var(--space-6);
+    padding-block: var(--space-8);
+    border-top: 1px solid var(--hairline);
+  }
+  .work-row:last-child {
+    border-bottom: 1px solid var(--hairline);
+  }
+  @media (width >= 48rem) {
+    .work-row {
+      grid-template-columns: 11rem minmax(0, 1fr) auto;
+      grid-template-areas: "period body arrow";
+      align-items: start;
+    }
+    .work-row--thumb {
+      grid-template-columns: 11rem minmax(0, 1fr) 15rem auto;
+      grid-template-areas: "period body thumb arrow";
+    }
+  }
+  .work-row__period {
+    grid-area: period;
+    padding-top: 0.45em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .work-row__body {
+    grid-area: body;
+    min-width: 0;
+  }
+  .work-row__title {
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+  .work-row__link {
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .work-row__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  .work-row__role {
+    margin-top: var(--space-2);
+  }
+  .work-row__summary {
+    margin-top: var(--space-3);
+    color: var(--ink-2);
+    max-width: 58ch;
+  }
+  .work-row__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+  .work-row__metrics div {
+    display: inline-flex;
+    gap: 0.45em;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    line-height: 1.3;
+  }
+  .work-row__metrics dt {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+  .work-row__metrics dd {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .work-row__thumb {
+    display: none;
+  }
+  @media (width >= 48rem) {
+    .work-row__thumb {
+      display: block;
+      grid-area: thumb;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1200 / 630;
+      object-fit: cover;
+      border-radius: var(--radius-control);
+      border: 1px solid var(--hairline);
+      transition:
+        translate var(--dur) var(--ease),
+        box-shadow var(--dur) var(--ease);
+    }
+    .work-row:hover .work-row__thumb {
+      translate: 0 -3px;
+      box-shadow: var(--shadow-hover);
+    }
+  }
+  .work-row__arrow {
+    grid-area: arrow;
+    align-self: center;
+    color: var(--ink-3);
+    font-size: var(--text-lg);
+    transition:
+      color var(--dur-fast) var(--ease),
+      translate var(--dur) var(--ease);
+  }
+  .work-row:hover .work-row__link {
+    color: var(--accent);
+  }
+  .work-row:hover .work-row__arrow {
+    color: var(--accent);
+    translate: 4px 0;
+  }
+  .work-row:has(.work-row__link:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .work-row__link:focus-visible {
+    outline: none;
+  }
+</style>

@@ -1,12 +1,10 @@
 ---
-import { getCollection, render } from "astro:content";
+import { render } from "astro:content";
 import ProjectLayout from "@/layouts/ProjectLayout.astro";
+import { getProjects } from "@/lib/posts";
 
 export async function getStaticPaths() {
-  const isProd = import.meta.env.PROD;
-  const entries = (await getCollection("projects")).filter((entry) =>
-    isProd ? !entry.data.draft : true
-  );
+  const entries = await getProjects();
   return entries.map((entry) => ({
     params: { slug: entry.id },
     props: { entry },
@@ -14,9 +12,9 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 ---
 
-<ProjectLayout project={entry}>
+<ProjectLayout project={entry} {headings}>
   <Content />
 </ProjectLayout>

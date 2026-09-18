@@ -1,33 +1,14 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import { AUTHOR, socialHref } from "@/lib/site";
 
 const contacts = [
-  {
-    label: "X (Twitter)",
-    val: "DM @jubayeramb, fastest",
-    href: "https://twitter.com/jubayeramb",
-  },
-  {
-    label: "LinkedIn",
-    val: "/in/jubayeramb",
-    href: "https://www.linkedin.com/in/jubayeramb/",
-  },
-  {
-    label: "Email",
-    val: "jubayeramb@gmail.com",
-    href: "mailto:jubayeramb@gmail.com",
-  },
-  {
-    label: "Ask my CV",
-    val: "Chat with the site",
-    href: "/ask",
-  },
-  {
-    label: "GitHub",
-    val: "@jubayeramb",
-    href: "https://github.com/jubayeramb",
-  },
+  { label: "X (Twitter)", val: "DM @jubayeramb, fastest", href: socialHref("x") },
+  { label: "LinkedIn", val: "/in/jubayeramb", href: socialHref("linkedin") },
+  { label: "Email", val: AUTHOR.email, href: `mailto:${AUTHOR.email}`, copy: AUTHOR.email },
+  { label: "Ask my CV", val: "Chat with the site", href: "/ask/" },
+  { label: "GitHub", val: "@jubayeramb", href: socialHref("github") },
   { label: "RSS", val: "/rss.xml", href: "/rss.xml" },
 ];
 
@@ -37,37 +18,139 @@ const description =
 ---
 
 <Layout {title} {description} activeRoute="contact">
-  <div class="page">
-    <FadeUp>
-      <h1 class="h1">Get in touch</h1>
-    </FadeUp>
-    <FadeUp delay={60}>
-      <p class="lead">
-        Fastest way to reach me is a <strong>DM on X or LinkedIn</strong>. I
-        reply almost instantly. You can also email me or ask my CV through the
-        chat on this site.
-      </p>
-    </FadeUp>
+  <PageHeader title="Get in touch" eyebrow="Contact">
+    <p>
+      Fastest way to reach me is a <strong>DM on X or LinkedIn</strong>. I reply almost instantly. You
+      can also email me or ask my CV through the chat on this site.
+    </p>
+  </PageHeader>
 
-    <section class="section">
-      <div class="contact-list">
+  <section class="band band--flush-top" aria-label="Ways to reach me">
+    <div class="container container--form">
+      <ul class="contact-list">
         {
-          contacts.map((c, i) => (
-            <FadeUp
-              delay={i * 40}
-              as="a"
-              class="contact-row"
-              href={c.href}
-              target={c.href.startsWith("http") ? "_blank" : undefined}
-              rel={c.href.startsWith("http") ? "noopener" : undefined}
-            >
-              <div class="contact-label">{c.label}</div>
-              <div class="contact-val">{c.val}</div>
-              <div class="contact-arrow">↗</div>
-            </FadeUp>
-          ))
+          contacts.map((c) => {
+            const external = c.href.startsWith("http");
+            return (
+              <li class="contact-row">
+                <span class="contact-row__label meta">{c.label}</span>
+                <a
+                  class="contact-row__link"
+                  href={c.href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noopener me" : undefined}
+                >
+                  {c.val}
+                </a>
+                {c.copy ? (
+                  <button type="button" class="contact-row__copy" data-copy={c.copy} aria-label={`Copy ${c.label.toLowerCase()} address`}>
+                    Copy
+                  </button>
+                ) : (
+                  <span class="contact-row__arrow" aria-hidden="true">
+                    {external ? "↗" : "→"}
+                  </span>
+                )}
+              </li>
+            );
+          })
         }
-      </div>
-    </section>
-  </div>
+      </ul>
+    </div>
+  </section>
 </Layout>
+
+<script>
+  const wireCopy = () => {
+    document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((btn) => {
+      if ((btn as any).__wired) return;
+      (btn as any).__wired = true;
+      btn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy ?? "");
+          btn.textContent = "Copied";
+        } catch {
+          btn.textContent = "Select to copy";
+        }
+        setTimeout(() => (btn.textContent = "Copy"), 1600);
+      });
+    });
+  };
+  wireCopy();
+  document.addEventListener("astro:page-load", wireCopy);
+</script>
+
+<style>
+  .contact-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--hairline);
+  }
+  .contact-row:last-child {
+    border-bottom: 1px solid var(--hairline);
+  }
+  @media (width >= 48rem) {
+    .contact-row {
+      grid-template-columns: 9rem minmax(0, 1fr) auto;
+    }
+  }
+  .contact-row__label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .contact-row__link {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .contact-row__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .contact-row:hover .contact-row__link {
+    color: var(--accent);
+  }
+  .contact-row__arrow {
+    color: var(--ink-3);
+    transition:
+      color var(--dur-fast) var(--ease),
+      translate var(--dur) var(--ease);
+  }
+  .contact-row:hover .contact-row__arrow {
+    color: var(--accent);
+    translate: 2px -2px;
+  }
+  .contact-row__copy {
+    position: relative;
+    z-index: 1;
+    padding: 0.3rem 0.75rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--hairline-strong);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--ink-2);
+    transition:
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  .contact-row__copy:hover {
+    color: var(--accent);
+    border-color: currentColor;
+  }
+  .contact-row:has(.contact-row__link:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .contact-row__link:focus-visible {
+    outline: none;
+  }
+</style>

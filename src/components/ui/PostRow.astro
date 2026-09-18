@@ -1,0 +1,128 @@
+---
+/**
+ * One post in a list. Only the title is the link (its accessible name is
+ * just the title); a stretched ::after makes the whole row clickable.
+ * Metadata is exactly two fields: date and reading time.
+ */
+import type { Post } from "@/lib/posts";
+import { getReadingStats } from "@/lib/posts";
+import { getFullDate, isoDay } from "@/utils";
+
+type Props = {
+  post: Post;
+  /** Show the description under the title. */
+  description?: boolean;
+  headingLevel?: 2 | 3;
+  /** Morph the title into the post page's h1. Off where a post can appear twice. */
+  transition?: boolean;
+};
+
+const { post, description = true, headingLevel = 3, transition = true } = Astro.props;
+const Heading = `h${headingLevel}` as "h2" | "h3";
+const { minutes } = getReadingStats(post.body);
+---
+
+<article class="post-row">
+  <p class="post-row__meta meta">
+    <time datetime={isoDay(post.data.pubDate)}>{getFullDate(post.data.pubDate)}</time>
+    <span aria-hidden="true">/</span>
+    <span>{minutes} min read</span>
+  </p>
+  <div class="post-row__body">
+    <Heading class="post-row__title">
+      <a
+        href={`/writings/${post.id}/`}
+        class="post-row__link"
+        transition:name={transition ? `post-${post.id}` : undefined}>{post.data.title}</a
+      >
+    </Heading>
+    {description && <p class="post-row__desc">{post.data.description}</p>}
+  </div>
+  <span class="post-row__arrow" aria-hidden="true">→</span>
+</article>
+
+<style>
+  .post-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "meta meta"
+      "body arrow";
+    gap: var(--space-2) var(--space-6);
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--hairline);
+  }
+  .post-row:last-child {
+    border-bottom: 1px solid var(--hairline);
+  }
+  @media (width >= 48rem) {
+    .post-row {
+      grid-template-columns: 11rem minmax(0, 1fr) auto;
+      grid-template-areas: "meta body arrow";
+      align-items: baseline;
+    }
+  }
+  .post-row__meta {
+    grid-area: meta;
+    display: flex;
+    gap: 0.5em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  @media (width >= 48rem) {
+    .post-row__meta {
+      flex-direction: column;
+      gap: 0.15em;
+    }
+    .post-row__meta span[aria-hidden] {
+      display: none;
+    }
+  }
+  .post-row__body {
+    grid-area: body;
+    min-width: 0;
+  }
+  .post-row__title {
+    font-size: var(--text-xl);
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+  .post-row__link {
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .post-row__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .post-row__desc {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+  .post-row__arrow {
+    grid-area: arrow;
+    align-self: center;
+    color: var(--ink-3);
+    font-size: var(--text-lg);
+    transition:
+      color var(--dur-fast) var(--ease),
+      translate var(--dur) var(--ease);
+  }
+  .post-row:hover .post-row__link {
+    color: var(--accent);
+  }
+  .post-row:hover .post-row__arrow {
+    color: var(--accent);
+    translate: 4px 0;
+  }
+  .post-row:has(.post-row__link:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .post-row__link:focus-visible {
+    outline: none;
+  }
+</style>

@@ -1,0 +1,135 @@
+---
+/**
+ * Primary: solid accent. Secondary: outlined. Link: underlined text with
+ * an arrow. Renders an <a> when `href` is set, otherwise a <button>.
+ */
+import type { HTMLAttributes } from "astro/types";
+
+type Props = {
+  href?: string;
+  variant?: "primary" | "secondary" | "link";
+  type?: "button" | "submit";
+  /** Opens in a new tab with rel="noopener". */
+  external?: boolean;
+  /** Trailing arrow; "out" for external destinations. */
+  arrow?: "right" | "out" | false;
+  class?: string;
+} & Omit<HTMLAttributes<"a">, "href" | "class" | "type">;
+
+const {
+  href,
+  variant = "primary",
+  type = "button",
+  external = false,
+  arrow = variant === "link" ? "right" : false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const classes = ["btn", `btn--${variant}`, className];
+const glyph = arrow === "out" ? "↗" : arrow === "right" ? "→" : null;
+---
+
+{
+  href ? (
+    <a
+      href={href}
+      class:list={classes}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener" : undefined}
+      {...rest}
+    >
+      <span>
+        <slot />
+      </span>
+      {glyph && <span class="btn__arrow" aria-hidden="true">{glyph}</span>}
+    </a>
+  ) : (
+    <button type={type} class:list={classes}>
+      <span>
+        <slot />
+      </span>
+      {glyph && <span class="btn__arrow" aria-hidden="true">{glyph}</span>}
+    </button>
+  )
+}
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    min-height: 2.875rem;
+    padding: 0.7rem 1.25rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+      background-color var(--dur-fast) var(--ease),
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease),
+      box-shadow var(--dur) var(--ease),
+      translate var(--dur) var(--ease);
+  }
+  .btn__arrow {
+    transition: translate var(--dur) var(--ease);
+  }
+  .btn:hover .btn__arrow {
+    translate: 3px 0;
+  }
+
+  .btn--primary {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .btn--primary:hover {
+    background: var(--accent-hover);
+    translate: 0 -1px;
+    box-shadow: var(--shadow-hover);
+  }
+
+  .btn--secondary {
+    border: 1px solid var(--control);
+    color: var(--ink);
+    background: transparent;
+  }
+  .btn--secondary:hover {
+    border-color: var(--ink);
+    background: var(--surface);
+  }
+
+  .btn--link {
+    min-height: 2.875rem;
+    padding-inline: 0.25rem;
+    border-radius: var(--radius-control);
+    color: var(--ink);
+  }
+  /* Underline the label only; the arrow sits beside it undecorated. */
+  .btn--link > span:first-child {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.3em;
+    text-decoration-color: var(--hairline-strong);
+    transition: text-decoration-color var(--dur-fast) var(--ease);
+  }
+  .btn--link:hover {
+    color: var(--accent);
+  }
+  .btn--link:hover > span:first-child {
+    text-decoration-color: currentColor;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn,
+    .btn__arrow {
+      transition: none;
+    }
+    .btn:hover,
+    .btn:hover .btn__arrow {
+      translate: none;
+    }
+  }
+</style>

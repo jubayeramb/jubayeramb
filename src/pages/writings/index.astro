@@ -1,33 +1,30 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
-import { getFullDate } from "@/utils";
-import { getCollection } from "astro:content";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import PostRow from "@/components/ui/PostRow.astro";
+import { getSortedPosts } from "@/lib/posts";
+import { isThinTag, tagLabel } from "@/lib/tags";
+import { getAllUniqueTags } from "@/utils";
 
-const posts = await getCollection("posts");
-const sortedPosts = posts.sort((a, b) => {
-  return (
-    new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
-  );
-});
+const posts = await getSortedPosts();
 
-type Group = { year: string; items: typeof sortedPosts };
-const grouped: Group[] = [];
-for (const p of sortedPosts) {
-  const year = String(new Date(p.data.pubDate).getFullYear());
-  let group = grouped.find((g) => g.year === year);
-  if (!group) {
-    group = { year, items: [] };
-    grouped.push(group);
-  }
-  group.items.push(p);
+const grouped = new Map<string, typeof posts>();
+for (const p of posts) {
+  const year = String(new Date(p.data.pubDate).getUTCFullYear());
+  grouped.set(year, [...(grouped.get(year) ?? []), p]);
 }
+
+// Only tags with enough posts to be worth their own indexable page.
+const topics = getAllUniqueTags(posts)
+  .map((tag) => ({ tag, count: posts.filter((p) => p.data.tags.includes(tag)).length }))
+  .filter((t) => !isThinTag(t.count))
+  .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 
 const title = "Writing";
 const description =
   "Notes on JavaScript, TypeScript, Astro, web development, and the occasional reflection by Jubayer Al Mamun.";
 
-const collectionItems = sortedPosts.map((p) => ({
+const collectionItems = posts.map((p) => ({
   title: p.data.title,
   url: `/writings/${p.id}/`,
   date: p.data.pubDate,
@@ -35,50 +32,104 @@ const collectionItems = sortedPosts.map((p) => ({
 }));
 ---
 
-<Layout
-  {title}
-  {description}
-  activeRoute="writings"
-  collectionItems={collectionItems}
-  collectionKind="Article"
->
-  <div class="page">
-    <FadeUp>
-      <h1 class="h1">Writing</h1>
-    </FadeUp>
-    <FadeUp delay={60}>
-      <p class="lead">
-        Notes on tech, personal growth, life experiences, and the occasional
-        reflection. I write about things I'm learning, hoping that it helps
-        someone else on a similar path.
-      </p>
-    </FadeUp>
+<Layout {title} {description} activeRoute="writings" {collectionItems} collectionKind="Article">
+  <PageHeader title="Writing" eyebrow={`${posts.length} posts`}>
+    <p>
+      Notes on tech, personal growth, life experiences, and the occasional reflection. I write about
+      things I'm learning, hoping that it helps someone else on a similar path.
+    </p>
+  </PageHeader>
 
-    <section class="section">
+  <section class="band band--flush-top" aria-label="All posts">
+    <div class="container">
       {
-        grouped.map((g, gi) => (
-          <div>
-            <FadeUp delay={gi * 60}>
-              <div class="write-year">{g.year}</div>
-            </FadeUp>
-            <div class="list">
-              {g.items.map((post, i) => (
-                <FadeUp
-                  delay={gi * 60 + i * 30}
-                  as="a"
-                  class="list-item"
-                  href={`/writings/${post.id}`}
-                >
-                  <div class="list-title" transition:name={`post-${post.id}`}>
-                    {post.data.title}
-                  </div>
-                  <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
-                </FadeUp>
+        [...grouped].map(([year, items]) => (
+          <section class="year" aria-labelledby={`year-${year}`}>
+            <h2 id={`year-${year}`} class="year__title">
+              {year}
+            </h2>
+            <div>
+              {items.map((post) => (
+                <PostRow post={post} />
               ))}
             </div>
-          </div>
+          </section>
         ))
       }
-    </section>
-  </div>
+    </div>
+  </section>
+
+  <section class="band band--alt band--tight" aria-labelledby="topics">
+    <div class="container topics">
+      <div>
+        <h2 id="topics" class="eyebrow">Browse by topic</h2>
+        <ul class="topics__list">
+          {
+            topics.map(({ tag, count }) => (
+              <li>
+                <a href={`/tags/${tag}/`}>
+                  {tagLabel(tag)} <span class="meta">{count}</span>
+                </a>
+              </li>
+            ))
+          }
+          <li><a href="/tags/">All tags <span aria-hidden="true">→</span></a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="eyebrow">Subscribe</h2>
+        <ul class="topics__list">
+          <li><a href="/rss.xml">RSS feed</a></li>
+          <li><a href="/feed.json">JSON Feed</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
 </Layout>
+
+<style>
+  .year + .year {
+    margin-top: var(--space-16);
+  }
+  .year__title {
+    margin-bottom: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+  .topics {
+    display: grid;
+    gap: var(--space-8);
+  }
+  @media (width >= 48rem) {
+    .topics {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+  }
+  .topics__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+  .topics__list a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--hairline-strong);
+    background: var(--surface);
+    font-size: var(--text-sm);
+    color: var(--ink);
+    transition:
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  .topics__list a:hover {
+    color: var(--accent);
+    border-color: currentColor;
+  }
+</style>

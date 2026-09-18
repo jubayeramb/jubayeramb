@@ -1,44 +1,62 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
+import Button from "@/components/ui/Button.astro";
 
-const title = "404 — Page not found";
+const title = "Page not found";
 const description = "The page you're looking for doesn't exist.";
 ---
 
 <Layout {title} {description} noindex>
-  <div class="page">
-    <FadeUp>
-      <div
-        style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); margin-bottom: 16px; letter-spacing: 0.06em;"
-      >
-        404
-      </div>
-    </FadeUp>
-    <FadeUp delay={60}>
-      <h1 class="h1">Nothing here, sorry.</h1>
-    </FadeUp>
-    <FadeUp delay={120}>
-      <p class="lead">
-        The page you're looking for doesn't exist. Maybe it moved, or maybe the
-        link was off. Try the home page or recent writing.
+  <section class="band lost">
+    <div class="container">
+      <p class="lost__code" aria-hidden="true">404</p>
+      <h1 class="page-title">Nothing here, sorry.</h1>
+      <p class="lead lost__lead">
+        The page you're looking for doesn't exist. Maybe it moved, or maybe the link was off. Try the home
+        page or recent writing.
       </p>
-    </FadeUp>
-    <FadeUp delay={180}>
-      <div
-        style="margin-top: 32px; display: flex; gap: 18px; font-family: var(--font-mono); font-size: 13px;"
-      >
-        <a
-          href="/"
-          style="color: var(--fg); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
-          >Home →</a
-        >
-        <a
-          href="/writings"
-          style="color: var(--fg); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
-          >Writing →</a
-        >
+      <div class="lost__actions">
+        <Button href="/">Home</Button>
+        <Button href="/writings/" variant="secondary">Writing</Button>
+        <Button href="/projects/" variant="link">Projects</Button>
       </div>
-    </FadeUp>
-  </div>
+      <p class="lost__search meta">
+        Or press <kbd>/</kbd> to search the site.
+      </p>
+    </div>
+  </section>
 </Layout>
+
+<style>
+  .lost {
+    padding-block: clamp(3rem, 2rem + 6vw, 7rem);
+  }
+  .lost__code {
+    font-family: var(--font-display);
+    font-size: clamp(5rem, 3rem + 10vw, 10rem);
+    font-weight: 700;
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--hairline-strong);
+    margin-bottom: var(--space-6);
+  }
+  .lost__lead {
+    margin-top: var(--space-5);
+  }
+  .lost__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-8);
+  }
+  .lost__search {
+    margin-top: var(--space-8);
+  }
+  .lost__search kbd {
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--hairline-strong);
+  }
+</style>

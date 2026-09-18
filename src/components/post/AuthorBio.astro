@@ -1,0 +1,81 @@
+---
+/**
+ * Who wrote this: photo, name, a line reused from /about, and where to
+ * find more. Visible authorship is an E-E-A-T signal for search and gives
+ * answer engines an entity to attribute the post to.
+ */
+import { Image } from "astro:assets";
+import avatar from "@/assets/portrait/avatar.jpg";
+import { AUTHOR, SOCIALS } from "@/lib/site";
+---
+
+<aside class="author" aria-labelledby="author-name">
+  <Image src={avatar} alt="" width={128} height={128} densities={[1, 2]} class="author__img" loading="lazy" />
+  <div class="author__body">
+    <p class="eyebrow">Written by</p>
+    <h2 id="author-name" class="author__name">
+      <a href="/about/" rel="author">{AUTHOR.name}</a>
+    </h2>
+    <p class="author__line">
+      Software engineer based in Dhaka, Bangladesh, mostly self-taught, currently working at {AUTHOR.employer.name}.
+    </p>
+    <ul class="author__links">
+      <li><a href="/about/">About me</a></li>
+      {
+        SOCIALS.map((s) => (
+          <li>
+            <a href={s.href} target="_blank" rel="noopener">
+              {s.label} <span aria-hidden="true">↗</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</aside>
+
+<style>
+  .author {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+    padding: var(--space-6);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .author :global(.author__img) {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--hairline);
+  }
+  .author__name {
+    margin-top: var(--space-1);
+    font-size: var(--text-xl);
+    letter-spacing: -0.02em;
+  }
+  .author__name a:hover {
+    color: var(--accent);
+  }
+  .author__line {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+  }
+  .author__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+  }
+  .author__links a {
+    color: var(--ink);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .author__links a:hover {
+    color: var(--accent);
+  }
+</style>

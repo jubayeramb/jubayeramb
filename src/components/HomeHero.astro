@@ -1,0 +1,327 @@
+---
+/**
+ * Home hero: the proposition headline, the existing intro, a credential
+ * row built only from facts already on the site, and the portrait.
+ *
+ * The portrait is a cutout photo sitting on an arch-shaped block. The
+ * photo's flat bottom edge and cropped shoulders line up with the block's
+ * bottom and sides, so it reads as a framed portrait rather than a
+ * floating sticker. The hand-drawn signature writes itself under the photo
+ * once per session, and again whenever the photo is hovered: the site's
+ * one playful moment.
+ */
+import Signature from "./Signature.astro";
+import Button from "./ui/Button.astro";
+import { AUTHOR } from "@/lib/site";
+import { HERO_SIZES, type HeroImage } from "@/lib/hero-image";
+
+type Props = {
+  /** Built by the page, which also preloads it (see src/lib/hero-image.ts). */
+  image: HeroImage;
+};
+
+const { image } = Astro.props;
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container hero__grid">
+    <h1 id="hero-title" class="hero__title">I build the product and the systems behind it.</h1>
+
+    <figure class="hero__portrait" data-signature-trigger>
+      <div class="portrait">
+        {/* WebP, not the PNG source, is the fallback: every browser that
+            understands srcset reads WebP, and the PNG is 1.8 MB. */}
+        {/* Blurred stand-in, underneath the real image. It's hidden once the
+            image loads, or it would show as a halo through the cutout's
+            transparent edges. */}
+        <img
+          class="portrait__placeholder"
+          src={image.placeholder}
+          alt=""
+          aria-hidden="true"
+          width={image.width}
+          height={image.height}
+          style={`aspect-ratio: ${image.width} / ${image.height}`}
+        />
+        <picture>
+          <source type="image/avif" srcset={image.avif.srcSet.attribute} sizes={HERO_SIZES} />
+          <img
+            onload="this.closest('.portrait').dataset.loaded = ''"
+            src={image.webp.src}
+            srcset={image.webp.srcSet.attribute}
+            sizes={HERO_SIZES}
+            width={image.width}
+            height={image.height}
+            alt={`Portrait of ${AUTHOR.name}`}
+            loading="eager"
+            fetchpriority="high"
+            class="portrait__img"
+          />
+        </picture>
+      </div>
+      {/* Hide the filled signature before first paint when this session
+          hasn't seen the draw-in yet, so it can write itself in. */}
+      <script is:inline>
+        try {
+          if (
+            sessionStorage.getItem("sig-drawn-v6") !== "1" &&
+            !matchMedia("(prefers-reduced-motion: reduce)").matches
+          )
+            document.documentElement.classList.add("sig-pending");
+        } catch (e) {}
+      </script>
+      <Signature animate width={236} class="hero__signature" />
+    </figure>
+
+    <div class="hero__body">
+      <div class="hero__lead">
+        <p>
+          I've spent the last few years shipping production software end to end, from
+          <strong>Postgres schemas</strong> to <strong>pixel-tight UI</strong>. I care about
+          well-considered interfaces, fast systems, and code that ages well.
+        </p>
+        <p>
+          Currently a Software Engineer at <a href={AUTHOR.employer.url} target="_blank" rel="noopener"
+            >{AUTHOR.employer.name}</a
+          >. CS graduate, mostly self-taught, still learning in public.
+        </p>
+      </div>
+
+      <dl class="hero__creds">
+        <div>
+          <dt>Experience</dt>
+          <dd>4+ years</dd>
+        </div>
+        <div>
+          <dt>Stack</dt>
+          <dd>TypeScript, React, Node.js</dd>
+        </div>
+        <div>
+          <dt>Based in</dt>
+          <dd>{AUTHOR.locality}, {AUTHOR.timezone}</dd>
+        </div>
+      </dl>
+
+      <div class="hero__actions">
+        <Button href="/projects/" data-astro-prefetch="viewport">See my work</Button>
+        <Button href="/contact/" variant="link">Get in touch</Button>
+      </div>
+      <p class="hero__status">
+        <span class="hero__dot" aria-hidden="true"></span>
+        Open to freelance work
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-top: clamp(1.5rem, 0.5rem + 4vw, 4.5rem);
+    padding-bottom: var(--band-pad);
+    overflow-x: clip;
+  }
+  /* Source order is the phone reading order: headline, portrait, then
+     the details. From 64rem the portrait takes the right column and the
+     headline and details center vertically beside it (the 1fr rows above
+     and below absorb the spare height). */
+  .hero__grid {
+    display: grid;
+    gap: var(--space-8);
+  }
+  @media (width >= 64rem) {
+    .hero__grid {
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+      grid-template-rows: 1fr auto auto 1fr;
+      grid-template-areas:
+        ".     portrait"
+        "title portrait"
+        "body  portrait"
+        ".     portrait";
+      gap: 0 var(--space-16);
+    }
+    .hero__title {
+      grid-area: title;
+    }
+    .hero__body {
+      grid-area: body;
+    }
+  }
+
+  .hero__body {
+    min-width: 0;
+  }
+  .hero__title {
+    font-size: var(--text-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+    max-width: 15ch;
+  }
+  .hero__lead {
+    display: grid;
+    gap: var(--space-4);
+    max-width: 38rem;
+    font-size: var(--text-lg);
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .hero__lead a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: var(--hairline-strong);
+    transition:
+      color var(--dur-fast) var(--ease),
+      text-decoration-color var(--dur-fast) var(--ease);
+  }
+  .hero__lead a:hover {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+
+  .hero__creds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) 0;
+    margin-top: var(--space-8);
+  }
+  .hero__creds div {
+    display: grid;
+    gap: 0.2rem;
+    padding-right: var(--space-6);
+    margin-right: var(--space-6);
+    border-right: 1px solid var(--hairline-strong);
+  }
+  .hero__creds div:last-child {
+    border-right: 0;
+    margin-right: 0;
+    padding-right: 0;
+  }
+  /* Too narrow for one row: Experience and Timezone side by side, the
+     longer Stack line underneath, with no dangling dividers. */
+  @media (width < 30rem) {
+    .hero__creds {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .hero__creds div,
+    .hero__creds div:last-child {
+      padding-right: 0;
+      margin-right: 0;
+      border-right: 0;
+    }
+    .hero__creds div:nth-child(2) {
+      order: 1;
+      grid-column: 1 / -1;
+    }
+  }
+  .hero__creds dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .hero__creds dd {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    margin-top: var(--space-8);
+  }
+  .hero__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .hero__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--success) 18%, transparent);
+  }
+
+  /* Portrait. Mobile first: centered between the headline and the
+     details, smaller. */
+  .hero__portrait {
+    position: relative;
+    width: min(15rem, 62vw);
+    justify-self: center;
+  }
+  @media (width >= 64rem) {
+    .hero__lead {
+      margin-top: var(--space-6);
+    }
+    .hero__portrait {
+      grid-area: portrait;
+      align-self: center;
+      width: 100%;
+      max-width: 26rem;
+      justify-self: end;
+      margin-bottom: 0;
+    }
+  }
+  .portrait {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: 999px 999px var(--radius-card) var(--radius-card);
+    background:
+      radial-gradient(70% 55% at 50% 38%, var(--portrait-glow), transparent 70%),
+      var(--portrait-block);
+    isolation: isolate;
+  }
+  /* A thin inner rule echoes the page's hairlines and keeps the arch
+     crisp against the canvas in both themes. */
+  .portrait::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+    pointer-events: none;
+  }
+  .portrait__img,
+  .portrait__placeholder {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+  }
+  .portrait__placeholder {
+    filter: blur(12px);
+    transition: opacity var(--dur) var(--ease);
+  }
+  .portrait[data-loaded] .portrait__placeholder {
+    opacity: 0;
+  }
+  /* Without JS the load flag never lands, so skip the stand-in. */
+  @media (scripting: none) {
+    .portrait__placeholder {
+      display: none;
+    }
+  }
+
+  /* The signature is written just under the photo, like signing the mat
+     of a print. One solid color: ink in the light theme, the accent in
+     the dark theme, where ink would sink into the dark canvas. */
+  .hero__portrait :global(.hero__signature) {
+    display: block;
+    width: 62%;
+    height: auto;
+    margin: var(--space-2) 0 0 auto;
+    color: light-dark(var(--ink), var(--accent));
+    rotate: -5deg;
+    pointer-events: none;
+  }
+</style>

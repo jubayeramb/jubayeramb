@@ -1,0 +1,79 @@
+---
+/**
+ * Eyebrow + real <h2>, with an optional "view all" link baseline-aligned
+ * on the right. Section labels used to be <div>s, which left index pages
+ * with an h1 and no outline at all.
+ */
+type Props = {
+  eyebrow?: string;
+  title: string;
+  id?: string;
+  href?: string;
+  linkLabel?: string;
+  /** Heading level; 2 for page sections. */
+  level?: 2 | 3;
+};
+
+const { eyebrow, title, id, href, linkLabel = "View all", level = 2 } = Astro.props;
+const Heading = `h${level}` as "h2" | "h3";
+---
+
+<header class="section-header">
+  <div class="section-header__text">
+    {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+    <Heading id={id} class="section-header__title">{title}</Heading>
+  </div>
+  {
+    href && (
+      <a class="section-header__more" href={href}>
+        {linkLabel}
+        <span aria-hidden="true">→</span>
+      </a>
+    )
+  }
+</header>
+
+<style>
+  .section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4) var(--space-6);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-8);
+  }
+  .section-header__text {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .section-header__title {
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+  .section-header__more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding-block: 0.3em;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-decoration-color: var(--hairline-strong);
+    text-underline-offset: 0.3em;
+    transition:
+      color var(--dur-fast) var(--ease),
+      text-decoration-color var(--dur-fast) var(--ease);
+  }
+  .section-header__more span {
+    transition: translate var(--dur) var(--ease);
+  }
+  .section-header__more:hover {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+  .section-header__more:hover span {
+    translate: 3px 0;
+  }
+</style>

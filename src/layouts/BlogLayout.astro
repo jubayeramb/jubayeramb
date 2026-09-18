@@ -1,138 +1,265 @@
 ---
+import type { MarkdownHeading } from "astro";
+import { Picture, getImage } from "astro:assets";
 import Layout from "./Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
-import type { BlogPostType } from "@/types";
-import { getFullDate } from "@/utils";
+import Toc from "@/components/post/Toc.astro";
+import Tldr from "@/components/post/Tldr.astro";
+import Faq from "@/components/post/Faq.astro";
+import AuthorBio from "@/components/post/AuthorBio.astro";
+import PrevNext from "@/components/post/PrevNext.astro";
+import CodeCopy from "@/components/post/CodeCopy.astro";
+import PostRow from "@/components/ui/PostRow.astro";
+import SectionHeader from "@/components/ui/SectionHeader.astro";
+import { getPrevNext, getReadingStats, getRelatedPosts, getSortedPosts, type Post } from "@/lib/posts";
+import { stripInlineMarkdown } from "@/lib/inline-markdown";
+import { tagLabel } from "@/lib/tags";
+import { getFullDate, isoDay } from "@/utils";
+import "../styles/prose.css";
 
-type Props = { postData: BlogPostType };
+type Props = { postData: Post; headings: MarkdownHeading[] };
 
-const { postData } = Astro.props;
-const { data: frontmatter, body } = postData;
+const { postData, headings } = Astro.props;
+const { title, description, pubDate, updatedDate, tags, image, tldr, faq } = postData.data;
 
-const { title, description, pubDate, updatedDate, tags, image } = frontmatter;
+const stats = getReadingStats(postData.body);
+const all = await getSortedPosts();
+const related = getRelatedPosts(postData, all);
+const { newer, older } = getPrevNext(postData, all);
 
-const wordCount = (body ?? "").split(/\s+/).filter(Boolean).length;
-const readingTime = Math.max(1, Math.ceil(wordCount / 220));
+const cover = image ? await getImage({ src: image.src, width: 1200, format: "jpg" }) : undefined;
 ---
 
 <Layout
   {title}
   {description}
-  image={image?.url}
-  imageAlt={image?.alt || title}
   type="article"
   {pubDate}
   {updatedDate}
   {tags}
+  readingStats={stats}
+  abstract={tldr ? tldr.map(stripInlineMarkdown).join(" ") : undefined}
+  cover={cover && image ? { src: cover.src, width: 1200, height: Math.round((1200 * image.src.height) / image.src.width) } : undefined}
+  {faq}
+  markdownAlternate={`/writings/${postData.id}.md`}
   activeRoute="writings"
 >
-  <article class="page">
-    <FadeUp>
-      <div style="margin-bottom: 24px;">
-        <a
-          href="/writings"
-          style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
-          >← All writing</a
-        >
-      </div>
-    </FadeUp>
-
-    <FadeUp delay={40}>
-      <h1
-        class="h1"
-        style="margin-bottom: 12px;"
-        transition:name={`post-${postData.id}`}
-      >
-        {title}
-      </h1>
-    </FadeUp>
-
-    <FadeUp delay={80}>
-      <div
-        style="display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); margin-bottom: 28px;"
-      >
-        <time datetime={pubDate.toString()}
-          >{getFullDate(pubDate.toString())}</time
-        >
-        <span>·</span>
-        <span>{readingTime} min read</span>
-        {
-          tags && tags.length > 0 && (
-            <>
-              <span>·</span>
-              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+  <article class="post">
+    <header class="post-head">
+      <div class="container post-grid">
+        <div class="post-main">
+          <a class="post-back" href="/writings/"><span aria-hidden="true">←</span> Writing</a>
+          {tags[0] && <p class="eyebrow post-eyebrow">{tagLabel(tags[0])}</p>}
+          <h1 class="post-title" transition:name={`post-${postData.id}`}>{title}</h1>
+          <p class="post-lead">{description}</p>
+          <p class="post-meta meta">
+            <span>
+              Published <time datetime={isoDay(pubDate)}>{getFullDate(pubDate)}</time>
+            </span>
+            {
+              updatedDate && (
+                <span>
+                  Updated <time datetime={isoDay(updatedDate)}>{getFullDate(updatedDate)}</time>
+                </span>
+              )
+            }
+            <span>{stats.minutes} min read</span>
+          </p>
+          {
+            tags.length > 0 && (
+              <ul class="post-tags" aria-label="Topics">
                 {tags.map((tag) => (
-                  <a href={`/tags/${tag}`} style="color: var(--fg-3);">
-                    #{tag}
-                  </a>
+                  <li>
+                    <a href={`/tags/${tag}/`}>{tagLabel(tag)}</a>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </div>
+      </div>
+    </header>
+
+    <div class="container post-grid post-body">
+      <div class="post-main">
+        {
+          image && (
+            <figure class="post-cover">
+              <Picture
+                src={image.src}
+                alt={image.alt}
+                widths={[480, 720, 960, 1360]}
+                sizes="(width >= 48rem) 42.5rem, 100vw"
+                formats={["avif", "webp"]}
+                loading="eager"
+                decoding="async"
+              />
+            </figure>
+          )
+        }
+
+        <div class="post-toc-inline">
+          <Toc {headings} variant="inline" extra={faq ? [{ slug: "faq", text: "FAQ" }] : []} />
+        </div>
+
+        {tldr && tldr.length > 0 && <Tldr items={tldr} />}
+
+        <div class="prose">
+          <slot />
+        </div>
+
+        {faq && faq.length > 0 && <Faq items={faq} />}
+
+        <AuthorBio />
+      </div>
+
+      <aside class="post-rail" aria-label="Table of contents">
+        <Toc {headings} variant="rail" extra={faq ? [{ slug: "faq", text: "FAQ" }] : []} />
+      </aside>
+    </div>
+  </article>
+
+  <section class="band band--alt post-more" aria-labelledby="keep-reading">
+    <div class="container post-grid">
+      <div class="post-main">
+        {
+          related.length > 0 && (
+            <>
+              <SectionHeader eyebrow="Related" title="Keep reading" id="keep-reading" level={2} />
+              <div class="post-related">
+                {related.map((p) => (
+                  <PostRow post={p} transition={false} />
                 ))}
               </div>
             </>
           )
         }
+        {related.length === 0 && <h2 id="keep-reading" class="sr-only">More writing</h2>}
+        <PrevNext
+          newer={newer && { href: `/writings/${newer.id}/`, title: newer.data.title }}
+          older={older && { href: `/writings/${older.id}/`, title: older.data.title }}
+        />
       </div>
-    </FadeUp>
-
-    {
-      image?.url && (
-        <FadeUp delay={120}>
-          <figure style="margin-bottom: 32px;">
-            <img
-              src={image.url}
-              alt={image.alt || "Cover image"}
-              style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--line);"
-              loading="eager"
-            />
-          </figure>
-        </FadeUp>
-      )
-    }
-
-    <FadeUp delay={160}>
-      <div id="article-content" class="blog-content">
-        <slot />
-      </div>
-    </FadeUp>
-  </article>
+    </div>
+  </section>
 </Layout>
 
-<script>
-  const enhanceCodeBlocks = () => {
-    const preElements = document.querySelectorAll<HTMLPreElement>(
-      "#article-content pre"
-    );
-    preElements.forEach((preElement, idx) => {
-      if (preElement.parentElement?.classList.contains("code-block")) return;
+<CodeCopy />
 
-      const wrap = document.createElement("div");
-      wrap.classList.add("code-block");
-      preElement.parentNode?.insertBefore(wrap, preElement);
+<style>
+  /* One reading column, with a table-of-contents rail on wide screens. */
+  .post-grid {
+    display: grid;
+    grid-template-columns: minmax(0, var(--w-prose));
+    justify-content: center;
+  }
+  @media (width >= 75rem) {
+    .post-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, var(--w-prose)) minmax(0, 1fr);
+      column-gap: var(--space-12);
+    }
+    .post-main {
+      grid-column: 2;
+    }
+  }
+  .post-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
 
-      const button = document.createElement("button");
-      button.textContent = "Copy";
-      button.classList.add("copy-button");
-      button.type = "button";
+  .post-head {
+    padding-top: clamp(2rem, 1.25rem + 3vw, 3.5rem);
+    padding-bottom: var(--space-8);
+  }
+  .post-back {
+    align-self: flex-start;
+    display: inline-flex;
+    gap: 0.4em;
+    margin-bottom: var(--space-8);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .post-back:hover {
+    color: var(--accent);
+  }
+  .post-eyebrow {
+    margin-bottom: var(--space-3);
+  }
+  .post-title {
+    font-size: clamp(2rem, 1.5rem + 2.2vw, 3.25rem);
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+  }
+  .post-lead {
+    margin-top: var(--space-5);
+    font-size: var(--text-lg);
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+  .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--hairline);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+  .post-tags a {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--hairline-strong);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+    transition:
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  .post-tags a:hover {
+    color: var(--accent);
+    border-color: currentColor;
+  }
 
-      const span = document.createElement("span");
-      span.textContent = "Copied!";
-      span.classList.add("copied", "hidden");
-      span.id = `copied-${idx}`;
+  .post-body {
+    padding-bottom: var(--band-pad);
+  }
+  .post-body .post-main {
+    gap: var(--space-10);
+  }
+  .post-cover :global(img) {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--hairline);
+  }
 
-      button.addEventListener("click", () => {
-        navigator.clipboard.writeText(preElement.textContent || "");
-        document.getElementById(`copied-${idx}`)?.classList.remove("hidden");
-        setTimeout(
-          () => document.getElementById(`copied-${idx}`)?.classList.add("hidden"),
-          1500
-        );
-      });
+  .post-rail {
+    display: none;
+  }
+  @media (width >= 75rem) {
+    .post-rail {
+      display: block;
+      grid-column: 3;
+      grid-row: 1;
+      max-width: 15rem;
+    }
+    .post-toc-inline {
+      display: none;
+    }
+  }
 
-      wrap.appendChild(preElement);
-      wrap.appendChild(button);
-      wrap.appendChild(span);
-    });
-  };
-
-  enhanceCodeBlocks();
-  document.addEventListener("astro:page-load", enhanceCodeBlocks);
-</script>
+  .post-more .post-main {
+    gap: var(--space-10);
+  }
+  .post-more :global(.section-header) {
+    margin-bottom: 0;
+  }
+</style>

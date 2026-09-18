@@ -186,7 +186,7 @@ const SUGGESTIONS = [
     window.addEventListener("chat:opened", () => {
       root.dataset.hidden = "true";
     });
-    // On close, return to a fresh idle state — no preview/chips visible.
+    // On close, return to a fresh idle state - no preview/chips visible.
     // The user has to click the input again to see the resume preview.
     window.addEventListener("chat:closed", () => {
       root.dataset.hidden = "false";
@@ -211,7 +211,7 @@ const SUGGESTIONS = [
     left: 50%;
     bottom: max(env(safe-area-inset-bottom, 0), 24px);
     transform: translateX(-50%);
-    z-index: 40;
+    z-index: var(--z-float);
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -235,7 +235,7 @@ const SUGGESTIONS = [
     gap: 10px;
   }
 
-  /* Suggestion chips — only when there is no history. */
+  /* Suggestion chips - only when there is no history. */
   .home-chat-chips {
     display: flex;
     flex-wrap: wrap;
@@ -244,16 +244,14 @@ const SUGGESTIONS = [
   }
   .home-chat-chips[hidden] { display: none; }
   .home-chat-chip {
-    font-family: var(--font-sans);
+    font-family: var(--font-body);
     font-size: 12.5px;
-    color: var(--fg-2);
+    color: var(--ink-2);
     padding: 7px 12px;
     border-radius: 999px;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    background: var(--surface);
+    border: 1px solid var(--hairline-strong);
+    box-shadow: var(--shadow-hover);
     cursor: pointer;
     opacity: 0;
     transition: color 0.2s, border-color 0.2s, background 0.2s;
@@ -263,7 +261,7 @@ const SUGGESTIONS = [
     white-space: nowrap;
   }
   .home-chat-chip:hover {
-    color: var(--fg);
+    color: var(--ink);
     border-color: color-mix(in oklab, var(--accent) 40%, transparent);
   }
 
@@ -290,26 +288,25 @@ const SUGGESTIONS = [
   .home-chat-preview .bubble:nth-child(2) { opacity: 0.55; }
   .home-chat-preview .bubble:nth-child(3) { opacity: 0.3; }
 
-  /* Floating glass input */
+  /* Floating input: a solid surface pill, so it reads on the warm canvas
+     and over the portrait band alike. */
   .home-chat-form {
     display: flex;
     align-items: stretch;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    background: var(--surface);
+    border: 1px solid var(--hairline-strong);
     border-radius: 999px;
-    box-shadow: var(--glass-shadow);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    box-shadow: var(--shadow-float);
     overflow: hidden;
     transition: border-color 0.2s, transform 0.2s;
   }
   .home-chat[data-state="expanded"] .home-chat-form {
-    border-color: color-mix(in oklab, var(--accent) 30%, var(--glass-border));
+    border-color: color-mix(in oklab, var(--accent) 55%, var(--hairline-strong));
   }
   .home-chat-icon {
     margin: 0 4px 0 16px;
     align-self: center;
-    color: var(--fg-3);
+    color: var(--accent);
     flex-shrink: 0;
   }
   .home-chat-input {
@@ -318,28 +315,33 @@ const SUGGESTIONS = [
     border: 0;
     outline: none;
     background: transparent;
-    color: var(--fg);
+    color: var(--ink);
     font: inherit;
     font-size: 14.5px;
     padding: 14px 12px;
   }
-  .home-chat-input::placeholder { color: var(--fg-3); }
+  .home-chat-input::placeholder { color: var(--ink-3); }
   .home-chat-send {
     padding: 0 18px;
-    color: var(--fg-3);
+    color: var(--ink-3);
     transition: color 0.2s, background 0.2s;
     flex-shrink: 0;
   }
   .home-chat-send:hover {
     color: var(--accent);
-    background: color-mix(in oklab, var(--fg) 6%, transparent);
+    background: color-mix(in oklab, var(--ink) 6%, transparent);
+  }
+
+  :global(html[data-nav-open]) .home-chat {
+    visibility: hidden;
+    opacity: 0;
   }
 
   @media (max-width: 480px) {
     .home-chat {
       bottom: max(env(safe-area-inset-bottom, 0), 12px);
-      /* Idle: comfortable thumb-reach pill, ~70% of viewport. */
-      width: min(280px, 75vw);
+      /* Idle: a thumb-reach pill, wide enough for the full placeholder. */
+      width: min(340px, calc(100vw - 32px));
     }
     /* Focus: expand to nearly full width so typing has room. */
     .home-chat[data-state="expanded"] {
@@ -354,5 +356,13 @@ const SUGGESTIONS = [
   @media (prefers-reduced-motion: reduce) {
     .home-chat,
     .home-chat-form { transition: none; }
+  }
+</style>
+
+<style is:global>
+  /* The floating bar sits over the bottom of the page; give the footer
+     room so its last line is never hidden behind it. */
+  body:has(#home-chat) .site-footer {
+    padding-bottom: 8rem;
   }
 </style>
