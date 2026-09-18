@@ -82,6 +82,6 @@ I’ve made progress in improving my communication skills, such as speaking with
 
 I’ve carried forward my unachieved goals to 2025, and I hope not to move them forward again! I aim to make 2025 a year of success and positivity.
 
-To follow my journey, stay tuned to this blog or connect with me on [Blusky](https://bsky.app/profile/jubayeramb.bsky.social), [X](https://x.com/jubayeramb), or [GitHub](https://github.com/jubayeramb).
+To follow my journey, stay tuned to this blog or connect with me on [Bluesky](https://bsky.app/profile/jubayeramb.com), [X](https://x.com/jubayeramb), or [GitHub](https://github.com/jubayeramb).
 
 Wishing you all a very happy and prosperous New Year 2025! 🎉

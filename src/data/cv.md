@@ -140,4 +140,4 @@ nobody runs in anger. Teams that ship and learn fast.
 Open to freelance work. Email: jubayeramb@gmail.com.
 GitHub: https://github.com/jubayeramb.
 LinkedIn: https://www.linkedin.com/in/jubayeramb/.
-Bluesky: https://bsky.app/profile/jubayeramb.bsky.social.
+Bluesky: https://bsky.app/profile/jubayeramb.com.

@@ -79,8 +79,8 @@ export const SOCIALS: readonly Social[] = [
   {
     id: "bluesky",
     label: "Bluesky",
-    handle: "@jubayeramb.bsky.social",
-    href: "https://bsky.app/profile/jubayeramb.bsky.social",
+    handle: "@jubayeramb.com",
+    href: "https://bsky.app/profile/jubayeramb.com",
   },
 ];
 
