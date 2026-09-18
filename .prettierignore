@@ -1,0 +1,6 @@
+dist
+node_modules
+remotion
+public
+src/content
+pnpm-lock.yaml
