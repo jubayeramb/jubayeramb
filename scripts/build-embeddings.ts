@@ -13,47 +13,18 @@
  * so the Function falls back to keyword scoring.
  */
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join, dirname, basename, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 import { embedMany } from "ai";
 import { google } from "@ai-sdk/google";
+import { loadLocalEnv } from "./lib/env";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-// Load env from local files (same format as .env: KEY=VALUE per line).
-// Priority: existing process.env wins; then .dev.vars (Wrangler convention,
-// shared with the Pages Function runtime); then .env.local; then .env.
-// This means `pnpm build` picks up keys you put in `.dev.vars` automatically,
-// no shell `export` needed.
-function loadEnvFile(path: string) {
-  if (!existsSync(path)) return;
-  const content = readFileSync(path, "utf8");
-  for (const raw of content.split("\n")) {
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) continue;
-    const eq = line.indexOf("=");
-    if (eq === -1) continue;
-    const key = line.slice(0, eq).trim();
-    let value = line.slice(eq + 1).trim();
-    // Strip wrapping quotes on either side.
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value;
-    }
-  }
-}
-
-loadEnvFile(join(ROOT, ".dev.vars"));
-loadEnvFile(join(ROOT, ".env.local"));
-loadEnvFile(join(ROOT, ".env"));
+loadLocalEnv(ROOT);
 const POSTS_DIR = join(ROOT, "src/content/posts");
 const PROJECTS_DIR = join(ROOT, "src/content/projects");
 const CV_PATH = join(ROOT, "src/data/cv.md");
@@ -61,7 +32,7 @@ const JOBS_PATH = join(ROOT, "src/data/jobs.json");
 const OUT_DIR = join(ROOT, "public");
 const OUT_PATH = join(OUT_DIR, "embeddings.json");
 // Mirror the manifest into node_modules/.cache so it survives Cloudflare
-// Pages builds — CF restores `node_modules` between runs based on the
+// Pages builds - CF restores `node_modules` between runs based on the
 // lockfile, while `public/` is wiped. Without this, every CI build pays
 // the full embedding cost (0 reused).
 const CACHE_DIR = join(ROOT, "node_modules/.cache");
@@ -127,7 +98,13 @@ async function loadMarkdownDir(
     if (data?.draft) continue;
     const title = (data?.title as string) ?? id;
     const url = toUrl(id);
-    const pieces = chunkText(`${title}\n\n${content}`);
+    // TL;DR and FAQ live in frontmatter, not the body; fold them back in
+    // so the chat can answer from them too.
+    const tldr = Array.isArray(data?.tldr) ? `\n\nTL;DR:\n${data.tldr.map((t: string) => `- ${t}`).join("\n")}` : "";
+    const faq = Array.isArray(data?.faq)
+      ? `\n\nFAQ:\n${data.faq.map((f: { q: string; a: string }) => `Q: ${f.q}\nA: ${f.a}`).join("\n\n")}`
+      : "";
+    const pieces = chunkText(`${title}${tldr}\n\n${content}${faq}`);
     pieces.forEach((piece, idx) => {
       out.push({
         id: `${source}:${id}:${idx}`,
@@ -165,14 +142,14 @@ async function loadJobs(): Promise<Chunk[]> {
   const data = JSON.parse(raw) as Record<string, any>;
   return Object.values(data).map((job, idx) => {
     const text = [
-      `${job.designation} at ${job.company} (${job.startDate} — ${job.endDate || "Present"})`,
+      `${job.designation} at ${job.company} (${job.startDate} to ${job.endDate || "Present"})`,
       job.description,
       `Stack: ${(job.technologies || []).join(", ")}`,
     ].join("\n");
     return {
       id: `jobs:${job.company.toLowerCase().replace(/\W+/g, "-")}:${idx}`,
       source: "jobs" as const,
-      title: `${job.designation} — ${job.company}`,
+      title: `${job.designation}, ${job.company}`,
       url: "/about",
       text,
       hash: sha(text),
@@ -192,10 +169,10 @@ async function loadCachedEmbeddings(): Promise<Map<string, number[]>> {
       const prev = JSON.parse(await readFile(path, "utf8")) as Manifest;
       // Vectors only line up across builds when the embedding model matches.
       // If the previous build used a different model (or "none"), throw the
-      // cache away — those vectors live in a different space.
+      // cache away - those vectors live in a different space.
       if (prev.vectorMode !== EMBED_MODEL) {
         console.log(
-          `[embeddings] cached manifest at ${path} used ${prev.vectorMode}; current is ${EMBED_MODEL} — skipping.`
+          `[embeddings] cached manifest at ${path} used ${prev.vectorMode}; current is ${EMBED_MODEL}, skipping.`
         );
         continue;
       }
@@ -204,7 +181,7 @@ async function loadCachedEmbeddings(): Promise<Map<string, number[]>> {
       }
       if (cache.size > 0) break;
     } catch {
-      // ignore — regenerating from scratch is safe
+      // ignore - regenerating from scratch is safe
     }
   }
   return cache;
@@ -233,7 +210,7 @@ async function main() {
 
   if (!haveGoogleKey) {
     console.warn(
-      "[embeddings] GOOGLE_GENERATIVE_AI_API_KEY missing — writing chunks without vectors. /api/ask will fall back to keyword scoring."
+      "[embeddings] GOOGLE_GENERATIVE_AI_API_KEY missing, writing chunks without vectors. /api/ask will fall back to keyword scoring."
     );
     await writeManifest({
       vectorMode: "none",
