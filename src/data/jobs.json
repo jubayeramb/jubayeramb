@@ -22,7 +22,7 @@
     "designation": "Full Stack Developer",
     "startDate": "2022-12-15",
     "endDate": "2023-12-31",
-    "description": "Built a marketplace for holistic healing services — REST APIs with Node.js + Postgres + Prisma, PayPal/Stripe payments, and the React + Next.js frontend. Cut page load time by ~30%.",
+    "description": "Built a marketplace for holistic healing services: REST APIs with Node.js + Postgres + Prisma, PayPal/Stripe payments, and the React + Next.js frontend. Cut page load time by ~30%.",
     "technologies": ["TypeScript", "Next.js", "PostgreSQL", "Prisma", "Stripe"]
   },
   "3": {
