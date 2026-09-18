@@ -115,6 +115,8 @@ const websiteLd = {
   "@type": "WebSite",
   "@id": WEBSITE_ID,
   name: SITE_NAME,
+  // Google's site-name system reads these as acceptable fallbacks.
+  alternateName: ["jubayeramb", SITE_HOST],
   url: SITE_URL + "/",
   description: SITE_DESCRIPTION,
   inLanguage: LOCALE.ld,
@@ -135,6 +137,9 @@ const personLd = {
   "@type": "Person",
   "@id": PERSON_ID,
   name: AUTHOR.name,
+  // The short name and the handle used across every profile, so search and
+  // answer engines join them to one person rather than a namesake.
+  alternateName: ["Jubayer", "jubayeramb"],
   givenName: AUTHOR.givenName,
   familyName: AUTHOR.familyName,
   url: SITE_URL + "/",
