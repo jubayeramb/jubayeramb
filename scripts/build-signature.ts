@@ -2,7 +2,7 @@
  * One-shot: pull Caveat-Regular.ttf from the Google Fonts repo, run "Jubayer"
  * through opentype.js, and emit the SVG path data + bounding box.
  *
- * Run with `pnpm tsx scripts/build-signature.ts` — copy the output into
+ * Run with `pnpm tsx scripts/build-signature.ts` - copy the output into
  * src/components/Signature.astro.
  */
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
@@ -14,7 +14,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CACHE_DIR = join(ROOT, "tmp");
 const FONT_PATH = join(CACHE_DIR, "caveat.ttf");
 
-// Stable mirror — Google's fonts repo on GitHub serves raw TTFs.
+// Stable mirror - Google's fonts repo on GitHub serves raw TTFs.
 const FONT_URL =
   "https://raw.githubusercontent.com/google/fonts/main/ofl/caveat/Caveat%5Bwght%5D.ttf";
 
