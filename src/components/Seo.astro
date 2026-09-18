@@ -1,61 +1,28 @@
 ---
-type CollectionItem = {
-  title: string;
-  url: string;
-  date?: string | Date;
-  description?: string;
-};
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { getImage } from "astro:assets";
+import avatarSrc from "@/assets/portrait/avatar.jpg";
+import {
+  AUTHOR,
+  LOCALE,
+  NAV,
+  SITE_DESCRIPTION,
+  SITE_HOST,
+  SITE_NAME,
+  SOCIALS,
+  TITLE_SEPARATOR,
+} from "@/lib/site";
+import { tagLabel } from "@/lib/tags";
+import { stripInlineMarkdown } from "@/lib/inline-markdown";
+import type { SeoProps } from "@/types/seo";
 
-type ProjectMeta = {
-  role?: string;
-  period?: string;
-  url?: string;
-  technologies?: string[];
-  /**
-   * Marks a project as a SoftwareApplication. Triggers the matching rich
-   * result schema (with offers) instead of plain CreativeWork.
-   */
-  softwareApp?: {
-    applicationCategory: string;
-    operatingSystem: string;
-    price?: string;
-    priceCurrency?: string;
-  };
-};
-
-type Props = {
-  title: string;
-  description?: string;
-  image?: string;
-  imageAlt?: string;
-  keywords?: string[];
-  /** Page kind — drives canonical, og:type, JSON-LD shape */
-  type?: "website" | "article" | "profile" | "project";
-  /** Article only */
-  pubDate?: string | Date;
-  updatedDate?: string | Date;
-  tags?: string[];
-  /** Project only — fed into CreativeWork JSON-LD */
-  projectMeta?: ProjectMeta;
-  /**
-   * When true on a non-article page, emits an ItemList over `collectionItems`
-   * inside a CollectionPage. Used by /writings, /projects, /tags index pages.
-   */
-  collectionItems?: CollectionItem[];
-  collectionKind?: "Article" | "CreativeWork" | "WebPage";
-  /** When true, emits a ProfilePage JSON-LD (for /about). */
-  profilePage?: boolean;
-  /** Override canonical URL if needed */
-  canonical?: string;
-  /** Disable indexing for this page */
-  noindex?: boolean;
-};
+type Props = SeoProps;
 
 const {
   title,
-  description = "Software engineer building things for the web — based in Dhaka, Bangladesh. Writing about TypeScript, React, and Astro.",
-  image,
-  imageAlt = "Jubayer Al Mamun",
+  description = SITE_DESCRIPTION,
+  imageAlt,
   keywords = [],
   type = "website",
   pubDate,
@@ -67,78 +34,93 @@ const {
   profilePage = false,
   canonical,
   noindex = false,
+  robots = noindex ? "noindex" : "index",
+  readingStats,
+  abstract,
+  cover,
+  faq,
+  markdownAlternate,
+  lastModified,
 } = Astro.props;
 
 const SITE_URL = Astro.site?.toString().replace(/\/$/, "") ?? "https://jubayeramb.com";
-const SITE_NAME = "Jubayer Al Mamun";
-const AUTHOR_NAME = "Jubayer Al Mamun";
-const AUTHOR_TWITTER = "@jubayeramb";
-const AUTHOR_AVATAR = `${SITE_URL}/assets/images/og-image.png`;
+const abs = (path: string) => new URL(path, SITE_URL + "/").toString();
 
-// Stable @id for the Person across all JSON-LD blocks so crawlers can
-// dedupe references. Same pattern for the WebSite and the about page.
+// Stable @ids so every node in the graph references the same Person and
+// WebSite instead of redefining them.
 const PERSON_ID = `${SITE_URL}/#person`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 
-const fullTitle =
-  title === SITE_NAME ? title : `${title} — ${SITE_NAME}`;
+// A title that already leads with the site name (the home page's
+// "Name - Role") is complete; every other page gets the name appended.
+const leadsWithName = title.startsWith(SITE_NAME);
+const fullTitle = leadsWithName ? title : `${title}${TITLE_SEPARATOR}${SITE_NAME}`;
 
-// Normalize canonical to always end with `/` so it matches sitemap entries
-// (Astro is configured with build.format = "directory").
-const normalizedPath = (() => {
-  let p = Astro.url.pathname;
-  if (!p.endsWith("/")) p += "/";
-  return p;
+// Canonical always ends with "/" to match the sitemap
+// (build.format = "directory").
+const normalizedPath = Astro.url.pathname.endsWith("/")
+  ? Astro.url.pathname
+  : `${Astro.url.pathname}/`;
+const canonicalUrl = canonical ?? abs(normalizedPath);
+const pageId = `${canonicalUrl}#webpage`;
+
+// og:image is always the generated 1200x630 card for this route
+// (scripts/build-og-images.ts), so the declared dimensions are true.
+// Routes without a card of their own fall back to the site card.
+const ogImagePath = (() => {
+  const segments = normalizedPath.split("/").filter(Boolean);
+  const candidate = segments.length === 0 ? "og/index.png" : `og/${segments.join("/")}.png`;
+  return existsSync(join(process.cwd(), "public", candidate)) ? candidate : "og/index.png";
 })();
-const canonicalUrl =
-  canonical ?? new URL(normalizedPath, SITE_URL + "/").toString();
+const ogImage = abs(ogImagePath);
+const ogImageAlt = imageAlt ?? (leadsWithName ? title : `${title}, ${SITE_NAME}`);
+const ogImageObject = {
+  "@type": "ImageObject",
+  url: ogImage,
+  width: 1200,
+  height: 630,
+};
 
-// Build OG image URL.
-//
-// - When the page passes its own `image` prop (e.g. a project's cover),
-//   honor it.
-// - Otherwise, derive the path of the matching pre-rendered OG card from
-//   `public/og/` (generated at build time by `scripts/build-og-images.ts`).
-const ogImage = (() => {
-  if (image) return new URL(image, SITE_URL).toString();
-  const segments = normalizedPath.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
-  const ogPath =
-    segments.length === 0 ? "og/index.png" : `og/${segments.join("/")}.png`;
-  return `${SITE_URL}/${ogPath}`;
-})();
-const ogImageType = ogImage.toLowerCase().endsWith(".jpg") || ogImage.toLowerCase().endsWith(".jpeg")
-  ? "image/jpeg"
-  : "image/png";
+// A real portrait for the Person, not a text banner.
+const avatar = await getImage({ src: avatarSrc, width: 800, height: 800, format: "jpg" });
+const personImage = {
+  "@type": "ImageObject",
+  "@id": `${SITE_URL}/#portrait`,
+  url: abs(avatar.src),
+  width: 800,
+  height: 800,
+  caption: AUTHOR.name,
+};
 
-// Keywords meta — kept short. Modern crawlers ignore it but social/embed
-// previews and some specialty engines still look. No keyword stuffing.
-const metaKeywords = [
-  ...keywords,
-  ...tags,
-  "Jubayer Al Mamun",
-  "software engineer",
-].filter((v, i, a) => a.indexOf(v) === i).slice(0, 12).join(", ");
+const metaKeywords = [...keywords, ...tags.map(tagLabel), AUTHOR.name, "software engineer"]
+  .filter((v, i, a) => a.indexOf(v) === i)
+  .slice(0, 12)
+  .join(", ");
 
-const ogType = type === "article" ? "article"
-  : type === "profile" ? "profile"
-  : "website";
+const ogType = type === "article" ? "article" : type === "profile" ? "profile" : "website";
 
-// ────────────────────────────────────────────────────────────────────────
-// JSON-LD blocks
-// ────────────────────────────────────────────────────────────────────────
+const robotsContent = {
+  index: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+  "noindex-follow": "noindex, follow",
+  noindex: "noindex, nofollow",
+}[robots];
+
+const iso = (d: string | Date | undefined) => (d ? new Date(d).toISOString() : undefined);
+const published = iso(pubDate);
+const modified = iso(updatedDate) ?? published;
+
+// ─── JSON-LD nodes ──────────────────────────────────────────────────────
 
 const websiteLd = {
-  "@context": "https://schema.org",
   "@type": "WebSite",
   "@id": WEBSITE_ID,
   name: SITE_NAME,
   url: SITE_URL + "/",
-  description,
-  inLanguage: "en-US",
+  description: SITE_DESCRIPTION,
+  inLanguage: LOCALE.ld,
   publisher: { "@id": PERSON_ID },
-  // Sitelinks search box — points at /ask, the actual searchable surface
-  // (the AI chat over site content). This is a meaningful action; the old
-  // /tags/{search_term_string} target wasn't a real search endpoint.
+  // Search action points at /ask, the site's real query surface (a chat
+  // over the site's own content).
   potentialAction: {
     "@type": "SearchAction",
     target: {
@@ -150,201 +132,197 @@ const websiteLd = {
 };
 
 const personLd = {
-  "@context": "https://schema.org",
   "@type": "Person",
   "@id": PERSON_ID,
-  name: AUTHOR_NAME,
+  name: AUTHOR.name,
+  givenName: AUTHOR.givenName,
+  familyName: AUTHOR.familyName,
   url: SITE_URL + "/",
-  image: AUTHOR_AVATAR,
-  jobTitle: "Software Engineer",
+  image: personImage,
+  jobTitle: AUTHOR.jobTitle,
+  description: SITE_DESCRIPTION,
   worksFor: {
     "@type": "Organization",
-    name: "WeCycle",
-    url: "https://getwecycle.com/",
+    name: AUTHOR.employer.name,
+    url: AUTHOR.employer.url,
   },
   alumniOf: {
     "@type": "CollegeOrUniversity",
-    name: "Green University of Bangladesh",
-    url: "https://green.edu.bd/",
+    name: AUTHOR.alumniOf.name,
+    url: AUTHOR.alumniOf.url,
   },
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Dhaka",
-    addressCountry: "BD",
+    addressLocality: AUTHOR.locality,
+    addressCountry: AUTHOR.country,
   },
-  sameAs: [
-    "https://github.com/jubayeramb",
-    "https://www.linkedin.com/in/jubayeramb/",
-    "https://twitter.com/jubayeramb",
-  ],
+  knowsAbout: ["TypeScript", "React", "Next.js", "Node.js", "Astro", "PostgreSQL", "Web performance", "SEO"],
+  sameAs: SOCIALS.map((s) => s.href),
 };
 
-const articleLd = type === "article"
-  ? {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      headline: title,
-      description,
-      image: ogImage,
-      datePublished: pubDate ? new Date(pubDate).toISOString() : undefined,
-      dateModified: updatedDate
-        ? new Date(updatedDate).toISOString()
-        : pubDate
-          ? new Date(pubDate).toISOString()
-          : undefined,
-      author: { "@id": PERSON_ID },
-      publisher: { "@id": PERSON_ID },
-      mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
-      keywords: tags.join(", "),
-      articleSection: tags[0],
-      inLanguage: "en-US",
-      isPartOf: { "@id": WEBSITE_ID },
-    }
-  : null;
-
-const projectLd = type === "project"
-  ? (() => {
-      const baseProps = {
-        name: title,
-        description,
-        image: ogImage,
-        url: canonicalUrl,
-        creator: { "@id": PERSON_ID },
-        author: { "@id": PERSON_ID },
-        mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
-        keywords: Array.from(
-          new Set([...(projectMeta?.technologies ?? []), ...tags])
-        ).join(", "),
-        ...(projectMeta?.url ? { sameAs: projectMeta.url } : {}),
-        ...(projectMeta?.period
-          ? {
-              // Loose date hint — period is "2025 — Present" or "2026";
-              // Schema.org dateCreated wants ISO. Pull the leading 4-digit
-              // year if present.
-              dateCreated: projectMeta.period.match(/\d{4}/)?.[0],
-            }
-          : {}),
-        inLanguage: "en-US",
-        isPartOf: { "@id": WEBSITE_ID },
-      };
-      // SoftwareApplication is rich-result eligible; plain CreativeWork is
-      // not. Switch types when the project marks itself as software.
-      if (projectMeta?.softwareApp) {
-        return {
-          "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          ...baseProps,
-          applicationCategory: projectMeta.softwareApp.applicationCategory,
-          operatingSystem: projectMeta.softwareApp.operatingSystem,
-          offers: {
-            "@type": "Offer",
-            price: projectMeta.softwareApp.price ?? "0",
-            priceCurrency: projectMeta.softwareApp.priceCurrency ?? "USD",
-          },
-        };
-      }
-      return {
-        "@context": "https://schema.org",
-        "@type": "CreativeWork",
-        ...baseProps,
-      };
-    })()
-  : null;
-
-const profilePageLd = profilePage
-  ? {
-      "@context": "https://schema.org",
-      "@type": "ProfilePage",
-      mainEntity: { "@id": PERSON_ID },
-      url: canonicalUrl,
-      name: fullTitle,
-      description,
-      inLanguage: "en-US",
-      isPartOf: { "@id": WEBSITE_ID },
-    }
-  : null;
-
-// CollectionPage + ItemList for index pages (writings, projects, tags).
-const collectionLd = collectionItems && collectionItems.length > 0
-  ? {
-      "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      url: canonicalUrl,
-      name: fullTitle,
-      description,
-      inLanguage: "en-US",
-      isPartOf: { "@id": WEBSITE_ID },
-      mainEntity: {
-        "@type": "ItemList",
-        itemListOrder: "https://schema.org/ItemListOrderDescending",
-        numberOfItems: collectionItems.length,
-        itemListElement: collectionItems.map((it, i) => ({
-          "@type": "ListItem",
-          position: i + 1,
-          url: new URL(it.url, SITE_URL).toString(),
-          name: it.title,
-          item: {
-            "@type": collectionKind,
-            "@id": new URL(it.url, SITE_URL).toString(),
-            name: it.title,
-            ...(it.description ? { description: it.description } : {}),
-            ...(it.date
-              ? { datePublished: new Date(it.date).toISOString() }
-              : {}),
-          },
-        })),
-      },
-    }
-  : null;
-
-// BreadcrumbList for non-home pages
-const segments = Astro.url.pathname
-  .replace(/\/$/, "")
-  .split("/")
-  .filter(Boolean);
-const breadcrumbLd = segments.length > 0
-  ? {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Home",
-          item: SITE_URL + "/",
-        },
-        ...segments.map((seg: string, i: number) => {
-          const path = "/" + segments.slice(0, i + 1).join("/") + "/";
-          const isLeaf = i === segments.length - 1;
-          const name =
-            isLeaf && (type === "article" || type === "project")
+const breadcrumbSegments = normalizedPath.split("/").filter(Boolean);
+const sectionLabel = (seg: string) =>
+  NAV.find((n) => n.href === `/${seg}/`)?.label ??
+  (seg === "tags" ? "Tags" : seg === "ask" ? "Ask" : seg.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()));
+const breadcrumbLd =
+  breadcrumbSegments.length > 0
+    ? {
+        "@type": "BreadcrumbList",
+        "@id": `${canonicalUrl}#breadcrumb`,
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL + "/" },
+          ...breadcrumbSegments.map((seg, i) => {
+            const path = "/" + breadcrumbSegments.slice(0, i + 1).join("/") + "/";
+            const isLeaf = i === breadcrumbSegments.length - 1;
+            const parent = breadcrumbSegments[i - 1];
+            const name = isLeaf && (type === "article" || type === "project")
               ? title
-              : seg
-                  .replace(/-/g, " ")
-                  .replace(/\b\w/g, (c: string) => c.toUpperCase());
+              : parent === "tags"
+                ? tagLabel(seg)
+                : sectionLabel(seg);
+            return { "@type": "ListItem", position: i + 2, name, item: SITE_URL + path };
+          }),
+        ],
+      }
+    : null;
+
+const faqLd =
+  faq && faq.length > 0
+    ? {
+        "@type": "FAQPage",
+        "@id": `${canonicalUrl}#faq`,
+        url: canonicalUrl,
+        isPartOf: { "@id": WEBSITE_ID },
+        mainEntity: faq.map((f) => ({
+          "@type": "Question",
+          name: stripInlineMarkdown(f.q),
+          acceptedAnswer: { "@type": "Answer", text: stripInlineMarkdown(f.a) },
+        })),
+      }
+    : null;
+
+const images = [ogImageObject, ...(cover ? [{ "@type": "ImageObject", url: abs(cover.src), width: cover.width, height: cover.height }] : [])];
+
+const articleLd =
+  type === "article"
+    ? {
+        "@type": "BlogPosting",
+        "@id": `${canonicalUrl}#article`,
+        headline: title,
+        description,
+        ...(abstract ? { abstract } : {}),
+        image: images,
+        datePublished: published,
+        dateModified: modified,
+        author: { "@id": PERSON_ID },
+        publisher: { "@id": PERSON_ID },
+        mainEntityOfPage: { "@id": pageId },
+        keywords: tags.map(tagLabel).join(", "),
+        articleSection: tags[0] ? tagLabel(tags[0]) : undefined,
+        ...(readingStats
+          ? { wordCount: readingStats.wordCount, timeRequired: readingStats.isoDuration }
+          : {}),
+        inLanguage: LOCALE.ld,
+        isPartOf: { "@id": WEBSITE_ID },
+      }
+    : null;
+
+const projectLd =
+  type === "project"
+    ? (() => {
+        const base = {
+          "@id": `${canonicalUrl}#project`,
+          name: title,
+          description,
+          image: images,
+          url: canonicalUrl,
+          creator: { "@id": PERSON_ID },
+          author: { "@id": PERSON_ID },
+          mainEntityOfPage: { "@id": pageId },
+          keywords: Array.from(new Set([...(projectMeta?.technologies ?? []), ...tags])).join(", "),
+          ...(projectMeta?.url ? { sameAs: projectMeta.url } : {}),
+          ...(published
+            ? { datePublished: published, dateModified: modified }
+            : projectMeta?.period?.match(/\d{4}/)
+              ? { dateCreated: projectMeta.period.match(/\d{4}/)![0] }
+              : {}),
+          inLanguage: LOCALE.ld,
+          isPartOf: { "@id": WEBSITE_ID },
+        };
+        // SoftwareApplication is rich-result eligible; plain CreativeWork
+        // is not.
+        if (projectMeta?.softwareApp) {
           return {
-            "@type": "ListItem",
-            position: i + 2,
-            name,
-            item: SITE_URL + path,
+            "@type": "SoftwareApplication",
+            ...base,
+            applicationCategory: projectMeta.softwareApp.applicationCategory,
+            operatingSystem: projectMeta.softwareApp.operatingSystem,
+            offers: {
+              "@type": "Offer",
+              price: projectMeta.softwareApp.price ?? "0",
+              priceCurrency: projectMeta.softwareApp.priceCurrency ?? "USD",
+            },
           };
-        }),
-      ],
-    }
-  : null;
+        }
+        return { "@type": "CreativeWork", ...base };
+      })()
+    : null;
+
+// Every page gets a WebPage-family node that ties it to the site, its
+// breadcrumb and its main entity.
+const pageType = profilePage
+  ? "ProfilePage"
+  : collectionItems && collectionItems.length > 0
+    ? "CollectionPage"
+    : "WebPage";
+const pageLd = {
+  "@type": pageType,
+  "@id": pageId,
+  url: canonicalUrl,
+  name: fullTitle,
+  description,
+  inLanguage: LOCALE.ld,
+  isPartOf: { "@id": WEBSITE_ID },
+  primaryImageOfPage: ogImageObject,
+  ...(breadcrumbLd ? { breadcrumb: { "@id": breadcrumbLd["@id"] } } : {}),
+  ...(profilePage ? { mainEntity: { "@id": PERSON_ID }, about: { "@id": PERSON_ID } } : {}),
+  ...(articleLd ? { mainEntity: { "@id": articleLd["@id"] } } : {}),
+  ...(projectLd ? { mainEntity: { "@id": projectLd["@id"] } } : {}),
+  ...(lastModified ? { dateModified: iso(lastModified) } : {}),
+  ...(modified && (articleLd || projectLd) ? { dateModified: modified } : {}),
+  ...(collectionItems && collectionItems.length > 0
+    ? {
+        mainEntity: {
+          "@type": "ItemList",
+          itemListOrder: "https://schema.org/ItemListOrderDescending",
+          numberOfItems: collectionItems.length,
+          itemListElement: collectionItems.map((it, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: abs(it.url),
+            name: it.title,
+            item: {
+              "@type": collectionKind,
+              "@id": abs(it.url),
+              name: it.title,
+              ...(it.description ? { description: it.description } : {}),
+              ...(it.date ? { datePublished: iso(it.date) } : {}),
+            },
+          })),
+        },
+      }
+    : {}),
+};
+
+const graph = [websiteLd, personLd, pageLd, articleLd, projectLd, faqLd, breadcrumbLd].filter(Boolean);
 ---
 
 <title>{fullTitle}</title>
-<meta name="title" content={fullTitle} />
 <meta name="description" content={description} />
 {metaKeywords && <meta name="keywords" content={metaKeywords} />}
-<meta name="author" content={AUTHOR_NAME} />
-<meta
-  name="robots"
-  content={noindex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"}
-/>
-<meta name="googlebot" content={noindex ? "noindex, nofollow" : "index, follow"} />
-<meta name="theme-color" content="#eef1f5" media="(prefers-color-scheme: light)" />
+<meta name="author" content={AUTHOR.name} />
+<meta name="robots" content={robotsContent} />
+<meta name="theme-color" content="#f6f8fb" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#0c1015" media="(prefers-color-scheme: dark)" />
 <meta name="color-scheme" content="light dark" />
 <meta name="format-detection" content="telephone=no" />
@@ -352,14 +330,14 @@ const breadcrumbLd = segments.length > 0
 <link rel="canonical" href={canonicalUrl} />
 <link rel="alternate" hreflang="en" href={canonicalUrl} />
 <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
-<link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} — Writing`} href={`${SITE_URL}/rss.xml`} />
+<link rel="alternate" type="application/rss+xml" title={`${SITE_NAME}${TITLE_SEPARATOR}Writing`} href={abs("/rss.xml")} />
+<link rel="alternate" type="application/feed+json" title={`${SITE_NAME}${TITLE_SEPARATOR}Writing`} href={abs("/feed.json")} />
+{markdownAlternate && <link rel="alternate" type="text/markdown" title="Markdown version" href={abs(markdownAlternate)} />}
 <link rel="sitemap" href="/sitemap-index.xml" />
 
 <!-- IndieWeb / Mastodon identity verification + author profile linking -->
-<link rel="me" href="https://github.com/jubayeramb" />
-<link rel="me" href="https://twitter.com/jubayeramb" />
-<link rel="me" href="https://www.linkedin.com/in/jubayeramb/" />
-<link rel="author" href={`${SITE_URL}/about/`} />
+{SOCIALS.map((s) => <link rel="me" href={s.href} />)}
+<link rel="author" href={abs("/about/")} />
 
 <!-- Open Graph -->
 <meta property="og:site_name" content={SITE_NAME} />
@@ -367,71 +345,40 @@ const breadcrumbLd = segments.length > 0
 <meta property="og:title" content={fullTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonicalUrl} />
-<meta property="og:locale" content="en_US" />
+<meta property="og:locale" content={LOCALE.og} />
 <meta property="og:image" content={ogImage} />
-<meta property="og:image:type" content={ogImageType} />
+<meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content={imageAlt} />
-{
-  type === "article" && pubDate && (
-    <meta property="article:published_time" content={new Date(pubDate).toISOString()} />
-  )
-}
-{
-  type === "article" && updatedDate && (
-    <meta property="article:modified_time" content={new Date(updatedDate).toISOString()} />
-  )
-}
-{
-  type === "article" && (
-    <meta property="article:author" content={`${SITE_URL}/about/`} />
-  )
-}
-{
-  type === "article" && (
-    <meta property="article:publisher" content={`${SITE_URL}/about/`} />
-  )
-}
-{
-  type === "article" &&
-    tags.map((tag: string) => <meta property="article:tag" content={tag} />)
-}
+<meta property="og:image:alt" content={ogImageAlt} />
+{type === "article" && published && <meta property="article:published_time" content={published} />}
+{type === "article" && modified && <meta property="article:modified_time" content={modified} />}
+{type === "article" && <meta property="article:author" content={abs("/about/")} />}
+{type === "article" && tags.map((tag) => <meta property="article:tag" content={tagLabel(tag)} />)}
 {
   type === "profile" && (
     <>
-      <meta property="profile:first_name" content="Jubayer Al" />
-      <meta property="profile:last_name" content="Mamun" />
-      <meta property="profile:username" content="jubayeramb" />
+      <meta property="profile:first_name" content={AUTHOR.givenName} />
+      <meta property="profile:last_name" content={AUTHOR.familyName} />
+      <meta property="profile:username" content={AUTHOR.username} />
     </>
   )
 }
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site" content={AUTHOR_TWITTER} />
-<meta name="twitter:creator" content={AUTHOR_TWITTER} />
-<meta name="twitter:domain" content="jubayeramb.com" />
+<meta name="twitter:site" content={AUTHOR.twitter} />
+<meta name="twitter:creator" content={AUTHOR.twitter} />
+<meta name="twitter:domain" content={SITE_HOST} />
 <meta name="twitter:title" content={fullTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogImage} />
-<meta name="twitter:image:alt" content={imageAlt} />
+<meta name="twitter:image:alt" content={ogImageAlt} />
 
-<!-- Structured data — emitted as a single Graph so crossreferences via
-     @id resolve cleanly inside one document. -->
+<!-- Structured data: one graph, so @id cross-references resolve inside a
+     single document. -->
 <script
   is:inline
   type="application/ld+json"
-  set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@graph": [
-      websiteLd,
-      personLd,
-      articleLd,
-      projectLd,
-      profilePageLd,
-      collectionLd,
-      breadcrumbLd,
-    ].filter(Boolean),
-  })}
+  set:html={JSON.stringify({ "@context": "https://schema.org", "@graph": graph })}
 />
