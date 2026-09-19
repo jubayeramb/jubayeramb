@@ -1,4 +1,4 @@
-// Minimal ambient declarations for sanitize-html — the package ships no
+// Minimal ambient declarations for sanitize-html - the package ships no
 // types and we only use a small slice of its surface (the default
 // callable, `simpleTransform`, and `defaults`).
 declare module "sanitize-html" {

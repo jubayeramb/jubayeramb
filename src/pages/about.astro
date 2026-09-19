@@ -1,18 +1,49 @@
 ---
+import { Picture } from "astro:assets";
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
+import SectionHeader from "@/components/ui/SectionHeader.astro";
+import Timeline from "@/components/ui/Timeline.astro";
+import type { TimelineItem } from "@/types/ui";
+import aboutPhoto from "@/assets/portrait/about.jpg";
 import jobsHistory from "@data/jobs.json";
+import recognition from "@data/recognition.json";
+import education from "@data/education.json";
 import type { JobDescription } from "@/types";
+import { AUTHOR } from "@/lib/site";
 import { getMonthYear } from "@/utils";
 
-const jobsData: { [key: string]: JobDescription } = jobsHistory as any;
+const jobs = Object.values(jobsHistory as Record<string, JobDescription>).sort(
+  (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+);
 
-const jobs = Object.keys(jobsData)
-  .map((k) => jobsData[k])
-  .sort(
-    (a, b) =>
-      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-  );
+const experience: TimelineItem[] = jobs.map((job) => {
+  const startYear = job.startDate.split("-")[0];
+  const endYear = job.endDate ? job.endDate.split("-")[0] : "";
+  return {
+    label: endYear ? (endYear === startYear ? startYear : `${startYear}–${endYear.slice(2)}`) : `${startYear}–now`,
+    title: job.designation,
+    org: job.company,
+    href: job.url,
+    detail: `${getMonthYear(job.startDate)} – ${job.endDate ? getMonthYear(job.endDate) : "Present"}`,
+    description: job.description,
+    tags: job.technologies,
+  };
+});
+
+const awards: TimelineItem[] = recognition.map((r) => ({
+  label: r.year,
+  title: r.title,
+  org: r.context,
+  description: r.description,
+}));
+
+const schooling: TimelineItem[] = education.map((e) => ({
+  label: e.period,
+  title: e.degree,
+  org: e.school,
+  href: e.url,
+  detail: e.dates,
+}));
 
 const stack = [
   "TypeScript",
@@ -34,149 +65,147 @@ const description =
 ---
 
 <Layout {title} {description} type="profile" profilePage activeRoute="about">
-  <div class="page">
-    <FadeUp>
-      <h1 class="h1">About</h1>
-    </FadeUp>
-    <FadeUp delay={60}>
-      <p class="lead">
-        I'm a software engineer based in <strong>Dhaka, Bangladesh</strong>,
-        mostly self-taught, currently working at <a
-          href="https://getwecycle.com/"
-          target="_blank"
-          rel="noopener">WeCycle</a
-        >. I've spent the last few years shipping production software end to
-        end: services, schemas, and interfaces.
-      </p>
-    </FadeUp>
-
-    <section class="section about-section">
-      <FadeUp>
-        <div class="section-label">A little more</div>
-      </FadeUp>
-      <FadeUp delay={60}>
-        <p>
-          I started programming in 2020, by accident, mostly. I opened a
-          stylesheet, and never really stopped. Since then I've shipped products
-          at small startups, contributed to open source, and helped a handful of
-          teams move faster without breaking things.
+  <section class="band about-hero" aria-labelledby="about-title">
+    <div class="container about-hero__grid">
+      <div>
+        <p class="eyebrow">{AUTHOR.name}</p>
+        <h1 id="about-title" class="page-title about-hero__title">About</h1>
+        <p class="lead">
+          I'm a software engineer based in <strong>Dhaka, Bangladesh</strong>, mostly self-taught,
+          currently working at <a class="link" href={AUTHOR.employer.url} target="_blank" rel="noopener"
+            >{AUTHOR.employer.name}</a
+          >. I've spent the last few years shipping production software end to end: services,
+          schemas, and interfaces.
         </p>
-        <p>
-          My work tends toward <strong>simple, fast, and considered</strong>.
-          I'm at my best when I can own a problem from data model to interaction
-          detail.
-        </p>
-      </FadeUp>
-    </section>
-
-    <section class="section about-section">
-      <FadeUp>
-        <div class="section-label">Experience</div>
-      </FadeUp>
-      <div class="work-list">
-        {
-          jobs.map((job, i) => {
-            const start = getMonthYear(job.startDate);
-            const end = job.endDate ? getMonthYear(job.endDate) : "Present";
-            const startYear = job.startDate.split("-")[0];
-            const endYear = job.endDate ? job.endDate.split("-")[0] : "";
-            const yearLabel = endYear
-              ? endYear === startYear
-                ? startYear
-                : `${startYear}–${endYear.slice(2)}`
-              : `${startYear}–`;
-            return (
-              <FadeUp delay={i * 40} class="work-item">
-                <div class="work-year">{yearLabel}</div>
-                <div>
-                  <div class="work-role">{job.designation}</div>
-                  <div class="work-co">
-                    <a
-                      href={job.url}
-                      target="_blank"
-                      rel="noopener"
-                      style="border-bottom: 1px solid var(--line-2);"
-                    >
-                      {job.company}
-                    </a>{" "}
-                    · {start} – {end}
-                  </div>
-                  <div class="work-desc">{job.description}</div>
-                  <div class="work-tags">
-                    {job.technologies.map((t) => (
-                      <span>{t}</span>
-                    ))}
-                  </div>
-                </div>
-              </FadeUp>
-            );
-          })
-        }
-      </div>
-    </section>
-
-    <section class="section about-section">
-      <FadeUp>
-        <div class="section-label">Recognition</div>
-      </FadeUp>
-      <div class="work-list">
-        <FadeUp class="work-item">
-          <div class="work-year">2025</div>
-          <div>
-            <div class="work-role">Verdicto, 1st Runner-Up</div>
-            <div class="work-co">National hackathon · 320 teams</div>
-            <div class="work-desc">
-              AI document review platform with automated captioning, sentiment
-              analysis, and a real-time review UI.
-            </div>
-          </div>
-        </FadeUp>
-        <FadeUp delay={40} class="work-item">
-          <div class="work-year">2024</div>
-          <div>
-            <div class="work-role">UniSync, 2nd Runner-Up</div>
-            <div class="work-co">National hackathon · 40+ finalists</div>
-            <div class="work-desc">
-              University companion app with live data feeds, AR navigation, and
-              an on-device AI assistant. Led a 3-person team.
-            </div>
-          </div>
-        </FadeUp>
-      </div>
-    </section>
-
-    <section class="section about-section">
-      <FadeUp>
-        <div class="section-label">Education</div>
-      </FadeUp>
-      <div class="work-list">
-        <FadeUp class="work-item">
-          <div class="work-year">2022–26</div>
-          <div>
-            <div class="work-role">B.Sc. in Computer Science & Engineering</div>
-            <div class="work-co">
-              <a
-                href="https://green.edu.bd/"
-                target="_blank"
-                rel="noopener"
-                style="border-bottom: 1px solid var(--line-2);"
-                >Green University of Bangladesh</a
-              > · Jan 2022 – Jan 2026
-            </div>
-          </div>
-        </FadeUp>
-      </div>
-    </section>
-
-    <section class="section about-section">
-      <FadeUp>
-        <div class="section-label">Stack</div>
-      </FadeUp>
-      <FadeUp delay={60}>
-        <div class="stack-list">
-          {stack.map((s) => <span>{s}</span>)}
+        <div class="about-more">
+          <h2 class="eyebrow">A little more</h2>
+          <p>
+            I started programming in 2020, by accident, mostly. I opened a stylesheet, and never really
+            stopped. Since then I've shipped products at small startups, contributed to open source,
+            and helped a handful of teams move faster without breaking things.
+          </p>
+          <p>
+            My work tends toward <strong>simple, fast, and considered</strong>. I'm at my best when I
+            can own a problem from data model to interaction detail.
+          </p>
         </div>
-      </FadeUp>
-    </section>
-  </div>
+      </div>
+      <figure class="about-photo">
+        <Picture
+          src={aboutPhoto}
+          alt={`${AUTHOR.name} in a light blue shirt against a grey backdrop`}
+          widths={[320, 480, 640, 960, 1208]}
+          sizes="(width >= 64rem) 24rem, (width >= 48rem) 50vw, 100vw"
+          formats={["avif", "webp"]}
+          loading="eager"
+          decoding="async"
+          class="about-photo__img"
+        />
+      </figure>
+    </div>
+  </section>
+
+  <section class="band band--alt" aria-labelledby="experience">
+    <div class="container">
+      <SectionHeader eyebrow="Career" title="Experience" id="experience" />
+      <Timeline items={experience} />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="recognition">
+    <div class="container">
+      <SectionHeader eyebrow="Awards" title="Recognition" id="recognition" />
+      <Timeline items={awards} />
+    </div>
+  </section>
+
+  <section class="band band--alt" aria-labelledby="education">
+    <div class="container">
+      <SectionHeader eyebrow="School" title="Education" id="education" />
+      <Timeline items={schooling} />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="stack">
+    <div class="container">
+      <SectionHeader eyebrow="Tools" title="Stack" id="stack" />
+      <ul class="stack-chips">
+        {stack.map((s) => <li>{s}</li>)}
+      </ul>
+    </div>
+  </section>
 </Layout>
+
+<style>
+  .about-hero {
+    padding-top: clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+  }
+  .about-hero__grid {
+    display: grid;
+    gap: var(--space-10);
+    align-items: start;
+  }
+  @media (width >= 48rem) {
+    .about-hero__grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: var(--space-12);
+    }
+  }
+  .about-hero__title {
+    margin-block: var(--space-4) var(--space-6);
+  }
+  .about-more {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-10);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--hairline);
+    max-width: 40rem;
+    color: var(--ink-2);
+  }
+  .about-photo {
+    order: -1;
+    max-width: 24rem;
+  }
+  @media (width >= 48rem) {
+    .about-photo {
+      order: 0;
+      justify-self: end;
+      width: 100%;
+    }
+  }
+  .about-photo :global(.about-photo__img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--hairline);
+  }
+
+  .stack-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .stack-chips li {
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--radius-control);
+    background: var(--ink);
+    color: var(--canvas);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  @media print {
+    :global(.site-header),
+    :global(.site-footer),
+    :global(.skip-link) {
+      display: none;
+    }
+    .band {
+      padding-block: 1.25rem;
+      background: none;
+    }
+  }
+</style>

@@ -1,29 +1,15 @@
 ---
-// Renders the navbar's visible search affordance. Click → palette:open.
+// The header's visible search affordance. Click dispatches palette:open;
+// the palette module itself loads on first use (see CommandPalette.astro).
 ---
 
-<button
-  type="button"
-  class="search-trigger"
-  id="search-trigger"
-  aria-label="Search"
->
-  <svg
-    viewBox="0 0 24 24"
-    width="13"
-    height="13"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-  >
+<button type="button" class="search-trigger" id="search-trigger" aria-label="Search the site" aria-keyshortcuts="Meta+K Control+K">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <circle cx="11" cy="11" r="7"></circle>
     <path d="m20 20-3.5-3.5"></path>
   </svg>
-  <span class="search-trigger-label">Search</span>
-  <kbd class="search-trigger-kbd">⌘K</kbd>
+  <span class="search-trigger__label">Search</span>
+  <kbd class="search-trigger__kbd" aria-hidden="true">⌘K</kbd>
 </button>
 
 <script>
@@ -31,8 +17,17 @@
     const btn = document.getElementById("search-trigger");
     if (!btn || (btn as any).__wired) return;
     (btn as any).__wired = true;
+    // Show the right modifier outside Apple platforms.
+    if (!/Mac|iPhone|iPad/.test(navigator.userAgent)) {
+      const kbd = btn.querySelector(".search-trigger__kbd");
+      if (kbd) kbd.textContent = "Ctrl K";
+    }
     btn.addEventListener("click", () => {
       window.dispatchEvent(new CustomEvent("palette:open"));
+    });
+    // Warm the palette module on intent so the first open is instant.
+    btn.addEventListener("pointerenter", () => window.dispatchEvent(new CustomEvent("palette:warm")), {
+      once: true,
     });
   };
   wireSearchTrigger();
@@ -43,41 +38,44 @@
   .search-trigger {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px 6px 10px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--fg-3);
-    font-size: 12.5px;
-    background: color-mix(in oklab, var(--bg), var(--fg) 1%);
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
-    cursor: pointer;
-    line-height: 1;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    padding: 0;
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--radius-pill);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    transition:
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease),
+      background-color var(--dur-fast) var(--ease);
   }
   .search-trigger:hover {
-    color: var(--fg);
-    border-color: var(--line-2);
+    color: var(--ink);
+    border-color: var(--control);
+    background: var(--surface);
   }
-  .search-trigger svg { flex-shrink: 0; }
-  .search-trigger-label { font-family: var(--font-sans); }
-  .search-trigger-kbd {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: var(--line);
-    color: var(--fg-2);
-    letter-spacing: 0.04em;
+  .search-trigger__label,
+  .search-trigger__kbd {
+    display: none;
   }
-  @media (max-width: 720px) {
+  @media (width >= 64rem) {
     .search-trigger {
-      padding: 6px;
-      gap: 0;
-      width: 28px;
-      height: 28px;
-      justify-content: center;
+      padding: 0 0.45rem 0 0.8rem;
     }
-    .search-trigger-label,
-    .search-trigger-kbd { display: none; }
+    .search-trigger__label,
+    .search-trigger__kbd {
+      display: inline;
+    }
+  }
+  .search-trigger__kbd {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--ink) 7%, transparent);
+    color: var(--ink-2);
   }
 </style>

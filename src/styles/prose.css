@@ -1,0 +1,192 @@
+/* ==========================================================================
+   Prose: rendered Markdown (posts, case studies) and the /now snapshot.
+   Imported only by the layouts and pages that render long-form content.
+   ========================================================================== */
+
+@layer components {
+  .prose {
+    font-size: var(--text-md);
+    line-height: var(--leading-prose);
+    color: var(--ink);
+    overflow-wrap: break-word;
+  }
+
+  .prose > * + * {
+    margin-top: 1.15em;
+  }
+
+  .prose :where(h2, h3, h4) {
+    scroll-margin-top: 6rem;
+    margin-top: 2.1em;
+    margin-bottom: -0.35em;
+    line-height: var(--leading-snug);
+  }
+  .prose h2 {
+    font-size: var(--text-2xl);
+    letter-spacing: -0.022em;
+  }
+  .prose h3 {
+    font-size: var(--text-xl);
+  }
+  .prose h4 {
+    font-size: var(--text-md);
+  }
+
+  /* Headings are wrapped in a self-link by rehype-autolink-headings. It
+     inherits the heading's look; a "#" appears on hover as the cue. */
+  .prose .heading-link {
+    color: inherit;
+    text-decoration: none;
+  }
+  .prose .heading-link::after {
+    content: "#";
+    margin-left: 0.35em;
+    color: var(--accent);
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease);
+  }
+  .prose .heading-link:hover::after,
+  .prose .heading-link:focus-visible::after {
+    opacity: 1;
+  }
+
+  .prose a:not(.heading-link) {
+    color: var(--ink);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in oklab, var(--accent) 55%, transparent);
+    transition:
+      color var(--dur-fast) var(--ease),
+      text-decoration-color var(--dur-fast) var(--ease);
+  }
+  .prose a:not(.heading-link):hover {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+
+  .prose em {
+    font-style: italic;
+  }
+
+  .prose :where(ul, ol) {
+    padding-left: 1.4em;
+  }
+  .prose ul {
+    list-style: disc;
+  }
+  .prose ol {
+    list-style: decimal;
+  }
+  .prose li + li {
+    margin-top: 0.4em;
+  }
+  .prose li::marker {
+    color: var(--ink-3);
+  }
+
+  .prose blockquote {
+    border-left: 3px solid var(--hairline-strong);
+    padding: 0.1em 0 0.1em 1.1em;
+    color: var(--ink-2);
+    font-size: var(--text-lg);
+  }
+
+  .prose hr {
+    border-top: 1px solid var(--hairline);
+    margin-block: 2.4em;
+  }
+
+  .prose img {
+    border-radius: var(--radius-card);
+    border: 1px solid var(--hairline);
+    margin-block: 0.4em;
+  }
+
+  .prose :not(pre) > code {
+    font-size: 0.86em;
+    padding: 0.14em 0.4em;
+    border-radius: 5px;
+    background: var(--code-surface);
+    border: 1px solid var(--hairline);
+    color: var(--code-ink);
+  }
+
+  .prose table {
+    width: 100%;
+    font-size: var(--text-sm);
+  }
+  .prose :where(th, td) {
+    text-align: left;
+    padding: 0.55em 0.8em;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .prose th {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 500;
+  }
+
+  /* Code blocks. Shiki emits both themes as custom properties
+     (astro.config.ts: shikiConfig.defaultColor = false); light-dark() picks
+     the one matching the page's color-scheme. */
+  .prose pre {
+    position: relative;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    padding: 1.1em 1.25em;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--hairline);
+    background: var(--code-surface) !important;
+    overflow-x: auto;
+    tab-size: 2;
+  }
+  .prose pre code {
+    font-size: inherit;
+  }
+  .prose .astro-code,
+  .prose .astro-code span {
+    color: light-dark(var(--shiki-light), var(--shiki-dark));
+  }
+
+  /* Copy button injected by src/components/CodeCopy.astro. */
+  .prose .code-block {
+    position: relative;
+  }
+  .prose .copy-button {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--hairline-strong);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.04em;
+    opacity: 0;
+    transition:
+      opacity var(--dur-fast) var(--ease),
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  .prose .code-block:hover .copy-button,
+  .prose .copy-button:focus-visible,
+  .prose .copy-button[data-copied] {
+    opacity: 1;
+  }
+  .prose .copy-button:hover {
+    color: var(--accent);
+    border-color: currentColor;
+  }
+  @media (hover: none) {
+    .prose .copy-button {
+      opacity: 1;
+    }
+  }
+}

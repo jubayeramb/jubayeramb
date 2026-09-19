@@ -1,0 +1,38 @@
+---
+// Adds a Copy button to every code block inside `.prose`. Styles live in
+// src/styles/prose.css.
+---
+
+<script>
+  const enhance = () => {
+    document.querySelectorAll<HTMLPreElement>(".prose pre").forEach((pre) => {
+      if (pre.parentElement?.classList.contains("code-block")) return;
+      const wrap = document.createElement("div");
+      wrap.className = "code-block";
+      pre.replaceWith(wrap);
+      wrap.appendChild(pre);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "copy-button";
+      button.textContent = "Copy";
+      button.setAttribute("aria-label", "Copy code to clipboard");
+      button.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(pre.innerText);
+          button.textContent = "Copied";
+        } catch {
+          button.textContent = "Press ⌘C";
+        }
+        button.dataset.copied = "";
+        setTimeout(() => {
+          button.textContent = "Copy";
+          delete button.dataset.copied;
+        }, 1600);
+      });
+      wrap.appendChild(button);
+    });
+  };
+  enhance();
+  document.addEventListener("astro:page-load", enhance);
+</script>

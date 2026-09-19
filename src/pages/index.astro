@@ -1,181 +1,251 @@
 ---
+import { Image } from "astro:assets";
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
+import HomeHero from "@/components/HomeHero.astro";
 import HomeChatInput from "@/components/HomeChatInput.astro";
 import ChatOverlay from "@/components/ChatOverlay.astro";
-import { getCollection } from "astro:content";
-import { getFullDate } from "@/utils";
+import SectionHeader from "@/components/ui/SectionHeader.astro";
+import PostRow from "@/components/ui/PostRow.astro";
+import WorkRow from "@/components/ui/WorkRow.astro";
+import Button from "@/components/ui/Button.astro";
+import avatar from "@/assets/portrait/avatar.jpg";
+import { getProjects, getSortedPosts } from "@/lib/posts";
+import { readNowSnapshot } from "@/lib/now-snapshot";
+import { AUTHOR, SITE_NAME, SOCIALS, TITLE_SEPARATOR } from "@/lib/site";
+import { getFullDate, isoDay } from "@/utils";
+import { getHeroImage, HERO_SIZES } from "@/lib/hero-image";
 
-const isProd = import.meta.env.PROD;
+const recent = (await getSortedPosts()).slice(0, 3);
+const selectedWork = (await getProjects()).slice(0, 3);
 
-const posts = await getCollection("posts");
-const sortedPosts = posts.sort((a, b) => {
-  return (
-    new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
-  );
-});
-const recent = sortedPosts.slice(0, 3);
+// First section of the /now page ("Working on" + its paragraph), from the
+// same build-time snapshot /now renders.
+const now = readNowSnapshot();
+const nowTeaser = now.html?.match(/^<h2>(.*?)<\/h2>(<p>.*?<\/p>)/s);
 
-const selectedWork = (await getCollection("projects"))
-  .filter((p) => (isProd ? !p.data.draft : true))
-  .sort((a, b) => b.data.order - a.data.order)
-  .slice(0, 3);
+const hero = await getHeroImage();
 ---
 
 <Layout
-  title="Jubayer Al Mamun"
-  description="Jubayer Al Mamun is a software engineer based in Dhaka, Bangladesh. Building things for the web. Currently at WeCycle. Writing about TypeScript, React, and Astro."
+  title={`${SITE_NAME}${TITLE_SEPARATOR}${AUTHOR.jobTitle}`}
+  description="Jubayer Al Mamun is a software engineer based in Dhaka, Bangladesh, currently at WeCycle, working on web and mobile products. Writing about TypeScript, React, and Astro."
   type="profile"
+  profilePage
   activeRoute="home"
 >
-  <div class="page page--with-floating-chat">
-    <FadeUp>
-      <h1 class="h1">
-        Hi, I'm Jubayer, a software engineer building things for the <em
-          >web</em
-        >.
-      </h1>
-    </FadeUp>
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    type="image/avif"
+    imagesrcset={hero.avif.srcSet.attribute}
+    imagesizes={HERO_SIZES}
+    fetchpriority="high"
+  />
+  <HomeHero image={hero} />
 
-    <FadeUp delay={80}>
-      <div class="home-intro">
-        <p class="lead">
-          I've spent the last few years shipping production software end to
-          end, from <strong>Postgres schemas</strong> to <strong
-            >pixel-tight UI</strong
-          >. I care about well-considered interfaces, fast systems, and code
-          that ages well.
-        </p>
-        <p class="lead">
-          Currently a Software Engineer at <a
-            href="https://getwecycle.com/"
-            target="_blank"
-            rel="noopener"
-            style="color: var(--fg); border-bottom: 1px solid var(--line-2);"
-            >WeCycle</a
-          >, working on web and mobile products. CS graduate, mostly
-          self-taught, still learning in public.
-        </p>
-      </div>
-    </FadeUp>
-
-    <FadeUp delay={140}>
-      <div class="home-meta">
-        <span class="avail">Open to freelance work</span>
-        <span>Dhaka, Bangladesh</span>
-        <span>UTC+6</span>
-      </div>
-    </FadeUp>
-
-    <section class="section">
-      <FadeUp>
-        <div class="section-label">Recent writing</div>
-      </FadeUp>
-      <div class="list">
-        {
-          recent.map((post, i) => (
-            <FadeUp
-              delay={i * 40}
-              as="a"
-              class="list-item"
-              href={`/writings/${post.id}`}
-            >
-              <div class="list-title" transition:name={`post-${post.id}`}>
-                {post.data.title}
-              </div>
-              <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
-            </FadeUp>
-          ))
-        }
-      </div>
-      <FadeUp delay={200}>
-        <div
-          style="margin-top: 16px; font-family: var(--font-mono); font-size: 12px;"
-        >
-          <a
-            href="/writings"
-            style="color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
-            >All writing →</a
-          >
-        </div>
-      </FadeUp>
-    </section>
-
-    {
-      selectedWork.length > 0 && (
-        <section class="section">
-          <FadeUp>
-            <div class="section-label">Selected work</div>
-          </FadeUp>
-          <div class="list">
-            {selectedWork.map((project, i) => (
-              <FadeUp
-                delay={i * 40}
-                as="a"
-                class="list-item"
-                href={`/projects/${project.id}`}
-              >
-                <div>
-                  <div
-                    class="list-title"
-                    transition:name={`project-${project.id}`}
-                  >
-                    {project.data.title}
-                  </div>
-                  <div class="list-desc">{project.data.summary}</div>
-                </div>
-                <div class="list-meta">{project.data.period}</div>
-              </FadeUp>
+  {
+    selectedWork.length > 0 && (
+      <section class="band band--alt" aria-labelledby="work-title">
+        <div class="container">
+          <SectionHeader
+            eyebrow="Work"
+            title="Selected work"
+            id="work-title"
+            href="/projects/"
+            linkLabel="All projects"
+          />
+          <div>
+            {selectedWork.map((project) => (
+              <WorkRow project={project} />
             ))}
           </div>
-          <FadeUp delay={200}>
-            <div
-              style="margin-top: 16px; font-family: var(--font-mono); font-size: 12px;"
-            >
-              <a
-                href="/projects"
-                style="color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
-                >All projects →</a
-              >
-            </div>
-          </FadeUp>
-        </section>
-      )
-    }
-
-    <section class="section">
-      <FadeUp>
-        <div class="section-label">Elsewhere</div>
-      </FadeUp>
-      <FadeUp delay={60}>
-        <div class="tag-cloud">
-          <a href="https://github.com/jubayeramb" target="_blank" rel="noopener"
-            >GitHub ↗</a
-          >
-          <a
-            href="https://www.linkedin.com/in/jubayeramb/"
-            target="_blank"
-            rel="noopener">LinkedIn ↗</a
-          >
-          <a
-            href="https://twitter.com/jubayeramb"
-            target="_blank"
-            rel="noopener">X (Twitter) ↗</a
-          >
-          <a href="mailto:jubayeramb@gmail.com">Email ↗</a>
         </div>
-      </FadeUp>
-    </section>
-  </div>
+      </section>
+    )
+  }
+
+  <section class="band" aria-labelledby="writing-title">
+    <div class="container">
+      <SectionHeader
+        eyebrow="Writing"
+        title="Recent writing"
+        id="writing-title"
+        href="/writings/"
+        linkLabel="All writing"
+      />
+      <div>
+        {recent.map((post) => <PostRow post={post} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--alt" aria-label="About and now">
+    <div class="container home-duo">
+      <article class="home-card reveal" aria-labelledby="about-teaser">
+        <p class="eyebrow">About</p>
+        <div class="home-card__head">
+          <Image
+            src={avatar}
+            alt=""
+            width={112}
+            height={112}
+            densities={[1, 2]}
+            class="home-card__avatar"
+            loading="lazy"
+          />
+          <h2 id="about-teaser" class="home-card__title">A little more</h2>
+        </div>
+        <p>
+          I started programming in 2020, by accident, mostly. I opened a stylesheet, and never really
+          stopped.
+        </p>
+        <ul class="home-card__links">
+          {
+            SOCIALS.map((s) => (
+              <li>
+                <a href={s.href} target="_blank" rel="noopener">
+                  {s.label} <span aria-hidden="true">↗</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+        <Button href="/about/" variant="link">More about me</Button>
+      </article>
+
+      <article class="home-card reveal" aria-labelledby="now-teaser">
+        <p class="eyebrow">Now</p>
+        <div class="home-card__head">
+          <h2 id="now-teaser" class="home-card__title">{nowTeaser ? nowTeaser[1] : "What I'm focused on"}</h2>
+        </div>
+        {
+          nowTeaser ? (
+            <div class="home-card__now" set:html={nowTeaser[2]} />
+          ) : (
+            <p>What I'm focused on right now: work, where I am, and what I'm learning.</p>
+          )
+        }
+        {
+          now.lastEdited && (
+            <p class="meta home-card__updated">
+              Updated <time datetime={isoDay(now.lastEdited)}>{getFullDate(now.lastEdited)}</time>
+            </p>
+          )
+        }
+        <Button href="/now/" variant="link">What I'm up to now</Button>
+      </article>
+    </div>
+  </section>
+
+  <section class="band home-cta" aria-labelledby="cta-title">
+    <div class="container home-cta__inner">
+      <div>
+        <p class="eyebrow">Contact</p>
+        <h2 id="cta-title" class="home-cta__title">Get in touch</h2>
+        <p class="lead">
+          Fastest way to reach me is a <strong>DM on X or LinkedIn</strong>. I reply almost instantly.
+          You can also email me or ask my CV through the chat on this site.
+        </p>
+      </div>
+      <div class="home-cta__actions">
+        <Button href="/contact/">Contact me</Button>
+        <Button href={`mailto:${AUTHOR.email}`} variant="secondary">{AUTHOR.email}</Button>
+      </div>
+    </div>
+  </section>
+
   <HomeChatInput />
   <ChatOverlay />
 </Layout>
 
 <style>
-  .page--with-floating-chat {
-    padding-bottom: 140px;
+  .home-duo {
+    display: grid;
+    gap: var(--space-6);
   }
-  @media (max-width: 480px) {
-    .page--with-floating-chat { padding-bottom: 110px; }
+  @media (width >= 48rem) {
+    .home-duo {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .home-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    color: var(--ink-2);
+  }
+  .home-card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .home-card :global(.home-card__avatar) {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--hairline);
+  }
+  .home-card__title {
+    font-size: var(--text-xl);
+    letter-spacing: -0.02em;
+  }
+  .home-card__now :global(a) {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--hairline-strong);
+    text-underline-offset: 0.2em;
+  }
+  .home-card__now :global(a:hover) {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+  .home-card__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--text-sm);
+  }
+  .home-card__links a {
+    color: var(--ink);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .home-card__links a:hover {
+    color: var(--accent);
+  }
+  .home-card__updated {
+    margin-top: auto;
+  }
+  .home-card :global(.btn--link) {
+    align-self: flex-start;
+    padding-inline: 0;
+    min-height: 0;
+  }
+
+  .home-cta__inner {
+    display: grid;
+    gap: var(--space-8);
+    align-items: end;
+  }
+  @media (width >= 64rem) {
+    .home-cta__inner {
+      grid-template-columns: minmax(0, 1.4fr) auto;
+    }
+  }
+  .home-cta__title {
+    margin-block: var(--space-3) var(--space-4);
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+  }
+  .home-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
   }
 </style>

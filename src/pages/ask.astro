@@ -7,8 +7,9 @@ const description =
   "A small RAG chat that answers questions about Jubayer Al Mamun's work, projects, and writing, citing sources from this site.";
 ---
 
-<Layout {title} {description} activeRoute="ask" noindex>
-  <div class="ask-shell">
+<Layout {title} {description} activeRoute="ask" noindex hideFooter>
+  <div class="ask-shell container container--form">
+    <h1 class="sr-only">Ask my CV</h1>
     <ChatUi mode="page" />
   </div>
 </Layout>
@@ -20,7 +21,7 @@ const description =
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q")?.trim();
     if (!q) return;
-    history.replaceState({}, "", "/ask");
+    history.replaceState({}, "", "/ask/");
     requestAnimationFrame(() => send(q));
   };
 
@@ -28,39 +29,27 @@ const description =
   document.addEventListener("astro:page-load", handleAskQueryParam);
 </script>
 
-<style is:global>
-  /* /ask is a dedicated chat page — lock the page to viewport height,
-     hide the footer, let the chat fill main. The shell's outer padding
-     and the nav stay at site defaults so the layout doesn't shift. */
-  body:has(.ask-shell) {
+<style>
+  /* A dedicated chat page: the chat fills the viewport under the sticky
+     header, and only the message list scrolls. */
+  :global(body:has(.ask-shell)) {
     height: 100dvh;
     overflow: hidden;
   }
-  body:has(.ask-shell) .app {
-    height: 100dvh;
-    min-height: 0;
-    padding-bottom: 0;
-    overflow: hidden;
-  }
-  body:has(.ask-shell) main {
-    flex: 1;
+  :global(body:has(.ask-shell) main) {
     display: flex;
     min-height: 0;
-  }
-  body:has(.ask-shell) .footer {
-    display: none;
   }
   .ask-shell {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
-    width: 100%;
-    animation: pageIn 0.4s var(--ease);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--space-4));
   }
-  .ask-shell > section.chat[data-mode="page"] {
-    height: auto;
+  .ask-shell :global(section.chat[data-mode="page"]) {
     flex: 1;
+    height: auto;
     min-height: 0;
     margin-top: 0;
   }

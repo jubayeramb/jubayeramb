@@ -1,264 +1,175 @@
 ---
 import Signature from "./Signature.astro";
 import SearchTrigger from "./SearchTrigger.astro";
+import { ASK_NAV, AUTHOR, NAV, SOCIALS } from "@/lib/site";
 
 type Props = {
   activeRoute?: string;
 };
 
 const { activeRoute } = Astro.props;
-const { pathname } = Astro.url;
-
-const inferred = (() => {
-  const seg = pathname.replace(/\/$/, "").split("/")[1];
-  if (!seg) return "home";
-  return seg;
-})();
-
-const active = activeRoute || inferred;
-
-const NAV = [
-  { id: "now", label: "Now", href: "/now", priority: "primary", hint: "What I'm focused on right now" },
-  { id: "projects", label: "Projects", href: "/projects", priority: "primary", hint: "Selected case studies" },
-  { id: "writings", label: "Writings", href: "/writings", priority: "primary", hint: "Notes on engineering and craft" },
-  { id: "ask", label: "Ask", href: "/ask", priority: "sheet", hint: "RAG chat grounded in this site" },
-  { id: "about", label: "About", href: "/about", priority: "primary", hint: "Background and approach" },
-  { id: "contact", label: "Contact", href: "/contact", priority: "primary", hint: "Get in touch" },
-];
+const segment = Astro.url.pathname.split("/").filter(Boolean)[0];
+const active = activeRoute || segment || "home";
+const current = (id: string) => (active === id ? "page" : undefined);
+const SHEET = [...NAV, ASK_NAV];
 ---
 
-<nav class="nav">
-  <a
-    href="/"
-    class="brand"
-    aria-label="Jubayer Al Mamun, home"
-  >
-    <Signature />
-  </a>
-  <div class="nav-links">
-    {
-      NAV.filter((item) => item.priority !== "sheet").map((item) => (
-        <a
-          href={item.href}
-          class={`nav-link nav-link--${item.priority} ${active === item.id ? "active" : ""}`}
-        >
-          {item.label}
-        </a>
-      ))
-    }
-    <SearchTrigger />
-    <button
-      id="navMenuToggle"
-      class="nav-toggle"
-      aria-label="Open menu"
-      aria-expanded="false"
-      aria-controls="navMobileMenu"
-      type="button"
-    >
-      <span class="nav-toggle-icon" aria-hidden="true">
-        <span class="nav-toggle-line nav-toggle-line--top"></span>
-        <span class="nav-toggle-line nav-toggle-line--bot"></span>
-      </span>
-    </button>
-    <button
-      id="themeToggle"
-      class="theme-toggle"
-      aria-label="Toggle color theme"
-      type="button"
-    >
-      <svg
-        id="themeIconSun"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.6"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="4"></circle>
-        <path
-          d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-        ></path>
-      </svg>
-      <svg
-        id="themeIconMoon"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.6"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        style="display:none"
-      >
-        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
-      </svg>
-    </button>
-  </div>
-</nav>
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="/" class="brand" aria-label={`${AUTHOR.name}, home`} aria-current={current("home")}>
+      <Signature width={92} />
+    </a>
 
-<div
-  id="navMobileMenu"
-  class="nav-sheet"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="navMenuToggle"
-  data-state="closed"
-  hidden
->
-  <div class="nav-sheet-inner">
-    <div class="nav-sheet-eyebrow" aria-hidden="true">Navigation</div>
-    <ul class="nav-sheet-list">
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        {
+          NAV.map((item) => (
+            <li>
+              <a href={item.href} class="site-nav__link" aria-current={current(item.id)}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      <SearchTrigger />
+      <a href={ASK_NAV.href} class="ask-pill" aria-current={current("ask")} data-astro-prefetch="false">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z"></path>
+        </svg>
+        <span>Ask</span>
+      </a>
+      <button id="themeToggle" class="icon-btn" type="button" aria-label="Switch color theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+        </svg>
+      </button>
+      <button
+        id="navMenuToggle"
+        class="icon-btn nav-toggle"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="navMobileMenu"
+      >
+        <span class="nav-toggle__icon" aria-hidden="true">
+          <span class="nav-toggle__line nav-toggle__line--top"></span>
+          <span class="nav-toggle__line nav-toggle__line--bot"></span>
+        </span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div id="navMobileMenu" class="nav-sheet" role="dialog" aria-modal="true" aria-label="Site menu" data-state="closed" hidden>
+  <div class="nav-sheet__inner container">
+    <p class="eyebrow">Menu</p>
+    <ul class="nav-sheet__list">
       {
-        NAV.map((item, i) => (
-          <li
-            class="nav-sheet-item"
-            style={`--i:${i};`}
-          >
-            <a
-              href={item.href}
-              class={`nav-sheet-link ${active === item.id ? "active" : ""}`}
-            >
-              <span class="nav-sheet-num">
-                {String(i + 1).padStart(2, "0")}
+        SHEET.map((item, i) => (
+          <li class="nav-sheet__item" style={`--i:${i};`}>
+            <a href={item.href} class="nav-sheet__link" aria-current={current(item.id)}>
+              <span class="nav-sheet__num meta">{String(i + 1).padStart(2, "0")}</span>
+              <span class="nav-sheet__text">
+                <span class="nav-sheet__label">{item.label}</span>
+                <span class="nav-sheet__hint">{item.hint}</span>
               </span>
-              <span class="nav-sheet-text">
-                <span class="nav-sheet-label">{item.label}</span>
-                <span class="nav-sheet-hint">{item.hint}</span>
-              </span>
-              <svg
-                class="nav-sheet-arrow"
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              <span class="nav-sheet__arrow" aria-hidden="true">→</span>
             </a>
           </li>
         ))
       }
     </ul>
-    <div class="nav-sheet-footer">
-      <span class="nav-sheet-footer-pulse" aria-hidden="true" />
-      <span>jubayeramb.com</span>
-      <span class="nav-sheet-footer-sep" aria-hidden="true">·</span>
-      <span>Dhaka, UTC+6</span>
-    </div>
+    <ul class="nav-sheet__socials">
+      {
+        SOCIALS.map((s) => (
+          <li>
+            <a href={s.href} target="_blank" rel="noopener">
+              {s.label} <span aria-hidden="true">↗</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
   </div>
 </div>
 
 <script>
-  const syncIcon = () => {
-    const theme = document.documentElement.getAttribute("data-theme") || "light";
-    const sun = document.getElementById("themeIconSun") as HTMLElement | null;
-    const moon = document.getElementById("themeIconMoon") as HTMLElement | null;
-    if (!sun || !moon) return;
-    if (theme === "dark") {
-      sun.style.display = "block";
-      moon.style.display = "none";
-    } else {
-      sun.style.display = "none";
-      moon.style.display = "block";
-    }
-  };
-
-  const handleToggle = () => {
-    const current =
-      document.documentElement.getAttribute("data-theme") || "light";
-    const next = current === "dark" ? "light" : "dark";
+  const setTheme = (next: "light" | "dark") => {
     document.documentElement.setAttribute("data-theme", next);
+    document.getElementById("theme-color-live")?.setAttribute(
+      "content",
+      next === "dark" ? "#0c1015" : "#f6f8fb",
+    );
     try {
       localStorage.setItem("theme", next);
-    } catch (e) {}
-    syncIcon();
+    } catch {}
   };
 
-  const wire = () => {
-    syncIcon();
+  const wireTheme = () => {
     const btn = document.getElementById("themeToggle");
-    if (btn && !(btn as any).__wired) {
-      btn.addEventListener("click", handleToggle);
-      (btn as any).__wired = true;
-    }
+    if (!btn || (btn as any).__wired) return;
+    (btn as any).__wired = true;
+    btn.addEventListener("click", () => {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      setTheme(isDark ? "light" : "dark");
+    });
   };
 
   const wireMenu = () => {
-    const toggle = document.getElementById("navMenuToggle");
+    const toggle = document.getElementById("navMenuToggle") as HTMLButtonElement | null;
     const menu = document.getElementById("navMobileMenu");
     if (!toggle || !menu || (toggle as any).__wired) return;
     (toggle as any).__wired = true;
 
-    // CSS exit animation length — sheet & links fade/scale down before
-    // we flip `hidden`. Keep in sync with the .nav-sheet[data-state]
-    // keyframes in global.css.
-    const EXIT_MS = 240;
+    // Matches the sheet's exit transition in the styles below.
+    const EXIT_MS = 220;
     let exitTimer = 0;
 
-    const setOpen = (open: boolean) => {
+    const lockScroll = (lock: boolean) => {
+      document.documentElement.style.overflow = lock ? "hidden" : "";
+      // Lets floating UI (the home chat bar) step aside while the sheet is open.
+      document.documentElement.toggleAttribute("data-nav-open", lock);
+    };
+
+    const setOpen = (open: boolean, { restoreFocus = true } = {}) => {
       toggle.setAttribute("aria-expanded", String(open));
-      toggle.setAttribute(
-        "aria-label",
-        open ? "Close menu" : "Open menu",
-      );
-      if (exitTimer) {
-        clearTimeout(exitTimer);
-        exitTimer = 0;
-      }
+      toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      window.clearTimeout(exitTimer);
       if (open) {
         menu.hidden = false;
-        // Two-step: paint hidden=false first, then flip data-state on
-        // the next frame so the enter animation actually runs (rather
-        // than the browser collapsing it because we transitioned from
-        // display:none → flex in the same frame).
+        // Paint hidden=false first, then flip the state on the next frame
+        // so the enter transition actually runs.
         requestAnimationFrame(() => {
           menu.dataset.state = "open";
         });
-        document.documentElement.style.overflow = "hidden";
-        document.body.style.overflow = "hidden";
-        // Move focus into the sheet so screen readers & keyboard users
-        // land on the first nav link.
-        const first = menu.querySelector<HTMLElement>(".nav-sheet-link");
-        first?.focus({ preventScroll: true });
+        lockScroll(true);
+        menu.querySelector<HTMLElement>(".nav-sheet__link")?.focus({ preventScroll: true });
       } else {
         menu.dataset.state = "closed";
-        document.documentElement.style.overflow = "";
-        document.body.style.overflow = "";
+        lockScroll(false);
         exitTimer = window.setTimeout(() => {
           menu.hidden = true;
-          exitTimer = 0;
-          // Return focus to the toggle if it's still in the DOM.
-          if (document.body.contains(toggle)) {
-            (toggle as HTMLElement).focus({ preventScroll: true });
-          }
+          if (restoreFocus && document.body.contains(toggle)) toggle.focus({ preventScroll: true });
         }, EXIT_MS);
       }
     };
 
-    toggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const isOpen = toggle.getAttribute("aria-expanded") === "true";
-      setOpen(!isOpen);
+    toggle.addEventListener("click", () => {
+      setOpen(toggle.getAttribute("aria-expanded") !== "true");
     });
 
-    // Click outside the inner card (i.e. on the backdrop) closes.
     menu.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
-      const a = target.closest("a");
-      if (a) {
-        setOpen(false);
-        return;
-      }
-      // The dialog itself is the backdrop; clicks on `.nav-sheet-inner`
-      // shouldn't bubble down to it.
-      if (target === menu) setOpen(false);
+      if (target.closest("a")) setOpen(false, { restoreFocus: false });
+      else if (target === menu) setOpen(false);
     });
 
     document.addEventListener("keydown", (e) => {
@@ -267,52 +178,353 @@ const NAV = [
         setOpen(false);
         return;
       }
-      // Simple focus trap — when tabbing past the last link, wrap to
-      // the first, and shift-tabbing past the first wraps to the last.
+      // Keep focus inside the sheet and its close button.
       if (e.key === "Tab") {
-        const focusables = menu.querySelectorAll<HTMLElement>(
-          "a, button, [tabindex]:not([tabindex='-1'])",
-        );
-        if (!focusables.length) return;
+        const focusables = [toggle, ...menu.querySelectorAll<HTMLElement>("a, button")];
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
-        const activeEl = document.activeElement;
-        if (e.shiftKey && activeEl === first) {
+        if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
           last.focus();
-        } else if (!e.shiftKey && activeEl === last) {
+        } else if (!e.shiftKey && document.activeElement === last) {
           e.preventDefault();
           first.focus();
         }
       }
     });
 
-    // Astro page transitions can swap pages while the sheet is open
-    // (e.g. clicking a nav link). Reset scroll lock + state so the new
-    // page isn't stuck behind a hidden=true menu with overflow locked.
+    // A navigation can happen while the sheet is open; never leave the
+    // next page scroll-locked.
     document.addEventListener(
       "astro:before-swap",
       () => {
-        document.documentElement.style.overflow = "";
-        document.body.style.overflow = "";
-        menu.dataset.state = "closed";
-        menu.hidden = true;
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "Open menu");
-        if (exitTimer) {
-          clearTimeout(exitTimer);
-          exitTimer = 0;
-        }
+        window.clearTimeout(exitTimer);
+        lockScroll(false);
       },
       { once: true },
     );
   };
 
-  wire();
-  wireMenu();
-  document.addEventListener("astro:page-load", () => {
-    wire();
+  const wire = () => {
+    wireTheme();
     wireMenu();
-  });
-  document.addEventListener("astro:after-swap", syncIcon);
+  };
+  wire();
+  document.addEventListener("astro:page-load", wire);
 </script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-nav);
+    background: color-mix(in oklab, var(--canvas) 86%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--hairline);
+  }
+  /* Where scroll-driven animations exist, the bottom rule fades in only
+     once the page has scrolled, so the header sits flush on the hero. */
+  @supports (animation-timeline: scroll()) {
+    .site-header {
+      animation: header-edge linear both;
+      animation-timeline: scroll();
+      animation-range: 0 72px;
+    }
+    @keyframes header-edge {
+      from {
+        border-bottom-color: transparent;
+        background: color-mix(in oklab, var(--canvas) 0%, transparent);
+      }
+    }
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header {
+      background: var(--canvas);
+    }
+  }
+
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    min-height: 4.25rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    color: var(--ink);
+    padding-block: var(--space-2);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .brand:hover {
+    color: var(--accent);
+  }
+
+  .site-nav {
+    display: none;
+    margin-left: auto;
+  }
+  @media (width >= 48rem) {
+    .site-nav {
+      display: block;
+    }
+  }
+  .site-nav ul {
+    display: flex;
+    gap: var(--space-1);
+  }
+  .site-nav__link {
+    display: inline-flex;
+    padding: 0.45rem 0.7rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--ink-2);
+    transition:
+      color var(--dur-fast) var(--ease),
+      background-color var(--dur-fast) var(--ease);
+  }
+  .site-nav__link:hover {
+    color: var(--ink);
+    background: color-mix(in oklab, var(--ink) 6%, transparent);
+  }
+  .site-nav__link[aria-current="page"] {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.45em;
+  }
+
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
+  }
+  @media (width >= 48rem) {
+    .site-header__actions {
+      margin-left: var(--space-2);
+    }
+  }
+
+  .ask-pill {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.25rem;
+    padding-inline: 0.8rem 0.9rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+    color: var(--accent);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    transition:
+      background-color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  @media (width >= 30rem) {
+    .ask-pill {
+      display: inline-flex;
+    }
+  }
+  .ask-pill:hover,
+  .ask-pill[aria-current="page"] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    /* The plain accent dips under 4.5:1 on its own tint. */
+    color: var(--accent-hover);
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--hairline-strong);
+    color: var(--ink-2);
+    transition:
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease),
+      background-color var(--dur-fast) var(--ease);
+  }
+  .icon-btn:hover {
+    color: var(--ink);
+    border-color: var(--control);
+    background: var(--surface);
+  }
+
+  /* The icon shows the theme you'd switch TO. Pure CSS, so it's right on
+     first paint. */
+  .icon-sun {
+    display: none;
+  }
+  :global(:root[data-theme="dark"]) .icon-sun {
+    display: block;
+  }
+  :global(:root[data-theme="dark"]) .icon-moon {
+    display: none;
+  }
+
+  .nav-toggle {
+    position: relative;
+    z-index: 1;
+  }
+  @media (width >= 48rem) {
+    .nav-toggle {
+      display: none;
+    }
+  }
+  .nav-toggle__icon {
+    position: relative;
+    width: 14px;
+    height: 10px;
+  }
+  .nav-toggle__line {
+    position: absolute;
+    height: 1.5px;
+    background: currentColor;
+    border-radius: 2px;
+    transition:
+      transform 260ms cubic-bezier(0.65, 0, 0.35, 1),
+      width 260ms cubic-bezier(0.65, 0, 0.35, 1),
+      top 260ms cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .nav-toggle__line--top {
+    top: 1px;
+    left: 0;
+    width: 100%;
+  }
+  .nav-toggle__line--bot {
+    top: 7px;
+    right: 0;
+    width: 62%;
+  }
+  .nav-toggle[aria-expanded="true"] {
+    color: var(--accent);
+    border-color: currentColor;
+  }
+  .nav-toggle[aria-expanded="true"] .nav-toggle__line {
+    top: 4px;
+    width: 100%;
+  }
+  .nav-toggle[aria-expanded="true"] .nav-toggle__line--top {
+    transform: rotate(45deg);
+  }
+  .nav-toggle[aria-expanded="true"] .nav-toggle__line--bot {
+    transform: rotate(-45deg);
+  }
+
+  /* Mobile sheet. Sits under the sticky header so the toggle stays
+     reachable as the close button. */
+  .nav-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-nav) - 1);
+    padding-top: 4.25rem;
+    background: var(--canvas);
+    opacity: 0;
+    transition: opacity 220ms var(--ease);
+    overflow-y: auto;
+  }
+  .nav-sheet[data-state="open"] {
+    opacity: 1;
+  }
+  .nav-sheet__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-height: 100%;
+    padding-top: var(--space-6);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-8));
+  }
+  .nav-sheet__list {
+    display: flex;
+    flex-direction: column;
+  }
+  .nav-sheet__item {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  .nav-sheet[data-state="open"] .nav-sheet__item {
+    animation: nav-sheet-item-in 360ms var(--ease) forwards;
+    animation-delay: calc(60ms + var(--i, 0) * 45ms);
+  }
+  @keyframes nav-sheet-item-in {
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  .nav-sheet__link {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-4);
+    border-bottom: 1px solid var(--hairline);
+    color: var(--ink);
+  }
+  .nav-sheet__num {
+    align-self: start;
+    padding-top: 0.55rem;
+  }
+  .nav-sheet__text {
+    display: grid;
+    gap: 0.15rem;
+  }
+  .nav-sheet__label {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .nav-sheet__hint {
+    font-size: var(--text-sm);
+    color: var(--ink-3);
+  }
+  .nav-sheet__arrow {
+    color: var(--ink-3);
+    transition: translate var(--dur) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .nav-sheet__link:hover .nav-sheet__label,
+  .nav-sheet__link[aria-current="page"] .nav-sheet__label {
+    color: var(--accent);
+  }
+  .nav-sheet__link:hover .nav-sheet__arrow {
+    color: var(--accent);
+    translate: 4px 0;
+  }
+  .nav-sheet__socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-6);
+    margin-top: auto;
+    padding-top: var(--space-6);
+    font-size: var(--text-sm);
+  }
+  .nav-sheet__socials a {
+    color: var(--ink-2);
+  }
+  .nav-sheet__socials a:hover {
+    color: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-sheet,
+    .nav-toggle__line {
+      transition: none;
+    }
+    .nav-sheet__item,
+    .nav-sheet[data-state="open"] .nav-sheet__item {
+      animation: none;
+      opacity: 1;
+      translate: none;
+    }
+  }
+</style>

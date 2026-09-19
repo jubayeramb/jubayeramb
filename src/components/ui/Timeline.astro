@@ -1,0 +1,116 @@
+---
+/**
+ * [label | content] rows separated by hairlines. Used for experience,
+ * recognition and education on /about. Each item's title is a real
+ * heading so the page outline reads Experience > WeCycle > ...
+ */
+import type { TimelineItem } from "@/types/ui";
+
+type Props = {
+  items: TimelineItem[];
+  headingLevel?: 3 | 4;
+};
+
+const { items, headingLevel = 3 } = Astro.props as Props;
+const Heading = `h${headingLevel}` as "h3" | "h4";
+---
+
+<ol class="timeline">
+  {
+    items.map((item) => (
+      <li class="timeline__item reveal">
+        <p class="timeline__label meta">{item.label}</p>
+        <div class="timeline__body">
+          <Heading class="timeline__title">{item.title}</Heading>
+          {(item.org || item.detail) && (
+            <p class="timeline__org">
+              {item.org &&
+                (item.href ? (
+                  <a href={item.href} target="_blank" rel="noopener">
+                    {item.org}
+                  </a>
+                ) : (
+                  <span>{item.org}</span>
+                ))}
+              {item.org && item.detail && <span aria-hidden="true"> · </span>}
+              {item.detail && <span class="timeline__detail">{item.detail}</span>}
+            </p>
+          )}
+          {item.description && <p class="timeline__desc">{item.description}</p>}
+          {item.tags && item.tags.length > 0 && (
+            <ul class="timeline__tags" aria-label="Technologies">
+              {item.tags.map((t) => (
+                <li>{t}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .timeline__item {
+    display: grid;
+    gap: var(--space-2) var(--space-8);
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--hairline);
+  }
+  .timeline__item:last-child {
+    border-bottom: 1px solid var(--hairline);
+  }
+  @media (width >= 48rem) {
+    .timeline__item {
+      grid-template-columns: 9rem minmax(0, 1fr);
+    }
+  }
+  .timeline__label {
+    padding-top: 0.3em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .timeline__title {
+    font-size: var(--text-xl);
+    letter-spacing: -0.015em;
+  }
+  .timeline__org {
+    margin-top: var(--space-1);
+    color: var(--ink-2);
+  }
+  .timeline__org a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--hairline-strong);
+    text-underline-offset: 0.2em;
+    transition:
+      color var(--dur-fast) var(--ease),
+      text-decoration-color var(--dur-fast) var(--ease);
+  }
+  .timeline__org a:hover {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+  .timeline__detail {
+    color: var(--ink-3);
+  }
+  .timeline__desc {
+    margin-top: var(--space-3);
+    color: var(--ink-2);
+    max-width: 62ch;
+  }
+  .timeline__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+  .timeline__tags li {
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--hairline-strong);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--ink-2);
+  }
+</style>

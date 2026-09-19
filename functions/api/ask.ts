@@ -1,21 +1,21 @@
 /// <reference types="@cloudflare/workers-types" />
 /**
- * /api/ask — RAG chat backed by Groq (chat) + Google Gemini (embeddings)
+ * /api/ask - RAG chat backed by Groq (chat) + Google Gemini (embeddings)
  * via the Vercel AI SDK.
  *
  * Pipeline: load embeddings.json → embed the user's query through Gemini →
- * cosine-rank top-K chunks → stream the answer through Groq Llama as SSE.
+ * cosine-rank top-K chunks → stream the answer through Groq as SSE.
  *
  * Bindings (set in Cloudflare Pages dashboard):
- *   GROQ_API_KEY                  — required. Drives chat completions.
- *   GOOGLE_GENERATIVE_AI_API_KEY  — required when embeddings.json was
+ *   GROQ_API_KEY                  - required. Drives chat completions.
+ *   GOOGLE_GENERATIVE_AI_API_KEY  - required when embeddings.json was
  *                                   built with vectors. Drives runtime
  *                                   query embedding for semantic search.
  *                                   Optional when vectorMode is "none".
- *   TURNSTILE_SECRET_KEY          — optional. When set, requests must
+ *   TURNSTILE_SECRET_KEY          - optional. When set, requests must
  *                                   include a valid `cf-turnstile-response`
  *                                   header.
- *   ASK_QUOTA                     — optional KV namespace. When bound,
+ *   ASK_QUOTA                     - optional KV namespace. When bound,
  *                                   applies a per-IP daily message cap.
  */
 import { streamText, embed } from "ai";
@@ -47,9 +47,10 @@ interface Env {
   ASK_QUOTA?: KVNamespace;
 }
 
-// Llama 3.3 70B Versatile on Groq — 1K RPD, 12K TPM free tier; 70B params
-// beat Gemini Flash Lite on reasoning, and Groq's inference is sub-second.
-const CHAT_MODEL = "llama-3.3-70b-versatile";
+// GPT-OSS 120B on Groq. Groq retired llama-3.3-70b-versatile; this is the
+// strongest general model left on the free tier, and with low reasoning
+// effort it still answers in about a second.
+const CHAT_MODEL = "openai/gpt-oss-120b";
 // Must match the embedding model used at build time in
 // scripts/build-embeddings.ts.
 const EMBED_MODEL = "gemini-embedding-001";
@@ -65,7 +66,8 @@ const SYSTEM_PROMPT = `You're chatting with a visitor on Jubayer Al Mamun's pers
 
 How to sound natural:
 - Conversational. Direct. No marketing fluff, no corporate filler.
-- Avoid em dashes. Use commas, colons, or periods like a normal person typing on a phone. They make text read as AI-generated; do not use them.
+- Avoid em dashes and en dashes. Use commas, colons, or periods like a normal person typing on a phone. They make text read as AI-generated; do not use them.
+- Plain text only. The chat shows your reply as-is, so no Markdown: no asterisks for bold, no headings, no tables. If a list genuinely helps, put each item on its own line starting with "• ".
 - Refer to him as "Jubayer" or "he". Never "the candidate", never "I".
 - Match the energy of the question. Short asks get short answers; deeper asks get more.
 - Vary your phrasing turn to turn. Don't fall into a template.
@@ -260,7 +262,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const retrieved = await retrieve(last.content, manifest, google);
   const context = buildContext(retrieved);
 
-  // Dedupe citations by URL — multiple chunks from the same document
+  // Dedupe citations by URL - multiple chunks from the same document
   // shouldn't render as duplicate "CV · CV" entries to the visitor.
   // The full chunk list still goes into the prompt for grounding.
   const seenUrls = new Set<string>();
@@ -296,15 +298,24 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
           model: groq(CHAT_MODEL),
           system: systemPrompt,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
-          maxOutputTokens: 600,
+          // Reasoning tokens count against this budget, so leave headroom
+          // for them on top of the ~600-token answer.
+          maxOutputTokens: 1200,
+          providerOptions: { groq: { reasoningEffort: "low", reasoningFormat: "hidden" } },
         });
 
-        for await (const chunk of result.textStream) {
-          if (chunk) send("delta", { text: chunk });
+        // fullStream, not textStream: textStream swallows provider errors
+        // (a retired model, a quota hit), which left the client waiting on
+        // an empty bubble forever.
+        for await (const part of result.fullStream) {
+          if (part.type === "text-delta" && part.text) send("delta", { text: part.text });
+          else if (part.type === "error") throw part.error;
         }
         send("done", {});
       } catch (err) {
-        send("error", { message: (err as Error).message });
+        // Provider errors name models and quotas; keep those in the logs.
+        console.error("[ask] stream failed", err);
+        send("error", { message: "The assistant couldn't answer right now. Try again in a minute." });
       } finally {
         controller.close();
       }

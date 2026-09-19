@@ -2,59 +2,28 @@
 import BaseLayout from "./BaseLayout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import type { SeoProps } from "@/types/seo";
 
-type CollectionItem = {
-  title: string;
-  url: string;
-  date?: string | Date;
-  description?: string;
-};
-
-type ProjectMeta = {
-  role?: string;
-  period?: string;
-  url?: string;
-  technologies?: string[];
-  softwareApp?: {
-    applicationCategory: string;
-    operatingSystem: string;
-    price?: string;
-    priceCurrency?: string;
-  };
-};
-
-type Props = {
-  title: string;
-  description?: string;
-  image?: string;
-  imageAlt?: string;
-  keywords?: string[];
-  type?: "website" | "article" | "profile" | "project";
-  pubDate?: string | Date;
-  updatedDate?: string | Date;
-  tags?: string[];
-  projectMeta?: ProjectMeta;
-  collectionItems?: CollectionItem[];
-  collectionKind?: "Article" | "CreativeWork" | "WebPage";
-  profilePage?: boolean;
-  canonical?: string;
-  noindex?: boolean;
+type Props = SeoProps & {
   /**
-   * Mark which top-level route is active for the nav.
-   * One of: "home" | "now" | "projects" | "writings" | "ask" | "about" | "contact".
+   * Which top-level route is active in the nav. One of:
+   * "home" | "now" | "projects" | "writings" | "ask" | "about" | "contact".
+   * Inferred from the URL when omitted.
    */
   activeRoute?: string;
+  /** Hide the footer (the /ask page is a full-height chat). */
+  hideFooter?: boolean;
 };
 
-const { activeRoute, ...seoProps } = Astro.props;
+const { activeRoute, hideFooter = false, ...seoProps } = Astro.props;
 ---
 
 <BaseLayout {...seoProps}>
-  <div class="app">
-    <Header activeRoute={activeRoute} />
-    <main>
-      <slot />
-    </main>
-    <Footer />
-  </div>
+  <slot name="head" slot="head" />
+  <a class="skip-link" href="#main">Skip to content</a>
+  <Header activeRoute={activeRoute} />
+  <main id="main" tabindex="-1">
+    <slot />
+  </main>
+  {!hideFooter && <Footer />}
 </BaseLayout>

@@ -1,10 +1,10 @@
 /// <reference types="@cloudflare/workers-types" />
 /**
- * /api/live-token — mints a short-lived Gemini Live ephemeral token.
+ * /api/live-token - mints a short-lived Gemini Live ephemeral token.
  *
  * The browser uses the returned token to open a WebSocket directly to
  * Google. Our server stays out of the audio path entirely, so this
- * function fires once per session — not per audio frame — keeping the
+ * function fires once per session - not per audio frame - keeping the
  * Pages Function quota near-untouched even for active users.
  *
  * The token is locked to:
@@ -14,9 +14,9 @@
  *   - a system instruction grounding the assistant in Jubayer's CV
  *
  * Bindings (set in Cloudflare Pages dashboard):
- *   GOOGLE_GENERATIVE_AI_API_KEY  — required. Master key used to mint the
+ *   GOOGLE_GENERATIVE_AI_API_KEY  - required. Master key used to mint the
  *                                   ephemeral token.
- *   ASK_QUOTA                     — optional KV namespace. When bound,
+ *   ASK_QUOTA                     - optional KV namespace. When bound,
  *                                   applies a per-IP daily session cap
  *                                   (separate `live:` prefix from the
  *                                   text-chat 30/day cap).
@@ -30,7 +30,7 @@ interface Env {
 
 // Model ID, not the friendly display name. The dashboard shows
 // "Gemini 2.5 Flash Native Audio Dialog" but the actual API id is the
-// preview-tagged identifier below — the @google/genai SDK lists it in
+// preview-tagged identifier below - the @google/genai SDK lists it in
 // its known-Model_2 type. The previous string ("…audio-dialog") was
 // the *display name*, not the API id, and the server rejected it.
 const MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
@@ -130,7 +130,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
             responseModalities: [Modality.AUDIO],
             inputAudioTranscription: {},
             outputAudioTranscription: {},
-            // Male voice — "Puck" is the upbeat, friendly male voice in
+            // Male voice - "Puck" is the upbeat, friendly male voice in
             // Gemini Live's prebuilt set. Distinct character from the
             // deeper "Charon" we previously had.
             // Other male options if you want to swap: "Charon" (deep),
@@ -147,7 +147,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           },
         },
         // Lock the system-instruction-bearing fields. Empty list is fine
-        // — anything inside `liveConnectConstraints.config` is already
+        // - anything inside `liveConnectConstraints.config` is already
         // pinned to that exact value when the browser opens the session.
       },
     });

@@ -49,7 +49,7 @@ type TokenResponse = {
 export function createLiveSession(): LiveSession {
   const listeners = new Set<() => void>();
 
-  // Mutable state — exposed through closures + the returned object's
+  // Mutable state - exposed through closures + the returned object's
   // getters so subscribers always see the latest values.
   let state: LiveState = "idle";
   let level = 0;
@@ -71,13 +71,13 @@ export function createLiveSession(): LiveSession {
   let analyserRaf = 0;
   // The Live API requires a `setupComplete` server message before any
   // realtime input can land. Sending audio frames before that arrives
-  // makes the server quietly close the WebSocket — which surfaces in
+  // makes the server quietly close the WebSocket - which surfaces in
   // the browser as "WebSocket is already in CLOSING or CLOSED state".
   // We gate sends on this flag and queue early frames in pendingPcm.
   let setupReady = false;
   let pendingPcm: ArrayBuffer[] = [];
   let playbackTime = 0; // monotonically advancing for queued buffers
-  // Accumulated text per active turn — Live emits transcripts in chunks
+  // Accumulated text per active turn - Live emits transcripts in chunks
   // and we batch them into one bubble per side at turnComplete.
   let userTurnText = "";
   let assistantTurnText = "";
@@ -246,7 +246,7 @@ export function createLiveSession(): LiveSession {
         sum += v;
       }
       const avg = sum / (combinedFreqData.length * 255);
-      // Boost — voice content tends to live in mid bins, average is low.
+      // Boost - voice content tends to live in mid bins, average is low.
       const boosted = Math.min(1, avg * 2.2);
       if (Math.abs(boosted - level) > 0.01) {
         level = boosted;
@@ -272,7 +272,7 @@ export function createLiveSession(): LiveSession {
 
   function handleServerMessage(message: LiveServerMessage) {
     if (message.setupComplete) {
-      // Server is ready — release any audio captured before this arrived.
+      // Server is ready - release any audio captured before this arrived.
       setupReady = true;
       flushPendingPcm();
     }
@@ -281,7 +281,7 @@ export function createLiveSession(): LiveSession {
     if (!sc) return;
 
     // Transcripts arrive as a stream of partial chunks. We DON'T write
-    // them to chat-store as they stream — that caused the bubbles to
+    // them to chat-store as they stream - that caused the bubbles to
     // visibly dance / shuffle as text mutated character-by-character on
     // /ask. Instead, accumulate per turn locally, then commit a single
     // clean bubble per side once turnComplete arrives.
@@ -292,7 +292,7 @@ export function createLiveSession(): LiveSession {
       assistantTurnText += sc.outputTranscription.text;
     }
 
-    // Audio frames from the model — queue for playback. Track that the
+    // Audio frames from the model - queue for playback. Track that the
     // assistant is producing audio (drives the orb's "speaking" visual).
     const parts = sc.modelTurn?.parts ?? [];
     let producedAudio = false;
@@ -320,7 +320,7 @@ export function createLiveSession(): LiveSession {
 
     if (sc.turnComplete) {
       // Commit the accumulated text to chat-store as a single, clean
-      // pair of bubbles. No partial patches — bubbles only appear once
+      // pair of bubbles. No partial patches - bubbles only appear once
       // they're complete.
       const u = userTurnText.trim();
       const a = assistantTurnText.trim();
@@ -364,7 +364,7 @@ export function createLiveSession(): LiveSession {
           },
           onclose: (e: CloseEvent) => {
             // 1000 = normal close. Anything else is interesting and worth
-            // surfacing — many setup-rejection cases land here without
+            // surfacing - many setup-rejection cases land here without
             // hitting onerror first.
             if (e.code !== 1000) {
               console.warn(

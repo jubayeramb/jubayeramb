@@ -1,0 +1,74 @@
+---
+/** Chronological neighbours at the end of a post or case study. */
+type Link = { href: string; title: string };
+type Props = { newer?: Link; older?: Link; label?: string };
+
+const { newer, older, label = "More posts" } = Astro.props;
+---
+
+{
+  (newer || older) && (
+    <nav class="prevnext" aria-label={label}>
+      {older ? (
+        <a class="prevnext__link" href={older.href} rel="prev">
+          <span class="eyebrow">
+            <span aria-hidden="true">←</span> Older
+          </span>
+          <span class="prevnext__title">{older.title}</span>
+        </a>
+      ) : (
+        <span />
+      )}
+      {newer && (
+        <a class="prevnext__link prevnext__link--next" href={newer.href} rel="next">
+          <span class="eyebrow">
+            Newer <span aria-hidden="true">→</span>
+          </span>
+          <span class="prevnext__title">{newer.title}</span>
+        </a>
+      )}
+    </nav>
+  )
+}
+
+<style>
+  .prevnext {
+    display: grid;
+    gap: var(--space-3);
+  }
+  @media (width >= 48rem) {
+    .prevnext {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .prevnext__link {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    transition:
+      border-color var(--dur-fast) var(--ease),
+      translate var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+  }
+  .prevnext__link--next {
+    text-align: right;
+  }
+  .prevnext__link:hover {
+    border-color: var(--hairline-strong);
+    translate: 0 -3px;
+    box-shadow: var(--shadow-hover);
+  }
+  .prevnext__title {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  .prevnext__link:hover .prevnext__title {
+    color: var(--accent);
+  }
+</style>

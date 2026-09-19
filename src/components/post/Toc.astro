@@ -1,0 +1,155 @@
+---
+/**
+ * "On this page" navigation built from the rendered headings. Rendered as
+ * a sticky rail on wide screens and a collapsible block above the article
+ * otherwise; the current section is highlighted as you scroll.
+ */
+import type { MarkdownHeading } from "astro";
+
+type Props = {
+  headings: MarkdownHeading[];
+  /** Extra entries appended after the Markdown headings (e.g. FAQ). */
+  extra?: { slug: string; text: string }[];
+  variant: "rail" | "inline";
+};
+
+const { headings, extra = [], variant } = Astro.props;
+const items = [
+  ...headings.filter((h) => h.depth === 2 || h.depth === 3),
+  ...extra.map((e) => ({ depth: 2, slug: e.slug, text: e.text })),
+];
+const labelId = `toc-label-${variant}`;
+---
+
+{
+  items.length > 0 &&
+    (variant === "rail" ? (
+      <nav class="toc toc--rail" aria-labelledby={labelId} data-toc>
+        <p id={labelId} class="eyebrow">
+          On this page
+        </p>
+        <ol>
+          {items.map((h) => (
+            <li class:list={[`toc__d${h.depth}`]}>
+              <a href={`#${h.slug}`}>{h.text}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    ) : (
+      <details class="toc toc--inline">
+        <summary id={labelId}>On this page</summary>
+        <nav aria-labelledby={labelId}>
+          <ol>
+            {items.map((h) => (
+              <li class:list={[`toc__d${h.depth}`]}>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </details>
+    ))
+}
+
+<script>
+  // Scroll-spy for the rail: marks the last heading that has scrolled past
+  // the top third of the viewport.
+  const wireToc = () => {
+    const nav = document.querySelector<HTMLElement>("[data-toc]");
+    if (!nav || (nav as any).__wired) return;
+    (nav as any).__wired = true;
+    const links = [...nav.querySelectorAll<HTMLAnchorElement>("a[href^='#']")];
+    const targets = links
+      .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+      .filter((el): el is HTMLElement => !!el);
+    if (!targets.length) return;
+
+    const setCurrent = () => {
+      const line = window.innerHeight * 0.33;
+      let current = targets[0];
+      for (const t of targets) {
+        if (t.getBoundingClientRect().top <= line) current = t;
+      }
+      links.forEach((a) => {
+        const on = a.hash.slice(1) === current.id;
+        if (on) a.setAttribute("aria-current", "location");
+        else a.removeAttribute("aria-current");
+      });
+    };
+
+    let queued = false;
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        setCurrent();
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("astro:before-swap", () => window.removeEventListener("scroll", onScroll), {
+      once: true,
+    });
+    setCurrent();
+  };
+  wireToc();
+  document.addEventListener("astro:page-load", wireToc);
+</script>
+
+<style>
+  .toc ol {
+    display: grid;
+    gap: 0.1rem;
+  }
+  .toc a {
+    display: block;
+    padding: 0.3rem 0 0.3rem 0.85rem;
+    border-left: 2px solid var(--hairline);
+    font-size: var(--text-sm);
+    line-height: 1.4;
+    color: var(--ink-2);
+    transition:
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+  .toc__d3 a {
+    padding-left: 1.6rem;
+    font-size: 0.8125rem;
+  }
+  .toc a:hover {
+    color: var(--ink);
+  }
+  .toc a[aria-current="location"] {
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .toc--rail {
+    position: sticky;
+    top: 6rem;
+    max-height: calc(100dvh - 8rem);
+    overflow-y: auto;
+  }
+  .toc--rail .eyebrow {
+    margin-bottom: var(--space-3);
+  }
+
+  .toc--inline {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .toc--inline summary {
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .toc--inline nav {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+</style>

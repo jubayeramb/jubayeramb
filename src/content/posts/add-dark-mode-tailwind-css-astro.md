@@ -9,7 +9,7 @@ A quick guide on how to add dark mode to your Astro (or whatever) website using 
 In this blog, I will show you how to add dark mode to a Astro website. This will also work with any other framework or even vanilla HTML/CSS/JS. </br>
 You can check the complete source code of this blog on [GitHub](https://github.com/jubayeramb/astro-tailwind-dark-theme).
 
-### 1. Initial setup
+## 1. Initial setup
 
 Initialize an Astro project by running the following command in your terminal:
 
@@ -28,7 +28,7 @@ npm run dev
 
 The default dev server will be running on `localhost:4321`.
 
-### 2. Add Tailwind CSS
+## 2. Add Tailwind CSS
 
 You can add Tailwind CSS to your project by running the following command in your terminal:
 
@@ -40,7 +40,7 @@ The `astro add` CLI command will automatically install the required dependencies
 
 > You can also add Tailwind CSS manually by following the [Manual Tailwind CSS installation documentation](https://docs.astro.build/en/guides/integrations-guide/tailwind/#manual-install) on Astro doc.
 
-### 3. Clean up the project (optional)
+## 3. Clean up the project (optional)
 
 If you chose the empty template, you don't need to follow this step. But if you chose any other template, you can clean up the project by removing the unnecessary files and code. You can remove the following files and folders:
 
@@ -92,12 +92,12 @@ const { title } = Astro.props;
 
 Now you can save the files and check the browser (make suer the dev server is running). You should see a page with a title "Welcome To Your Site" placed in the center of the page. _**Notice that the Tailwind CSS is already working.**_
 
-### 4. Add dark mode
+## 4. Add dark mode
 
 Now we will add dark mode to our website. We will be using the `prefers-color-scheme` media query to detect the user's system preference by default and then we will add a toggle button to switch between light and dark mode.
 To skip the `dark:` prefixes, we will take advantage of the Tailwind color palette customization and CSS variables. First we will declare two color variable in our `./src/styles/global.css` file and define the colors in the `tailwind.config.js` file and then we will use the `bg-[color]` and `text-[color]` classes to apply the colors to the elements.
 
-#### 4.1. Add color variables
+### 4.1. Add color variables
 
 Create a `global.css` file in the `./src/styles/` directory and add the following code:
 
@@ -135,7 +135,7 @@ Create a `global.css` file in the `./src/styles/` directory and add the followin
 
 > **Notice** that we are using the `:root[data-theme="light"]` and `:root[data-theme="dark"]` selectors to define the colors. We will use the `data-theme` attribute to switch between light and dark mode. We're also using the `prefers-color-scheme` media query to detect the user's system preference by default.
 
-#### 4.2. Add color definitions
+### 4.2. Add color definitions
 
 Now open the `tailwind.config.cjs` file and add the following code:
 
@@ -155,7 +155,7 @@ export default {
 };
 ```
 
-#### 4.3. Import global styles
+### 4.3. Import global styles
 
 Usually you will be using the `Layout.astro` component to wrap your other pages. So import the `global.css` file in the `./src/layouts/Layout.astro` file frontmatter (otherwise add it to the `index.astro` file, if you're not using the `Layout.astro` component) like this:
 
@@ -182,7 +182,7 @@ Now all you need to do is to use the `bg-bgColor` and `text-contentColor` classe
 **Wohoo! You have successfully added dark mode to your website!** 🔥 </br>
 Now your site will respond to the user's system preference. Toggle your System theme to see the effect on your site. But we still need to add a toggle button for the user to switch between light and dark mode manually.
 
-#### 4.4. Add a toggle button
+### 4.4. Add a toggle button
 
 Now we will add a toggle button to switch between light and dark mode manually. We will use the `data-theme` attribute to switch between light and dark mode. We will also use the `--sun-fill` and `--moon-fill` variables to define the fill color of the sun and moon icons. We will use the `bg-bgColor` and `text-contentColor` classes to apply the colors to the elements.
 

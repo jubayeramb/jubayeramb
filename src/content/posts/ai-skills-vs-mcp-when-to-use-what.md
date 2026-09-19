@@ -4,8 +4,24 @@ description: "A practical guide to AI agent skills and the Model Context Protoco
 pubDate: 2026-05-12
 tags: ["technical", "ai", "agents", "claude", "mcp", "skills"]
 image:
-  url: "/assets/images/blog/ai-skills-vs-mcp/hero.png"
+  src: "./images/ai-skills-vs-mcp/hero.png"
   alt: "AI Skills vs MCP cover. Bold serif type setting Skills against MCP in the post's accent blue."
+tldr:
+  - "Skills teach your agent **how** to do a task well. MCP gives your agent **access** to systems it would not otherwise reach."
+  - "If the gap you are trying to close is \"the model does not know our house style,\" that is a Skill. If the gap is \"the model cannot see our Drive, Postgres, or Linear,\" that is MCP."
+  - "MCP is not free at runtime. Every tool the server exposes goes into the agent's context as part of the tool catalog, every single turn."
+  - "Most real workflows are MCP for the verbs and Skills for the style."
+faq:
+  - q: "What are AI Skills vs MCP, in one line each?"
+    a: "Skills are reusable instruction packs the agent loads on demand. MCP is a protocol that lets the agent talk to outside systems."
+  - q: "What is the difference between AI Agent Skills and MCP?"
+    a: "Same answer. Skills live in your repo. MCP lives behind a server. Skills carry know-how. MCP carries access."
+  - q: "Do Skills replace MCP?"
+    a: "No. They share an agent runtime but solve different problems. Skills cannot fetch a fresh row from your database. MCP cannot capture how your team writes a pull request comment."
+  - q: "Should I rewrite my MCP server as a Skill?"
+    a: "Only if the tool was never really fetching live data. A lot of \"MCP servers\" in the wild are static lookup tables that would be lighter and faster as a Skill. If you grep your server and it never reads from a network, it is a Skill in disguise."
+  - q: "Where do agents and subagents fit?"
+    a: "An agent is the runtime. Skills and MCP are two ways you extend it. A subagent is a way to spawn another agent run for a focused task, with its own Skills and MCP servers. Different layer of the stack."
 ---
 
 If you build with agents, you have probably been asked the same question a dozen times this year. Should I write a Skill for this, or wrap it in an MCP server? Both extend what an agent can do. Both come from the same Anthropic playbook. Both have loud fan bases on the timeline.
@@ -116,23 +132,6 @@ Say you want an agent that ships your weekly customer digest.
 - It needs to post the digest in the `#growth` channel and tag the owner. **MCP.** A Slack MCP server gives you `post_message(channel, body)`.
 
 Notice how the seam falls. MCP shows up wherever the agent crosses a system boundary. Skills show up wherever the agent has to make a judgment call about _how good_ the output should be.
-
-## Frequently asked, briefly
-
-**What are AI Skills vs MCP, in one line each?**
-Skills are reusable instruction packs the agent loads on demand. MCP is a protocol that lets the agent talk to outside systems.
-
-**What is the difference between AI Agent Skills and MCP?**
-Same answer. Skills live in your repo. MCP lives behind a server. Skills carry know-how. MCP carries access.
-
-**Do Skills replace MCP?**
-No. They share an agent runtime but solve different problems. Skills cannot fetch a fresh row from your database. MCP cannot capture how your team writes a pull request comment.
-
-**Should I rewrite my MCP server as a Skill?**
-Only if the tool was never really fetching live data. A lot of "MCP servers" in the wild are static lookup tables that would be lighter and faster as a Skill. If you grep your server and it never reads from a network, it is a Skill in disguise.
-
-**Where do agents and subagents fit?**
-An agent is the runtime. Skills and MCP are two ways you extend it. A subagent is a way to spawn another agent run for a focused task, with its own Skills and MCP servers. Different layer of the stack.
 
 ## The short rule I use
 

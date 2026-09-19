@@ -1,16 +1,155 @@
 ---
+import Signature from "./Signature.astro";
+import { ASK_NAV, AUTHOR, NAV, SITE_DESCRIPTION, SOCIALS } from "@/lib/site";
+import { siteLastUpdated } from "@/lib/site-meta";
+import { getShortMonthYear, isoDay } from "@/utils";
+
+const updated = siteLastUpdated();
 const year = new Date().getFullYear();
-const updated = new Date().toLocaleString("en-US", {
-  month: "short",
-  year: "numeric",
-});
+
+const SUBSCRIBE = [
+  { label: "RSS feed", href: "/rss.xml" },
+  { label: "JSON Feed", href: "/feed.json" },
+  { label: "llms.txt", href: "/llms.txt" },
+];
 ---
 
-<footer class="footer">
-  <div>© {year} Jubayer Al Mamun</div>
-  <div>
-    <a href="/rss.xml" aria-label="RSS feed">RSS</a>
-    <span style="margin: 0 8px; color: var(--line-2);">·</span>
-    Updated · {updated}
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div class="site-footer__id">
+        <a href="/" class="site-footer__brand" aria-label={`${AUTHOR.name}, home`}>
+          <Signature width={104} />
+        </a>
+        <p class="site-footer__about">{SITE_DESCRIPTION}</p>
+        <p class="site-footer__status">
+          <span class="status-dot" aria-hidden="true"></span>
+          Open to freelance work
+        </p>
+      </div>
+
+      <nav aria-labelledby="footer-site">
+        <h2 id="footer-site" class="eyebrow">Site</h2>
+        <ul>
+          {[...NAV, ASK_NAV].map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+        </ul>
+      </nav>
+
+      <nav aria-labelledby="footer-elsewhere">
+        <h2 id="footer-elsewhere" class="eyebrow">Elsewhere</h2>
+        <ul>
+          {
+            SOCIALS.map((s) => (
+              <li>
+                <a href={s.href} target="_blank" rel="noopener me">
+                  {s.label} <span aria-hidden="true">↗</span>
+                </a>
+              </li>
+            ))
+          }
+          <li><a href={`mailto:${AUTHOR.email}`}>Email</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-labelledby="footer-subscribe">
+        <h2 id="footer-subscribe" class="eyebrow">Subscribe</h2>
+        <ul>
+          {SUBSCRIBE.map((s) => <li><a href={s.href}>{s.label}</a></li>)}
+        </ul>
+      </nav>
+    </div>
+
+    <div class="site-footer__base meta">
+      <p>© {year} {AUTHOR.name}</p>
+      {
+        updated && (
+          <p>
+            Last updated <time datetime={isoDay(updated)}>{getShortMonthYear(updated)}</time>
+          </p>
+        )
+      }
+    </div>
   </div>
 </footer>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    padding-block: var(--space-16) var(--space-8);
+    background: var(--band);
+    border-top: 1px solid var(--hairline);
+  }
+  .site-footer__grid {
+    display: grid;
+    gap: var(--space-10) var(--space-8);
+    grid-template-columns: 1fr;
+  }
+  @media (width >= 30rem) {
+    .site-footer__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .site-footer__id {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (width >= 64rem) {
+    .site-footer__grid {
+      grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+    }
+    .site-footer__id {
+      grid-column: auto;
+    }
+  }
+  .site-footer__brand {
+    display: inline-flex;
+    color: var(--ink);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .site-footer__brand:hover {
+    color: var(--accent);
+  }
+  .site-footer__about {
+    margin-top: var(--space-4);
+    max-width: 34ch;
+    color: var(--ink-2);
+  }
+  .site-footer__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: var(--space-5);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--success) 18%, transparent);
+  }
+  nav h2 {
+    margin-bottom: var(--space-4);
+  }
+  nav ul {
+    display: grid;
+    gap: var(--space-2);
+  }
+  nav a {
+    color: var(--ink-2);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  nav a:hover {
+    color: var(--accent);
+  }
+  .site-footer__base {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-6);
+    margin-top: var(--space-12);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--hairline);
+  }
+</style>

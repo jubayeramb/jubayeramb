@@ -1,138 +1,280 @@
 ---
+import type { MarkdownHeading } from "astro";
+import { Picture, getImage } from "astro:assets";
 import Layout from "./Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
-import type { CollectionEntry } from "astro:content";
+import Toc from "@/components/post/Toc.astro";
+import Faq from "@/components/post/Faq.astro";
+import PrevNext from "@/components/post/PrevNext.astro";
+import CodeCopy from "@/components/post/CodeCopy.astro";
+import Button from "@/components/ui/Button.astro";
+import PostRow from "@/components/ui/PostRow.astro";
+import SectionHeader from "@/components/ui/SectionHeader.astro";
+import { getPostsAboutProject, getProjects, getSortedPosts, type Project } from "@/lib/posts";
+import "../styles/prose.css";
 
-type Props = { project: CollectionEntry<"projects"> };
+type Props = { project: Project; headings: MarkdownHeading[] };
 
-const { project } = Astro.props;
-const { data: frontmatter, body, id: projectId } = project;
+const { project, headings } = Astro.props;
+const { title, company, role, period, summary, url, metrics, technologies, cover, softwareApp, faq, pubDate, updatedDate } =
+  project.data;
 
-const {
-  title,
-  company,
-  role,
-  period,
-  summary,
-  url,
-  metrics,
-  technologies,
-  cover,
-  softwareApp,
-} = frontmatter;
+const projects = await getProjects();
+const i = projects.findIndex((p) => p.id === project.id);
+const prev = projects[i - 1];
+const next = projects[i + 1];
+const posts = getPostsAboutProject(project.id, await getSortedPosts());
+const showToc = headings.filter((h) => h.depth === 2).length >= 3;
 
-const wordCount = (body ?? "").split(/\s+/).filter(Boolean).length;
-const readingTime = Math.max(1, Math.ceil(wordCount / 220));
+const coverImage = cover ? await getImage({ src: cover.src, width: 1200, format: "jpg" }) : undefined;
+const host = url ? new URL(url).host : undefined;
 ---
 
 <Layout
   {title}
   description={summary}
-  image={cover?.url}
-  imageAlt={cover?.alt || title}
   type="project"
   tags={technologies}
-  projectMeta={{
-    role,
-    period,
-    url,
-    technologies,
-    softwareApp,
-  }}
+  {pubDate}
+  {updatedDate}
+  projectMeta={{ role, period, url, technologies, softwareApp }}
+  cover={coverImage && cover ? { src: coverImage.src, width: 1200, height: Math.round((1200 * cover.src.height) / cover.src.width) } : undefined}
+  {faq}
+  markdownAlternate={`/projects/${project.id}.md`}
   activeRoute="projects"
 >
-  <article class="page">
-    <FadeUp>
-      <div style="margin-bottom: 24px;">
-        <a
-          href="/projects"
-          style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
-          >← All projects</a
-        >
-      </div>
-    </FadeUp>
+  <article>
+    <header class="band case-head">
+      <div class="container">
+        <a class="case-back" href="/projects/"><span aria-hidden="true">←</span> Projects</a>
+        <p class="eyebrow">{role} · {company}</p>
+        <h1 class="case-title" transition:name={`project-${project.id}`}>{title}</h1>
+        <p class="case-lead">{summary}</p>
 
-    <FadeUp delay={40}>
-      <h1 class="h1" style="margin-bottom: 12px;" transition:name={`project-${projectId}`}>{title}</h1>
-    </FadeUp>
+        <dl class="case-facts">
+          <div>
+            <dt>Period</dt>
+            <dd>{period}</dd>
+          </div>
+          {
+            metrics.map((m) => (
+              <div>
+                <dt>{m.label}</dt>
+                <dd>{m.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
 
-    <FadeUp delay={80}>
-      <div class="project-meta">
         {
-          url ? (
-            <a href={url} target="_blank" rel="noopener" class="project-co">
-              {company} ↗
-            </a>
-          ) : (
-            <span class="project-co">{company}</span>
+          url && (
+            <div class="case-actions">
+              <Button href={url} external arrow="out">
+                Visit {host}
+              </Button>
+            </div>
           )
         }
-        <span class="project-sep">·</span>
-        <span>{role}</span>
-        <span class="project-sep">·</span>
-        <span>{period}</span>
-        <span class="project-sep">·</span>
-        <span>{readingTime} min read</span>
       </div>
-    </FadeUp>
-
-    <FadeUp delay={120}>
-      <p class="lead" style="margin-top: 18px;">{summary}</p>
-    </FadeUp>
+    </header>
 
     {
-      metrics.length > 0 && (
-        <FadeUp delay={160}>
-          <div class="metric-grid">
-            {metrics.map((m) => (
-              <div class="metric">
-                <div class="metric-label">{m.label}</div>
-                <div class="metric-value">{m.value}</div>
-              </div>
-            ))}
-          </div>
-        </FadeUp>
-      )
-    }
-
-    {
-      cover?.url && (
-        <FadeUp delay={200}>
-          <figure style="margin-top: 28px;">
-            <img
-              src={cover.url}
-              alt={cover.alt || title}
-              style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--line);"
+      cover && (
+        <div class="container case-cover-wrap">
+          <figure class="case-cover">
+            <Picture
+              src={cover.src}
+              alt={cover.alt}
+              widths={[480, 800, 1200]}
+              sizes="(width >= 70rem) 70rem, 100vw"
+              formats={["avif", "webp"]}
               loading="eager"
+              decoding="async"
             />
           </figure>
-        </FadeUp>
+        </div>
       )
     }
 
-    <FadeUp delay={240}>
-      <div
-        id="article-content"
-        class="blog-content"
-        style="margin-top: 32px;"
-      >
-        <slot />
-      </div>
-    </FadeUp>
-
-    {
-      technologies.length > 0 && (
-        <FadeUp delay={280}>
-          <div class="section">
-            <div class="section-label">Stack</div>
-            <div class="stack-list">
-              {technologies.map((t) => (
-                <span>{t}</span>
-              ))}
-            </div>
+    <div class="container case-grid">
+      <div class="case-main">
+        {showToc && (
+          <div class="case-toc-inline">
+            <Toc {headings} variant="inline" />
           </div>
-        </FadeUp>
-      )
-    }
+        )}
+        <div class="prose">
+          <slot />
+        </div>
+        {faq && faq.length > 0 && <Faq items={faq} />}
+
+        <section aria-labelledby="stack">
+          <h2 id="stack" class="eyebrow case-stack-title">Built with</h2>
+          <ul class="case-stack">
+            {technologies.map((t) => <li>{t}</li>)}
+          </ul>
+        </section>
+      </div>
+      {
+        showToc && (
+          <aside class="case-rail" aria-label="Table of contents">
+            <Toc {headings} variant="rail" />
+          </aside>
+        )
+      }
+    </div>
   </article>
+
+  <section class="band band--alt" aria-labelledby="more-work">
+    <div class="container case-more">
+      {
+        posts.length > 0 && (
+          <div>
+            <SectionHeader eyebrow="Writing" title="Posts about this project" level={2} />
+            {posts.map((p) => (
+              <PostRow post={p} transition={false} />
+            ))}
+          </div>
+        )
+      }
+      <h2 id="more-work" class="sr-only">More projects</h2>
+      <PrevNext
+        label="More projects"
+        older={next && { href: `/projects/${next.id}/`, title: next.data.title }}
+        newer={prev && { href: `/projects/${prev.id}/`, title: prev.data.title }}
+      />
+    </div>
+  </section>
 </Layout>
+
+<CodeCopy />
+
+<style>
+  .case-head {
+    padding-top: clamp(2rem, 1.25rem + 3vw, 3.5rem);
+    padding-bottom: var(--space-10);
+  }
+  .case-back {
+    display: inline-flex;
+    gap: 0.4em;
+    margin-bottom: var(--space-8);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .case-back:hover {
+    color: var(--accent);
+  }
+  .case-title {
+    margin-top: var(--space-3);
+    font-size: var(--text-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
+  }
+  .case-lead {
+    margin-top: var(--space-5);
+    max-width: 44rem;
+    font-size: var(--text-lg);
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+  .case-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 1px;
+    margin-top: var(--space-10);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    background: var(--hairline);
+    overflow: hidden;
+  }
+  .case-facts div {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-4) var(--space-5);
+    background: var(--canvas);
+  }
+  .case-facts dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .case-facts dd {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .case-actions {
+    margin-top: var(--space-8);
+  }
+
+  .case-cover-wrap {
+    margin-bottom: var(--space-12);
+  }
+  .case-cover :global(img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1200 / 630;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--hairline);
+  }
+
+  .case-grid {
+    display: grid;
+    grid-template-columns: minmax(0, var(--w-prose));
+    justify-content: center;
+    padding-bottom: var(--band-pad);
+  }
+  @media (width >= 75rem) {
+    .case-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, var(--w-prose)) minmax(0, 1fr);
+      column-gap: var(--space-12);
+    }
+    .case-main {
+      grid-column: 2;
+    }
+    .case-rail {
+      grid-column: 3;
+      grid-row: 1;
+      max-width: 15rem;
+    }
+    .case-toc-inline {
+      display: none;
+    }
+  }
+  .case-rail {
+    display: none;
+  }
+  @media (width >= 75rem) {
+    .case-rail {
+      display: block;
+    }
+  }
+  .case-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+  .case-stack-title {
+    margin-bottom: var(--space-3);
+  }
+  .case-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .case-stack li {
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--radius-control);
+    background: var(--ink);
+    color: var(--canvas);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+  .case-more {
+    display: grid;
+    gap: var(--space-10);
+  }
+</style>

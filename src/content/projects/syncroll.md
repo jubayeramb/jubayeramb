@@ -14,12 +14,13 @@ technologies:
 softwareApp:
   applicationCategory: BrowserApplication
   operatingSystem: Chrome 145+
+  installUrl: https://chromewebstore.google.com/detail/syncroll-split-view-sync/ghpgfihdllhgmjkgkjnkmoonelfokpdi
 metrics:
   - { label: Sync modes, value: "3" }
   - { label: Chrome target, value: "v145+" }
   - { label: Pairs, value: "Cross-mode" }
 cover:
-  url: /projects/syncroll.png
+  src: ./images/syncroll.png
   alt: Syncroll, split-view scroll sync
 ---
 
@@ -47,5 +48,6 @@ A zero-build Chrome extension that handles three kinds of pages:
   events and replays them on the other side.
 
 Cross-mode pairs work cleanly: a normal site on one side and Figma on the
-other syncs without thinking about it. Landing page is at
+other syncs without thinking about it. It's on the
+[Chrome Web Store](https://chromewebstore.google.com/detail/syncroll-split-view-sync/ghpgfihdllhgmjkgkjnkmoonelfokpdi), and the landing page is at
 [syncroll.jubayeramb.com](https://syncroll.jubayeramb.com/).

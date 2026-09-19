@@ -1,46 +1,76 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import { getSortedPosts } from "@/lib/posts";
+import { tagLabel } from "@/lib/tags";
 import { getAllUniqueTags } from "@/utils";
-import { getCollection } from "astro:content";
 
-const allPosts = await getCollection("posts");
-const tags = getAllUniqueTags(allPosts).sort();
+const posts = await getSortedPosts();
+const tags = getAllUniqueTags(posts)
+  .map((tag) => ({ tag, count: posts.filter((p) => p.data.tags.includes(tag)).length }))
+  .sort((a, b) => b.count - a.count || tagLabel(a.tag).localeCompare(tagLabel(b.tag)));
 
 const title = "Tags";
-const description =
-  "Browse Jubayer Al Mamun's writing by topic: JavaScript, TypeScript, Astro, CSS, and more.";
+const description = "Browse Jubayer Al Mamun's writing by topic: JavaScript, TypeScript, Astro, CSS, AI, and more.";
 
-const collectionItems = tags.map((tag) => ({
-  title: `#${tag}`,
-  url: `/tags/${tag}/`,
-}));
+const collectionItems = tags.map(({ tag }) => ({ title: tagLabel(tag), url: `/tags/${tag}/` }));
 ---
 
-<Layout
-  {title}
-  {description}
-  activeRoute="writings"
-  collectionItems={collectionItems}
-  collectionKind="WebPage"
->
-  <div class="page">
-    <FadeUp>
-      <h1 class="h1">Tags</h1>
-    </FadeUp>
-    <FadeUp delay={60}>
-      <p class="lead">
-        Browse writing by topic. {tags.length}
-        {tags.length === 1 ? "tag" : "tags"} in total.
-      </p>
-    </FadeUp>
+<Layout {title} {description} activeRoute="writings" {collectionItems} collectionKind="WebPage">
+  <PageHeader title="Tags" eyebrow={`${tags.length} topics`} back={{ href: "/writings/", label: "Writing" }}>
+    <p>Browse writing by topic.</p>
+  </PageHeader>
 
-    <section class="section">
-      <FadeUp>
-        <div class="tag-cloud">
-          {tags.map((tag) => <a href={`/tags/${tag}`}>#{tag}</a>)}
-        </div>
-      </FadeUp>
-    </section>
-  </div>
+  <section class="band band--flush-top" aria-label="All tags">
+    <div class="container">
+      <ul class="tag-grid">
+        {
+          tags.map(({ tag, count }) => (
+            <li>
+              <a href={`/tags/${tag}/`}>
+                <span class="tag-grid__name">{tagLabel(tag)}</span>
+                <span class="meta">
+                  {count} {count === 1 ? "post" : "posts"}
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
 </Layout>
+
+<style>
+  .tag-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: var(--space-3);
+  }
+  .tag-grid a {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    transition:
+      border-color var(--dur-fast) var(--ease),
+      translate var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+  }
+  .tag-grid a:hover {
+    border-color: var(--hairline-strong);
+    translate: 0 -3px;
+    box-shadow: var(--shadow-hover);
+  }
+  .tag-grid__name {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: 600;
+  }
+  .tag-grid a:hover .tag-grid__name {
+    color: var(--accent);
+  }
+</style>

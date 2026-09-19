@@ -1,36 +1,26 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import FadeUp from "@/components/FadeUp.astro";
 import type { GetStaticPaths } from "astro";
-import type { BlogPostType } from "@/types";
-import { getAllUniqueTags, getFullDate } from "@/utils";
-import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import PostRow from "@/components/ui/PostRow.astro";
+import { getSortedPosts, type Post } from "@/lib/posts";
+import { isThinTag, tagLabel } from "@/lib/tags";
+import { getAllUniqueTags } from "@/utils";
 
 export const getStaticPaths = (async () => {
-  const allPosts: BlogPostType[] = await getCollection("posts");
-  const uniqueTags = getAllUniqueTags(allPosts);
-
-  return uniqueTags.map((tag) => {
-    const filteredPosts = allPosts.filter((post) =>
-      post.data.tags?.includes(tag)
-    );
-    return {
-      params: { tag },
-      props: { posts: filteredPosts },
-    };
-  });
+  const posts = await getSortedPosts();
+  return getAllUniqueTags(posts).map((tag) => ({
+    params: { tag },
+    props: { posts: posts.filter((p) => p.data.tags.includes(tag)) },
+  }));
 }) satisfies GetStaticPaths;
 
 const { tag } = Astro.params;
-const { posts } = Astro.props;
-const sortedPosts = posts.sort(
-  (a, b) =>
-    new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()
-);
+const { posts } = Astro.props as { posts: Post[] };
+const label = tagLabel(tag);
+const count = `${posts.length} ${posts.length === 1 ? "post" : "posts"}`;
 
-const description = `Posts by Jubayer Al Mamun tagged with #${tag}. ${sortedPosts.length} ${sortedPosts.length === 1 ? "post" : "posts"}.`;
-
-const collectionItems = sortedPosts.map((p) => ({
+const collectionItems = posts.map((p) => ({
   title: p.data.title,
   url: `/writings/${p.id}/`,
   date: p.data.pubDate,
@@ -39,50 +29,21 @@ const collectionItems = sortedPosts.map((p) => ({
 ---
 
 <Layout
-  title={`#${tag}`}
-  {description}
-  keywords={[tag as string]}
+  title={`${label} posts`}
+  description={`Posts by Jubayer Al Mamun about ${label}. ${count}.`}
+  keywords={[label]}
   activeRoute="writings"
-  collectionItems={collectionItems}
+  {collectionItems}
   collectionKind="Article"
+  robots={isThinTag(posts.length) ? "noindex-follow" : "index"}
 >
-  <div class="page">
-    <FadeUp>
-      <div style="margin-bottom: 16px;">
-        <a
-          href="/tags"
-          style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); border-bottom: 1px solid var(--line-2); padding-bottom: 1px;"
-          >← All tags</a
-        >
-      </div>
-    </FadeUp>
-    <FadeUp delay={40}>
-      <h1 class="h1">
-        Posts tagged <em>#{tag}</em>
-      </h1>
-    </FadeUp>
-    <FadeUp delay={80}>
-      <p class="lead">
-        {sortedPosts.length} {sortedPosts.length === 1 ? "post" : "posts"}.
-      </p>
-    </FadeUp>
+  <PageHeader title={label} eyebrow={count} back={{ href: "/tags/", label: "All tags" }}>
+    <p>Posts tagged {label}.</p>
+  </PageHeader>
 
-    <section class="section">
-      <div class="list">
-        {
-          sortedPosts.map((post, i) => (
-            <FadeUp
-              delay={i * 30}
-              as="a"
-              class="list-item"
-              href={`/writings/${post.id}`}
-            >
-              <div class="list-title">{post.data.title}</div>
-              <div class="list-meta">{getFullDate(post.data.pubDate)}</div>
-            </FadeUp>
-          ))
-        }
-      </div>
-    </section>
-  </div>
+  <section class="band band--flush-top" aria-label={`Posts tagged ${label}`}>
+    <div class="container">
+      {posts.map((post) => <PostRow post={post} headingLevel={2} transition={false} />)}
+    </div>
+  </section>
 </Layout>
