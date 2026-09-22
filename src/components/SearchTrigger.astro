@@ -3,7 +3,7 @@
 // the palette module itself loads on first use (see CommandPalette.astro).
 ---
 
-<button type="button" class="search-trigger" id="search-trigger" aria-label="Search the site" aria-keyshortcuts="Meta+K Control+K">
+<button type="button" class="search-trigger" id="search-trigger" aria-keyshortcuts="Meta+K Control+K">
   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <circle cx="11" cy="11" r="7"></circle>
     <path d="m20 20-3.5-3.5"></path>
@@ -57,7 +57,18 @@
     border-color: var(--control);
     background: var(--surface);
   }
-  .search-trigger__label,
+  /* Icon only on small screens. The label is hidden visually, not with
+     display: none, so it still names the button: an aria-label that
+     differs from the visible "Search" would fail WCAG 2.5.3 (label in
+     name) on wide screens. */
+  .search-trigger__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .search-trigger__kbd {
     display: none;
   }
@@ -65,7 +76,13 @@
     .search-trigger {
       padding: 0 0.45rem 0 0.8rem;
     }
-    .search-trigger__label,
+    .search-trigger__label {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip-path: none;
+    }
     .search-trigger__kbd {
       display: inline;
     }
