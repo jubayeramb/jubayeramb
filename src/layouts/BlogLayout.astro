@@ -8,6 +8,7 @@ import Faq from "@/components/post/Faq.astro";
 import AuthorBio from "@/components/post/AuthorBio.astro";
 import PrevNext from "@/components/post/PrevNext.astro";
 import CodeCopy from "@/components/post/CodeCopy.astro";
+import ReducedMotionVideo from "@/components/post/ReducedMotionVideo.astro";
 import PostRow from "@/components/ui/PostRow.astro";
 import SectionHeader from "@/components/ui/SectionHeader.astro";
 import { getPrevNext, getReadingStats, getRelatedPosts, getSortedPosts, type Post } from "@/lib/posts";
@@ -144,6 +145,7 @@ const cover = image ? await getImage({ src: image.src, width: 1200, format: "jpg
 </Layout>
 
 <CodeCopy />
+<ReducedMotionVideo />
 
 <style>
   /* One reading column, with a table-of-contents rail on wide screens. */

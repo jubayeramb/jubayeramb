@@ -1,0 +1,18 @@
+---
+// In-body clips autoplay muted on a loop. Readers who ask for reduced
+// motion get the poster frame and controls instead.
+---
+
+<script>
+  const settle = () => {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    document.querySelectorAll<HTMLVideoElement>(".prose video[autoplay]").forEach((video) => {
+      video.pause();
+      video.removeAttribute("autoplay");
+      video.currentTime = 0;
+      video.controls = true;
+    });
+  };
+  settle();
+  document.addEventListener("astro:page-load", settle);
+</script>
