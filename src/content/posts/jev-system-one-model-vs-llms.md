@@ -72,7 +72,10 @@ The sampling row is the one that explains the rest.
 An LLM answering three questions has to write them out, token by token, in order.
 Jev scores every option for every question at the same time.
 
+<figure>
 <video src="/assets/images/blog/jev-system-one-model/sampling.mp4" poster="/assets/images/blog/jev-system-one-model/sampling-poster.png" width="1600" height="900" autoplay muted loop playsinline preload="metadata" aria-label="Side by side animation. On the left an LLM types out a JSON answer one token at a time. On the right Jev fills in all three typed answers at once, each with a probability bar."></video>
+<figcaption>An 8 second loop. Both sides start empty: Jev fills in all three answers at once while the LLM is still typing its first field.</figcaption>
+</figure>
 
 Giving up text is the whole trade.
 Jev cannot write you an email.
@@ -86,41 +89,40 @@ There are three question types, and every answer comes back typed:
 - **Score.** A level on a scale you describe. Returns a score, the probabilities per level, and a confidence.
 - **Noul.** A yes or no. Returns the probability that it is true.
 
-Here is the example from their quickstart, using the Python SDK.
-One support ticket, three questions, one call:
+Here is the support ticket example from their quickstart, written with their TypeScript SDK, [`@typesafe-ai/sdk`](https://www.npmjs.com/package/@typesafe-ai/sdk).
+One ticket, three questions, one call:
 
-```python
-from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+```ts
+import { choice, noul, score, TypeSafeClient } from "@typesafe-ai/sdk";
 
-client = TypeSafeClient()
+const client = new TypeSafeClient(); // reads TYPESAFE_API_KEY
 
-ticket = "Hi, I've been trying to connect my Stripe account for 3 days and the integration keeps failing. I'm losing sales. Please help ASAP."
+const ticket =
+  "Hi, I've been trying to connect my Stripe account for 3 days and the integration keeps failing. I'm losing sales. Please help ASAP.";
 
-response = client.system_one(
-    state=ticket,
-    questions={
-        "department": Choice(
-            instructions="Which team should handle this",
-            criteria={
-                "billing": "Payment or subscription issues",
-                "technical": "Bugs or integration problems",
-                "sales": "Pricing or account questions",
-            },
-        ),
-        "frustration": Score(
-            instructions="How frustrated the customer appears",
-            criteria=[
-                "Calm, just stating facts",
-                "Frustrated but civil",
-                "Very angry, strong language",
-            ],
-        ),
-        "is_urgent": Noul(
-            instructions="The message conveys urgency or time-sensitivity",
-        ),
-    },
-)
+const { answers } = await client.systemOne({
+  state: ticket,
+  questions: {
+    department: choice("Which team should handle this", {
+      billing: "Payment or subscription issues",
+      technical: "Bugs or integration problems",
+      sales: "Pricing or account questions",
+    }),
+    frustration: score("How frustrated the customer appears", [
+      "Calm, just stating facts",
+      "Frustrated but civil",
+      "Very angry, strong language",
+    ]),
+    is_urgent: noul("The message conveys urgency or time-sensitivity"),
+  },
+});
+
+answers.department.choice; // "billing" | "technical" | "sales"
+answers.frustration.score; // number, 0 to 2
+answers.is_urgent.noul; // number, probability of yes
 ```
+
+The SDK infers each answer's type from its question, so `answers.department.choice` is the union of your three labels, not a `string`.
 
 And the answers that come back (trimmed):
 
@@ -157,18 +159,31 @@ Every Choice and Score answer comes with a confidence between 0 and 1, derived f
 The docs suggest three paths: act on high confidence, confirm on medium, hand off on low.
 And the threshold should follow the stakes, not be one number for the whole system:
 
-```python
-action = response.answers["action"]
+```ts
+const { answers } = await client.systemOne({
+  state: userMessage,
+  questions: {
+    action: choice("What is the user trying to do?", {
+      check_balance: "View account balance",
+      approve_transfer: "Approve the pending withdrawal request",
+      support: "Get help with an issue",
+    }),
+  },
+});
 
-if action.confidence < 0.5:
-    route_to_human(user_message)          # genuinely unsure, don't guess
-elif action.choice == "check_balance":
-    show_balance(account_id)              # low stakes, a wrong screen is recoverable
-elif action.choice == "approve_transfer":
-    if action.confidence > 0.9:
-        confirm_then_execute(account_id)  # high stakes, high confidence
-    else:
-        ask_user_to_confirm(account_id)   # high stakes, verify first
+const { action } = answers;
+
+if (action.confidence < 0.5) {
+  routeToHuman(userMessage); // genuinely unsure, don't guess
+} else if (action.choice === "check_balance") {
+  showBalance(accountId); // low stakes, a wrong screen is recoverable
+} else if (action.choice === "approve_transfer") {
+  if (action.confidence > 0.9) {
+    confirmThenExecute(accountId); // high stakes, high confidence
+  } else {
+    askUserToConfirm(accountId); // high stakes, verify first
+  }
+}
 ```
 
 You can ask an LLM for a confidence score too, but you get a number it wrote, not a number it measured.
