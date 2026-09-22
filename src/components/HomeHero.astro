@@ -33,16 +33,25 @@ const { image } = Astro.props;
             understands srcset reads WebP, and the PNG is 1.8 MB. */}
         {/* Blurred stand-in, underneath the real image. It's hidden once the
             image loads, or it would show as a halo through the cutout's
-            transparent edges. */}
-        <img
+            transparent edges. An inline SVG rather than an <img>: the 24px
+            source is meant to be stretched, and as an <img> browsers and
+            Lighthouse read it as a low-resolution, wrongly proportioned
+            photo. */}
+        <svg
           class="portrait__placeholder"
-          src={image.placeholder}
-          alt=""
+          viewBox={`0 0 ${image.width} ${image.height}`}
+          preserveAspectRatio="none"
           aria-hidden="true"
-          width={image.width}
-          height={image.height}
+          focusable="false"
           style={`aspect-ratio: ${image.width} / ${image.height}`}
-        />
+        >
+          <image
+            href={image.placeholder}
+            width={image.width}
+            height={image.height}
+            preserveAspectRatio="none"
+          />
+        </svg>
         <picture>
           <source type="image/avif" srcset={image.avif.srcSet.attribute} sizes={HERO_SIZES} />
           <img
