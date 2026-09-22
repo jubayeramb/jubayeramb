@@ -73,12 +73,13 @@ const props = Astro.props;
        * analytics never competes with rendering. `import.meta.env.PROD`
        * keeps it out of dev, but `astro preview` and *.pages.dev deploys are
        * production builds too, so it also checks the hostname, and skips
-       * automated browsers (tests, Lighthouse runs, headless bots).
+       * automated browsers: WebDriver-driven tests, headless bots, and
+       * Lighthouse, which sets neither flag but names itself in the UA.
        */
       import.meta.env.PROD && (
         <script
           is:inline
-          set:html={`(function(){var h=location.hostname;if((h!==${JSON.stringify(SITE_HOST)}&&h!==${JSON.stringify("www." + SITE_HOST)})||navigator.webdriver)return;function load(){(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","wou28uhmsb");}function idle(){"requestIdleCallback" in window?requestIdleCallback(load,{timeout:4000}):setTimeout(load,2000);}document.readyState==="complete"?idle():addEventListener("load",idle,{once:true});})();`}
+          set:html={`(function(){var h=location.hostname;if((h!==${JSON.stringify(SITE_HOST)}&&h!==${JSON.stringify("www." + SITE_HOST)})||navigator.webdriver||/Chrome-Lighthouse|HeadlessChrome/.test(navigator.userAgent))return;function load(){(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","wou28uhmsb");}function idle(){"requestIdleCallback" in window?requestIdleCallback(load,{timeout:4000}):setTimeout(load,2000);}document.readyState==="complete"?idle():addEventListener("load",idle,{once:true});})();`}
         />
       )
     }
@@ -86,7 +87,12 @@ const props = Astro.props;
     <ClientRouter />
   </head>
   <body>
+    {/* Cloudflare's Email Obfuscation rewrites every mailto into a link that
+        needs its render-blocking email-decode.min.js. The address is public
+        anyway (JSON-LD, RSS, the command palette), so opt the page out. */}
+    <!--email_off-->
     <slot />
     <CommandPalette />
+    <!--/email_off-->
   </body>
 </html>

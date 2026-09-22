@@ -279,6 +279,12 @@ const projectLd =
       })()
     : null;
 
+const COLLECTION_ID_FRAGMENT = {
+  Article: "#article",
+  CreativeWork: "#project",
+  WebPage: "#webpage",
+} as const;
+
 // Every page gets a WebPage-family node that ties it to the site, its
 // breadcrumb and its main entity.
 const pageType = profilePage
@@ -314,7 +320,9 @@ const pageLd = {
             name: it.title,
             item: {
               "@type": collectionKind,
-              "@id": abs(it.url),
+              // The same @id the item's own page gives it, so the list and
+              // the page describe one entity instead of two.
+              "@id": abs(it.url) + COLLECTION_ID_FRAGMENT[collectionKind],
               name: it.title,
               ...(it.description ? { description: it.description } : {}),
               ...(it.date ? { datePublished: iso(it.date) } : {}),
