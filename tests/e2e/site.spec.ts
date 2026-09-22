@@ -175,3 +175,26 @@ test("theme toggle flips and persists", async ({ page }) => {
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
+
+// The home overlay's chat subscription used to survive client-side
+// navigation and throw on its detached dialog, so /ask showed nothing.
+// The API isn't served here; the question itself must still render.
+test("asking on /ask after arriving from home shows the question", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.waitForFunction(() => (document.getElementById("home-chat") as any)?.__wired);
+  await page.locator('header a[href="/ask/"]').first().click();
+  await expect(page).toHaveURL(/\/ask\/$/);
+  await page.locator("#chat-input").fill("What does he work on?");
+  await page.locator("#chat-input").press("Enter");
+  await expect(page.locator(".bubble--user")).toHaveText("What does he work on?");
+});
+
+test("a home question sent before the chat loads is answered on /ask", async ({ page }) => {
+  await page.route(/home-chat-input\.[\w-]+\.js$/, (route) => route.abort());
+  await page.goto("/");
+  await page.locator("#home-chat-input").fill("hello there");
+  await page.locator("#home-chat-input").press("Enter");
+  await expect(page).toHaveURL(/\/ask\/$/);
+  await expect(page.locator(".bubble--user")).toHaveText("hello there");
+});

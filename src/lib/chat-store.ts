@@ -108,13 +108,25 @@ function ensureHydrated() {
   window.addEventListener("storage", (e) => {
     if (e.key !== STORAGE_KEY) return;
     messages = load();
-    listeners.forEach((l) => l());
+    notify();
+  });
+}
+
+// One failing view must not stop the others from updating, so each
+// listener's error is reported and the loop carries on.
+function notify() {
+  listeners.forEach((l) => {
+    try {
+      l();
+    } catch (err) {
+      reportError(err);
+    }
   });
 }
 
 function emit() {
   persist();
-  listeners.forEach((l) => l());
+  notify();
 }
 
 export function getMessages(): readonly Msg[] {
