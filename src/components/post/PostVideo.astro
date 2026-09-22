@@ -1,0 +1,48 @@
+---
+// In-body clips play from the start when they scroll into view and pause
+// when they leave, so a reader never lands on one mid-loop and mistakes it
+// for a still. Readers who ask for reduced motion get the poster frame and
+// controls instead. Without JS, the markup's autoplay still runs the loop.
+---
+
+<script>
+  const setup = () => {
+    const videos = document.querySelectorAll<HTMLVideoElement>(".prose video[autoplay]");
+    if (!videos.length) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      videos.forEach((video) => {
+        video.pause();
+        video.removeAttribute("autoplay");
+        video.currentTime = 0;
+        video.controls = true;
+      });
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const { target, isIntersecting } of entries) {
+          const video = target as HTMLVideoElement;
+          if (isIntersecting) {
+            video.currentTime = 0;
+            video.play().catch(() => {
+              // Autoplay blocked (e.g. Low Power Mode): let the reader start it.
+              video.controls = true;
+            });
+          } else {
+            video.pause();
+          }
+        }
+      },
+      { threshold: 0.6 },
+    );
+    videos.forEach((video) => {
+      video.removeAttribute("autoplay");
+      video.pause();
+      observer.observe(video);
+    });
+  };
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>

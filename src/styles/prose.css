@@ -111,6 +111,17 @@
     height: auto;
   }
 
+  .prose figure {
+    margin-block: 1.6em;
+  }
+
+  .prose figcaption {
+    margin-top: 0.6em;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--ink-3);
+  }
+
   .prose :not(pre) > code {
     font-size: 0.86em;
     padding: 0.14em 0.4em;
