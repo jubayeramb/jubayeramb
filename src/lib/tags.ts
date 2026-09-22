@@ -16,6 +16,7 @@ const TAG_LABELS: Record<string, string> = {
   html: "HTML",
   javascript: "JavaScript",
   life: "Life",
+  llm: "LLM",
   mcp: "MCP",
   promises: "Promises",
   skills: "Skills",

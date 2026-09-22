@@ -36,6 +36,7 @@ pnpm-debug.log*
 # Promotional content
 /promos/
 /remotion/
+/hyperframes/
 
 # Local-only docs / scratch references — not shipped publicly
 /docs/
