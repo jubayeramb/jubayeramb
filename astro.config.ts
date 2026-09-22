@@ -12,6 +12,7 @@ import {
 } from "./src/lib/build/content-index";
 import { isThinTag } from "./src/lib/tags";
 import { readNowSnapshot } from "./src/lib/now-snapshot";
+import lowPriorityScripts from "./src/lib/build/low-priority-scripts";
 
 const SITE = "https://jubayeramb.com";
 
@@ -152,6 +153,7 @@ export default defineConfig({
     ],
   },
   integrations: [
+    lowPriorityScripts(),
     sitemap({
       filter: (page) =>
         !EXCLUDED.some((p) => page.includes(p)) && !thinTagPaths.has(page),
