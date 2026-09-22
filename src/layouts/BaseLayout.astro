@@ -23,12 +23,13 @@ const props = Astro.props;
         in <head> so the LCP image is queued ahead of the fonts. */}
     <slot name="head" />
 
-    {/* Only the two faces used above the fold on every page are preloaded:
-        the display face (headings) and upright body text. Mono and italic
-        load on demand. */}
+    {/* The three faces used above the fold on every page are preloaded:
+        headings, upright body text, and the mono used for labels. Found
+        through CSS instead, mono is fetched at the priority that blocks
+        first paint. Italic loads on demand. */}
     <Font cssVariable="--font-display" preload />
     <Font cssVariable="--font-body" preload={[{ style: "normal" }]} />
-    <Font cssVariable="--font-mono" />
+    <Font cssVariable="--font-mono" preload />
 
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/png" href="/icon-192.png" sizes="192x192" />
