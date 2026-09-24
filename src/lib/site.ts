@@ -74,7 +74,7 @@ export const SOCIALS: readonly Social[] = [
     id: "x",
     label: "X (Twitter)",
     handle: "@jubayeramb",
-    href: "https://twitter.com/jubayeramb",
+    href: "https://x.com/jubayeramb",
   },
   {
     id: "bluesky",
