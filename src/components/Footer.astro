@@ -22,10 +22,6 @@ const SUBSCRIBE = [
           <Signature width={104} />
         </a>
         <p class="site-footer__about">{SITE_DESCRIPTION}</p>
-        <p class="site-footer__status">
-          <span class="status-dot" aria-hidden="true"></span>
-          Open to freelance work
-        </p>
       </div>
 
       <nav aria-labelledby="footer-site">
@@ -112,22 +108,6 @@ const SUBSCRIBE = [
     margin-top: var(--space-4);
     max-width: 34ch;
     color: var(--ink-2);
-  }
-  .site-footer__status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    margin-top: var(--space-5);
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--ink);
-  }
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--success) 18%, transparent);
   }
   nav h2 {
     margin-bottom: var(--space-4);

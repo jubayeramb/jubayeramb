@@ -115,10 +115,6 @@ const { image } = Astro.props;
         <Button href="/projects/" data-astro-prefetch="viewport">See my work</Button>
         <Button href="/contact/" variant="link">Get in touch</Button>
       </div>
-      <p class="hero__status">
-        <span class="hero__dot" aria-hidden="true"></span>
-        Open to freelance work
-      </p>
     </div>
   </div>
 </section>
@@ -242,21 +238,6 @@ const { image } = Astro.props;
     align-items: center;
     gap: var(--space-3) var(--space-5);
     margin-top: var(--space-8);
-  }
-  .hero__status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    margin-top: var(--space-5);
-    font-size: var(--text-sm);
-    color: var(--ink-2);
-  }
-  .hero__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--success) 18%, transparent);
   }
 
   /* Portrait. Mobile first: centered between the headline and the
