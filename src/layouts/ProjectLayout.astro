@@ -45,7 +45,7 @@ const host = url ? new URL(url).host : undefined;
   <article>
     <header class="band case-head">
       <div class="container">
-        <a class="case-back" href="/projects/"><span aria-hidden="true">←</span> Projects</a>
+        <a class="case-back" href="/projects"><span aria-hidden="true">←</span> Projects</a>
         <p class="eyebrow">{role} · {company}</p>
         <h1 class="case-title" transition:name={`project-${project.id}`}>{title}</h1>
         <p class="case-lead">{summary}</p>
@@ -139,8 +139,8 @@ const host = url ? new URL(url).host : undefined;
       <h2 id="more-work" class="sr-only">More projects</h2>
       <PrevNext
         label="More projects"
-        older={next && { href: `/projects/${next.id}/`, title: next.data.title }}
-        newer={prev && { href: `/projects/${prev.id}/`, title: prev.data.title }}
+        older={next && { href: `/projects/${next.id}`, title: next.data.title }}
+        newer={prev && { href: `/projects/${prev.id}`, title: prev.data.title }}
       />
     </div>
   </section>

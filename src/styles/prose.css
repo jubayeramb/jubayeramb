@@ -131,6 +131,17 @@
     color: var(--code-ink);
   }
 
+  /* rehype-table-scroll wraps each table so a wide one scrolls on its own
+     instead of pushing the page sideways on a phone. */
+  .prose .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .prose .table-scroll:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
   .prose table {
     width: 100%;
     font-size: var(--text-sm);

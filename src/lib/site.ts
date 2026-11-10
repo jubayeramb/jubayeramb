@@ -96,19 +96,27 @@ export type NavItem = {
 
 /** Primary navigation, in display order. */
 export const NAV: readonly NavItem[] = [
-  { id: "projects", label: "Projects", href: "/projects/", hint: "Selected case studies" },
-  { id: "writings", label: "Writing", href: "/writings/", hint: "Notes on engineering and craft" },
-  { id: "about", label: "About", href: "/about/", hint: "Background and approach" },
-  { id: "now", label: "Now", href: "/now/", hint: "What I'm focused on right now" },
-  { id: "contact", label: "Contact", href: "/contact/", hint: "Get in touch" },
+  { id: "projects", label: "Projects", href: "/projects", hint: "Selected case studies" },
+  { id: "writings", label: "Writing", href: "/writings", hint: "Notes on engineering and craft" },
+  { id: "about", label: "About", href: "/about", hint: "Background and approach" },
+  { id: "now", label: "Now", href: "/now", hint: "What I'm focused on right now" },
+  { id: "contact", label: "Contact", href: "/contact", hint: "Get in touch" },
 ];
 
 export const ASK_NAV: NavItem = {
   id: "ask",
   label: "Ask",
-  href: "/ask/",
+  href: "/ask",
   hint: "Chat grounded in this site",
 };
 
 /** Absolute URL for a site path. */
 export const absolute = (path: string) => new URL(path, SITE_URL + "/").toString();
+
+/**
+ * The public path for a request path: "/writings/foo" whether the request
+ * came in as "/writings/foo/", or, during the build (build.format = "file"),
+ * as "/writings/foo.html". The root stays "/".
+ */
+export const pagePath = (pathname: string) =>
+  pathname.replace(/\.html$/, "").replace(/(^|\/)index$/, "$1").replace(/(.)\/+$/, "$1") || "/";

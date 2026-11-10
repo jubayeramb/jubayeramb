@@ -3,17 +3,17 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ROUTES = [
   "/",
-  "/projects/",
+  "/projects",
   "/projects/focrel/",
-  "/writings/",
+  "/writings",
   "/writings/ai-skills-vs-mcp-when-to-use-what/",
   "/writings/2024-year-in-review-and-next-goals/",
-  "/about/",
-  "/now/",
-  "/contact/",
-  "/tags/",
+  "/about",
+  "/now",
+  "/contact",
+  "/tags",
   "/tags/ai/",
-  "/ask/",
+  "/ask",
   "/404.html",
 ];
 const WIDTHS = [390, 768, 1440];
@@ -64,7 +64,7 @@ for (const theme of THEMES) {
 test.describe("without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  for (const route of ["/", "/now/", "/writings/ai-skills-vs-mcp-when-to-use-what/", "/about/"]) {
+  for (const route of ["/", "/now", "/writings/ai-skills-vs-mcp-when-to-use-what/", "/about"]) {
     test(`${route} renders its content`, async ({ page }) => {
       await page.goto(route);
       const h1 = page.locator("h1");
@@ -136,16 +136,16 @@ test("the signature waits until it's on screen, draws letter by letter, then rep
 });
 
 test("client-side navigation keeps the document and lands on the post", async ({ page }) => {
-  await page.goto("/writings/");
+  await page.goto("/writings");
   await page.evaluate(() => ((window as any).__marker = true));
   await page.getByRole("link", { name: "AI Skills vs MCP: When to Use What" }).first().click();
-  await expect(page).toHaveURL(/ai-skills-vs-mcp-when-to-use-what\/$/);
+  await expect(page).toHaveURL(/ai-skills-vs-mcp-when-to-use-what$/);
   await expect(page.locator("h1")).toHaveText("AI Skills vs MCP: When to Use What");
   expect(await page.evaluate(() => (window as any).__marker)).toBe(true);
 });
 
 test("command palette opens, searches and navigates", async ({ page }) => {
-  await page.goto("/writings/");
+  await page.goto("/writings");
   await page.keyboard.press("ControlOrMeta+k");
   const dialog = page.locator("dialog#palette");
   await expect(dialog).toBeVisible();
@@ -183,8 +183,8 @@ test("asking on /ask after arriving from home shows the question", async ({ page
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.waitForFunction(() => (document.getElementById("home-chat") as any)?.__wired);
-  await page.locator('header a[href="/ask/"]').first().click();
-  await expect(page).toHaveURL(/\/ask\/$/);
+  await page.locator('header a[href="/ask"]').first().click();
+  await expect(page).toHaveURL(/\/ask$/);
   await page.locator("#chat-input").fill("What does he work on?");
   await page.locator("#chat-input").press("Enter");
   await expect(page.locator(".bubble--user")).toHaveText("What does he work on?");
@@ -195,6 +195,6 @@ test("a home question sent before the chat loads is answered on /ask", async ({ 
   await page.goto("/");
   await page.locator("#home-chat-input").fill("hello there");
   await page.locator("#home-chat-input").press("Enter");
-  await expect(page).toHaveURL(/\/ask\/$/);
+  await expect(page).toHaveURL(/\/ask$/);
   await expect(page.locator(".bubble--user")).toHaveText("hello there");
 });

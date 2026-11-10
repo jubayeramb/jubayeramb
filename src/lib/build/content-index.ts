@@ -60,7 +60,7 @@ export function tagCounts(posts: IndexedEntry[]): Map<string, number> {
 }
 
 /**
- * Real last-modified dates keyed by path ("/writings/foo/"). Pages without
+ * Real last-modified dates keyed by path ("/writings/foo"). Pages without
  * a trustworthy date are left out on purpose: no lastmod is more honest
  * than a build timestamp.
  */
@@ -75,21 +75,18 @@ export function lastModifiedByPath(
     if (d) map.set(path, d);
   };
 
-  for (const p of posts) set(`/writings/${p.id}/`, entryModified(p));
-  for (const p of projects) set(`/projects/${p.id}/`, entryModified(p));
+  for (const p of posts) set(`/writings/${p.id}`, entryModified(p));
+  for (const p of projects) set(`/projects/${p.id}`, entryModified(p));
 
   const latestPost = latest(posts.map(entryModified));
   const latestProject = latest(projects.map(entryModified));
-  set("/writings/", latestPost);
-  set("/projects/", latestProject);
-  set("/tags/", latestPost);
+  set("/writings", latestPost);
+  set("/projects", latestProject);
+  set("/tags", latestPost);
   for (const tag of tagCounts(posts).keys()) {
-    set(
-      `/tags/${tag}/`,
-      latest(posts.filter((p) => p.data.tags?.includes(tag)).map(entryModified)),
-    );
+    set(`/tags/${tag}`, latest(posts.filter((p) => p.data.tags?.includes(tag)).map(entryModified)));
   }
   for (const [path, d] of Object.entries(extra)) set(path, d);
-  set("/", latest([latestPost, latestProject, extra["/now/"]]));
+  set("/", latest([latestPost, latestProject, extra["/now"]]));
   return map;
 }

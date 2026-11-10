@@ -22,7 +22,7 @@ const count = `${posts.length} ${posts.length === 1 ? "post" : "posts"}`;
 
 const collectionItems = posts.map((p) => ({
   title: p.data.title,
-  url: `/writings/${p.id}/`,
+  url: `/writings/${p.id}`,
   date: p.data.pubDate,
   description: p.data.description,
 }));
@@ -37,7 +37,7 @@ const collectionItems = posts.map((p) => ({
   collectionKind="Article"
   robots={isThinTag(posts.length) ? "noindex-follow" : "index"}
 >
-  <PageHeader title={label} eyebrow={count} back={{ href: "/tags/", label: "All tags" }}>
+  <PageHeader title={label} eyebrow={count} back={{ href: "/tags", label: "All tags" }}>
     <p>Posts tagged {label}.</p>
   </PageHeader>
 

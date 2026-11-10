@@ -3,18 +3,20 @@
  *
  * Every built HTML page must have:
  *   - exactly one <title>, a meta description and a robots directive
- *   - one absolute canonical ending in "/" that matches the page's own path,
+ *   - one absolute, slashless canonical that matches the page's own path,
  *     listed in the sitemap when indexable and absent from it when not
+ *     ("noindex, nofollow" pages carry no canonical at all)
  *   - a complete Open Graph and Twitter card set
  *   - exactly one JSON-LD block whose @id references all resolve
  *   - exactly one h1 and no skipped heading levels
  *   - internal links, assets and same-page fragments that resolve
- *     (honoring public/_redirects)
+ *     (honoring public/_redirects), with no trailing slash on page links
  *   - images with alt text and explicit dimensions
  *   - no em dashes in visible text or metadata
  *   - first-party JS under the page's byte budget
  *
- * Plus: /now renders real content, and the text endpoints are dash-free.
+ * Plus: /now renders real content, the text endpoints are dash-free, and
+ * no page URL in the feeds, llms files or sitemap ends in "/".
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, posix, relative } from "node:path";
@@ -31,7 +33,7 @@ const EM_DASH = "\u2014";
 const JS_BUDGET_DEFAULT = 25 * 1024;
 const JS_BUDGET: Record<string, number> = {
   "/": 45 * 1024, // floating chat
-  "/ask/": 45 * 1024, // full chat
+  "/ask": 45 * 1024, // full chat
 };
 
 type Problem = { page: string; msg: string };
@@ -54,16 +56,24 @@ const walk = (dir: string): string[] =>
 const files = walk(DIST);
 const htmlFiles = files.filter((f) => f.endsWith(".html"));
 
-/** "/writings/foo/" for dist/writings/foo/index.html, "/404.html" for 404. */
+/** "/writings/foo" for dist/writings/foo.html, "/" for index.html, "/404.html" for 404. */
 const routeOf = (file: string) => {
   const rel = "/" + relative(DIST, file).split("\\").join("/");
-  return rel.endsWith("/index.html") ? rel.slice(0, -"index.html".length) : rel;
+  if (rel === "/index.html") return "/";
+  if (rel === "/404.html") return rel;
+  return rel.replace(/\.html$/, "");
 };
+
+/** Page URLs are slashless; only the root keeps its "/". */
+const hasTrailingSlash = (pathname: string) => pathname !== "/" && pathname.endsWith("/");
 
 const sitemapUrls = new Set(
   readdirSync(DIST)
     .filter((f) => /^sitemap-\d+\.xml$/.test(f))
-    .flatMap((f) => [...readFileSync(join(DIST, f), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])),
+    .flatMap((f) => [...readFileSync(join(DIST, f), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]))
+    // @astrojs/sitemap writes the root as "https://host" with no path; it is
+    // the same URL as the canonical "https://host/".
+    .map((u) => (u === SITE ? `${SITE}/` : u)),
 );
 
 const redirectSources = new Set(
@@ -123,7 +133,6 @@ for (const file of htmlFiles) {
   const head = doc.querySelector("head");
   const meta = (sel: string) => head?.querySelectorAll(sel) ?? [];
   const content = (sel: string) => meta(sel)[0]?.getAttribute("content")?.trim() ?? "";
-  const is404 = route === "/404.html";
 
   // Title, description, robots
   const titles = doc.querySelectorAll("title");
@@ -136,10 +145,15 @@ for (const file of htmlFiles) {
 
   // Canonical and sitemap
   const canon = meta('link[rel="canonical"]');
-  if (!is404) {
+  const selfUrl = route === "/" ? `${SITE}/` : `${SITE}${route}`;
+  if (robots.includes("nofollow")) {
+    if (canon.length) fail(route, "noindex, nofollow page should not declare a canonical");
+    if (sitemapUrls.has(selfUrl)) fail(route, `noindex but listed in sitemap: ${selfUrl}`);
+  } else {
     if (canon.length !== 1) fail(route, `expected 1 canonical, found ${canon.length}`);
     const href = canon[0]?.getAttribute("href") ?? "";
-    if (!href.startsWith(`${SITE}/`) || !href.endsWith("/")) fail(route, `canonical not absolute with trailing slash: ${href}`);
+    if (!href.startsWith(`${SITE}/`)) fail(route, `canonical not absolute: ${href}`);
+    else if (hasTrailingSlash(new URL(href).pathname)) fail(route, `canonical has a trailing slash: ${href}`);
     else if (new URL(href).pathname !== route) fail(route, `canonical points elsewhere: ${href}`);
     if (indexable && !sitemapUrls.has(href)) fail(route, `indexable but missing from sitemap: ${href}`);
     if (!indexable && sitemapUrls.has(href)) fail(route, `noindex but listed in sitemap: ${href}`);
@@ -212,6 +226,7 @@ for (const file of htmlFiles) {
         return;
       }
       if (!resolves(url.pathname)) fail(route, `broken ${attr}: ${raw}`);
+      else if (attr === "link" && hasTrailingSlash(url.pathname)) fail(route, `link with trailing slash: ${raw}`);
     };
     for (const a of doc.querySelectorAll("a[href]")) checkUrl(a.getAttribute("href")!, "link");
     for (const n of doc.querySelectorAll("link[href]")) {
@@ -265,21 +280,30 @@ for (const file of htmlFiles) {
 
 // ------------------------------------------------------------ site-wide
 
-const nowFile = join(DIST, "now/index.html");
+const nowFile = join(DIST, "now.html");
 if (existsSync(nowFile)) {
   const main = parse(readFileSync(nowFile, "utf8")).querySelector("main");
   const text = main ? visibleText(main).replace(/\s+/g, " ").trim() : "";
-  if (text.length < 300) fail("/now/", `too little server-rendered content (${text.length} chars)`);
-} else fail("/now/", "page missing");
+  if (text.length < 300) fail("/now", `too little server-rendered content (${text.length} chars)`);
+} else fail("/now", "page missing");
 
 for (const endpoint of ["llms.txt", "llms-full.txt", "rss.xml", "feed.json", "robots.txt", "site.webmanifest"]) {
   const p = join(DIST, endpoint);
   if (!existsSync(p)) fail(`/${endpoint}`, "missing");
-  else if (endpoint !== "llms-full.txt" && readFileSync(p, "utf8").includes(EM_DASH)) fail(`/${endpoint}`, "contains an em dash");
+  else {
+    const text = readFileSync(p, "utf8");
+    if (endpoint !== "llms-full.txt" && text.includes(EM_DASH)) fail(`/${endpoint}`, "contains an em dash");
+    // Absolute page URLs with a trailing slash, e.g. ".../writings/foo/".
+    // Static files (".png/", none expected) and the bare root are ignored.
+    for (const m of text.matchAll(/https:\/\/jubayeramb\.com(\/[^\s"'<>)\]\\&]*)/g)) {
+      if (hasTrailingSlash(m[1])) fail(`/${endpoint}`, `URL with trailing slash: ${m[0]}`);
+    }
+  }
 }
 
 for (const url of sitemapUrls) {
   if (!resolves(new URL(url).pathname)) fail("sitemap", `lists a URL with no page: ${url}`);
+  if (hasTrailingSlash(new URL(url).pathname)) fail("sitemap", `URL with trailing slash: ${url}`);
 }
 
 // ------------------------------------------------------------- report

@@ -15,3 +15,7 @@
 /feed             /rss.xml            301
 /feed.xml         /rss.xml            301
 /atom.xml         /rss.xml            301
+
+# Typo in the original slug
+/writings/handle-javascript-pormises-better /writings/handle-javascript-promises-better 301
+/writings/handle-javascript-pormises-better/ /writings/handle-javascript-promises-better 301

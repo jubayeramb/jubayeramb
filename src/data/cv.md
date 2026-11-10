@@ -14,9 +14,10 @@ self-taught, currently Software Engineer at WeCycle.
 
 **Software Engineer, WeCycle, a Tanbel company (Dec 2023 to Present).**
 
-- Driving a phased Node.js monolith to microservices migration: defining
-  service boundaries, designing inter-service contracts, and extracting
-  bounded contexts incrementally without disrupting production.
+- Moving a Node.js monolith toward microservices through a modular
+  monolith: drawing module boundaries (payments, booking, notifications
+  with an outbox and event contract) so services can be extracted one at
+  a time.
 - Lead a team of two junior engineers: code reviews, coding standards,
   and guidance across multiple concurrent projects.
 - Built a B2B CRM, the client-facing web app, and internal dashboards

@@ -1,7 +1,8 @@
 ---
-title: "Jev and System One Models: When You Need a Decision, Not a Chat"
-description: "What TypeSafe AI's Jev is, how a System One Model differs from an LLM, what the workflow benchmarks actually show, and when it makes sense to reach for one."
+title: "Jev System One Model vs LLMs: Benchmarks and When to Use It"
+description: "Jev, TypeSafe AI's System One Model, matches Sonnet 5's 67.8% on workflow evals at $0.0004 vs $0.1174 per case. How it works and when to use it."
 pubDate: 2026-09-22
+updatedDate: 2026-11-11
 tags: ["technical", "ai", "llm", "agents", "automation"]
 image:
   src: "./images/jev-system-one-model/hero.png"
@@ -189,7 +190,7 @@ if (action.confidence < 0.5) {
 You can ask an LLM for a confidence score too, but you get a number it wrote, not a number it measured.
 That difference is what lets you put a model somewhere nobody is watching.
 
-## The workflow benchmark
+## Benchmarking Jev against LLMs
 
 This is the part I spent the most time on, because the headline on their homepage is "193.6x faster, 444.6x cheaper" and that is the kind of number that deserves a closer look.
 

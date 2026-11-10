@@ -31,7 +31,7 @@ const { minutes } = getReadingStats(post.body);
   <div class="post-row__body">
     <Heading class="post-row__title">
       <a
-        href={`/writings/${post.id}/`}
+        href={`/writings/${post.id}`}
         class="post-row__link"
         transition:name={transition ? `post-${post.id}` : undefined}>{post.data.title}</a
       >

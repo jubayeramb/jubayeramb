@@ -48,7 +48,7 @@ const cover = image ? await getImage({ src: image.src, width: 1200, format: "jpg
     <header class="post-head">
       <div class="container post-grid">
         <div class="post-main">
-          <a class="post-back" href="/writings/"><span aria-hidden="true">←</span> Writing</a>
+          <a class="post-back" href="/writings"><span aria-hidden="true">←</span> Writing</a>
           {tags[0] && <p class="eyebrow post-eyebrow">{tagLabel(tags[0])}</p>}
           <h1 class="post-title" transition:name={`post-${postData.id}`}>{title}</h1>
           <p class="post-lead">{description}</p>
@@ -70,7 +70,7 @@ const cover = image ? await getImage({ src: image.src, width: 1200, format: "jpg
               <ul class="post-tags" aria-label="Topics">
                 {tags.map((tag) => (
                   <li>
-                    <a href={`/tags/${tag}/`}>{tagLabel(tag)}</a>
+                    <a href={`/tags/${tag}`}>{tagLabel(tag)}</a>
                   </li>
                 ))}
               </ul>
@@ -136,8 +136,8 @@ const cover = image ? await getImage({ src: image.src, width: 1200, format: "jpg
         }
         {related.length === 0 && <h2 id="keep-reading" class="sr-only">More writing</h2>}
         <PrevNext
-          newer={newer && { href: `/writings/${newer.id}/`, title: newer.data.title }}
-          older={older && { href: `/writings/${older.id}/`, title: older.data.title }}
+          newer={newer && { href: `/writings/${newer.id}`, title: newer.data.title }}
+          older={older && { href: `/writings/${older.id}`, title: older.data.title }}
         />
       </div>
     </div>

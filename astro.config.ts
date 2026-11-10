@@ -5,6 +5,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import remarkHeadingGuard from "./src/lib/markdown/remark-heading-guard";
 import { shikiAaLight } from "./src/lib/markdown/shiki-aa-light";
 import rehypePublicImg from "./src/lib/markdown/rehype-public-img";
+import rehypeTableScroll from "./src/lib/markdown/rehype-table-scroll";
 import {
   lastModifiedByPath,
   readCollection,
@@ -20,7 +21,7 @@ const SITE = "https://jubayeramb.com";
 // trustworthy date get no <lastmod> at all rather than the build time.
 const now = readNowSnapshot();
 const lastmod = lastModifiedByPath(process.cwd(), {
-  "/now/": now.lastEdited ? new Date(now.lastEdited) : undefined,
+  "/now": now.lastEdited ? new Date(now.lastEdited) : undefined,
 });
 
 // Tag pages with a single post are noindex (see src/lib/tags.ts), so they
@@ -28,20 +29,25 @@ const lastmod = lastModifiedByPath(process.cwd(), {
 const thinTagPaths = new Set(
   [...tagCounts(readCollection("posts")).entries()]
     .filter(([, count]) => isThinTag(count))
-    .map(([tag]) => `${SITE}/tags/${tag}/`),
+    .map(([tag]) => `${SITE}/tags/${tag}`),
 );
 
 const EXCLUDED = ["/404", "/ask"];
 
+/** True for the section page itself ("/writings") and anything under it. */
+const isUnder = (page: string, section: string) =>
+  page === `${SITE}${section}` || page.startsWith(`${SITE}${section}/`);
+
 // Per-route priority. Boosts content pages over taxonomies.
 const priorityFor = (page: string) => {
-  if (page === `${SITE}/`) return 1.0;
-  if (page.startsWith(`${SITE}/writings/`)) return 0.9;
-  if (page.startsWith(`${SITE}/projects/`)) return 0.9;
-  if (page.startsWith(`${SITE}/now/`)) return 0.8;
-  if (page.startsWith(`${SITE}/about/`)) return 0.8;
-  if (page.startsWith(`${SITE}/contact/`)) return 0.7;
-  if (page.startsWith(`${SITE}/tags/`)) return 0.4;
+  // The plugin writes the root without its "/" (same URL either way).
+  if (page === SITE || page === `${SITE}/`) return 1.0;
+  if (isUnder(page, "/writings")) return 0.9;
+  if (isUnder(page, "/projects")) return 0.9;
+  if (isUnder(page, "/now")) return 0.8;
+  if (isUnder(page, "/about")) return 0.8;
+  if (isUnder(page, "/contact")) return 0.7;
+  if (isUnder(page, "/tags")) return 0.4;
   return 0.6;
 };
 
@@ -55,9 +61,13 @@ const fontFile = (pkg: string, file: string) =>
 // https://astro.build/config
 export default defineConfig({
   site: SITE,
-  trailingSlash: "ignore",
+  // One URL form everywhere: no trailing slash. "file" writes about.html,
+  // which Cloudflare Pages serves at /about while 308-redirecting /about/
+  // and /about.html to it. "never" makes the dev server reject /about/ so
+  // a slashed link fails locally instead of in Search Console.
+  trailingSlash: "never",
   build: {
-    format: "directory",
+    format: "file",
     inlineStylesheets: "always",
   },
   image: {
@@ -150,6 +160,7 @@ export default defineConfig({
         },
       ],
       rehypePublicImg,
+      rehypeTableScroll,
     ],
   },
   integrations: [

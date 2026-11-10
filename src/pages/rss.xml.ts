@@ -14,11 +14,13 @@ export async function GET(context: APIContext) {
     description:
       "Notes on JavaScript, TypeScript, Astro, and the occasional reflection by Jubayer Al Mamun.",
     site: context.site!,
+    // Item links match the site's slashless URLs (the helper adds a "/" by default).
+    trailingSlash: false,
     items: posts.map((post) => ({
       title: post.data.title,
       description: post.data.description,
       pubDate: new Date(post.data.pubDate),
-      link: `/writings/${post.id}/`,
+      link: `/writings/${post.id}`,
       author: `${AUTHOR.email} (${AUTHOR.name})`,
       // The rendered HTML, not the raw Markdown body, with root-relative
       // links made absolute so they work inside feed readers.

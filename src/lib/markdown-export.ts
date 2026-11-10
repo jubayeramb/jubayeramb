@@ -33,8 +33,8 @@ export function postToMarkdown(post: Post): string {
     d.tldr && d.tldr.length > 0 ? `\n\n## TL;DR\n\n${d.tldr.map((t) => `- ${t}`).join("\n")}` : "";
   return (
     header(d.title, d.description, [
-      ["URL", `${SITE_URL}/writings/${post.id}/`],
-      ["Author", `${AUTHOR.name} (${SITE_URL}/about/)`],
+      ["URL", `${SITE_URL}/writings/${post.id}`],
+      ["Author", `${AUTHOR.name} (${SITE_URL}/about)`],
       ["Published", day(d.pubDate)],
       ["Updated", day(d.updatedDate)],
       ["Topics", d.tags.map(tagLabel).join(", ")],
@@ -53,7 +53,7 @@ export function projectToMarkdown(project: Project): string {
     d.metrics.length > 0 ? `\n\n## At a glance\n\n${d.metrics.map((m) => `- ${m.label}: ${m.value}`).join("\n")}` : "";
   return (
     header(d.title, d.summary, [
-      ["URL", `${SITE_URL}/projects/${project.id}/`],
+      ["URL", `${SITE_URL}/projects/${project.id}`],
       ["Live", d.url],
       ["Role", `${d.role}, ${d.company}`],
       ["Period", d.period],

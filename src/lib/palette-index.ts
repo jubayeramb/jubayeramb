@@ -32,7 +32,7 @@ export async function buildPaletteIndex(): Promise<PaletteItem[]> {
       id: `project-${p.id}`,
       group: "Projects",
       label: p.data.title,
-      href: `/projects/${p.id}/`,
+      href: `/projects/${p.id}`,
       hint: p.data.period,
       keywords: [p.data.summary, ...p.data.technologies].join(" "),
     })),
@@ -41,7 +41,7 @@ export async function buildPaletteIndex(): Promise<PaletteItem[]> {
       id: `post-${p.id}`,
       group: "Posts",
       label: p.data.title,
-      href: `/writings/${p.id}/`,
+      href: `/writings/${p.id}`,
       keywords: [p.data.description, ...p.data.tags].join(" "),
     })),
 

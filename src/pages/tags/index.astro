@@ -13,11 +13,11 @@ const tags = getAllUniqueTags(posts)
 const title = "Tags";
 const description = "Browse Jubayer Al Mamun's writing by topic: JavaScript, TypeScript, Astro, CSS, AI, and more.";
 
-const collectionItems = tags.map(({ tag }) => ({ title: tagLabel(tag), url: `/tags/${tag}/` }));
+const collectionItems = tags.map(({ tag }) => ({ title: tagLabel(tag), url: `/tags/${tag}` }));
 ---
 
 <Layout {title} {description} activeRoute="writings" {collectionItems} collectionKind="WebPage">
-  <PageHeader title="Tags" eyebrow={`${tags.length} topics`} back={{ href: "/writings/", label: "Writing" }}>
+  <PageHeader title="Tags" eyebrow={`${tags.length} topics`} back={{ href: "/writings", label: "Writing" }}>
     <p>Browse writing by topic.</p>
   </PageHeader>
 
@@ -27,7 +27,7 @@ const collectionItems = tags.map(({ tag }) => ({ title: tagLabel(tag), url: `/ta
         {
           tags.map(({ tag, count }) => (
             <li>
-              <a href={`/tags/${tag}/`}>
+              <a href={`/tags/${tag}`}>
                 <span class="tag-grid__name">{tagLabel(tag)}</span>
                 <span class="meta">
                   {count} {count === 1 ? "post" : "posts"}

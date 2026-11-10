@@ -22,6 +22,16 @@ metrics:
 cover:
   src: ./images/syncroll.png
   alt: Syncroll, split-view scroll sync
+updatedDate: 2026-11-11
+faq:
+  - q: "How do I sync scroll in Chrome Split View?"
+    a: "Chrome has no built-in scroll sync. Install Syncroll, open its popup inside a split (both panes are detected automatically), pick an alignment and hit Sync Split Panes. Scroll either side and the other follows."
+  - q: "Can I scroll two Chrome windows at the same time without Split View?"
+    a: "Yes. Pick any two open tabs in the Syncroll popup and tick Open in new window. Syncroll places them in two windows on the left and right halves of your screen and keeps them in sync."
+  - q: "Does it work on ChatGPT, Gemini or Figma?"
+    a: "Yes. On chat apps it finds the inner scrolling area, so the sidebar stays put. On canvas apps like Figma, Miro and Excalidraw it relays wheel events, so both canvases pan together."
+  - q: "Does Syncroll collect any data?"
+    a: "No. There are no servers, analytics or tracking. Sync runs locally between your tabs through Chrome's built-in messaging."
 ---
 
 ## The problem
@@ -35,6 +45,26 @@ entirely.
 
 The use case I wanted: open ChatGPT on the left, my MDX draft on the
 right, scroll either side, the other follows.
+
+## How to scroll two tabs together in Chrome
+
+Chrome doesn't sync scrolling between Split View panes on its own. With
+Syncroll it takes four steps:
+
+1. Install Syncroll from the
+   [Chrome Web Store](https://chromewebstore.google.com/detail/syncroll-split-view-sync/ghpgfihdllhgmjkgkjnkmoonelfokpdi).
+   It needs Chrome 145 or newer.
+2. Click the Syncroll icon. Inside Chrome's Split View, both panes are
+   detected automatically. Otherwise, pick the left and right tab from
+   the dropdowns. Any tab in any window works.
+3. Pick a scroll alignment: **Relative (%)** so both pages reach the end
+   together, or **Exact (px)** so both travel the same distance.
+4. Hit **Sync Split Panes**. Scroll either side, the other follows.
+
+Not using Split View? Tick **Open in new window** in step 2 and Syncroll
+arranges the two tabs as side-by-side windows on the left and right
+halves of your screen. That also answers the other common question, how
+to scroll two windows at the same time.
 
 ## What shipped
 

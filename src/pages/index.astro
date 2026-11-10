@@ -52,7 +52,7 @@ const hero = await getHeroImage();
             eyebrow="Work"
             title="Selected work"
             id="work-title"
-            href="/projects/"
+            href="/projects"
             linkLabel="All projects"
           />
           <div>
@@ -71,7 +71,7 @@ const hero = await getHeroImage();
         eyebrow="Writing"
         title="Recent writing"
         id="writing-title"
-        href="/writings/"
+        href="/writings"
         linkLabel="All writing"
       />
       <div>
@@ -111,7 +111,7 @@ const hero = await getHeroImage();
             ))
           }
         </ul>
-        <Button href="/about/" variant="link">More about me</Button>
+        <Button href="/about" variant="link">More about me</Button>
       </article>
 
       <article class="home-card reveal" aria-labelledby="now-teaser">
@@ -133,7 +133,7 @@ const hero = await getHeroImage();
             </p>
           )
         }
-        <Button href="/now/" variant="link">What I'm up to now</Button>
+        <Button href="/now" variant="link">What I'm up to now</Button>
       </article>
     </div>
   </section>
@@ -149,7 +149,7 @@ const hero = await getHeroImage();
         </p>
       </div>
       <div class="home-cta__actions">
-        <Button href="/contact/">Contact me</Button>
+        <Button href="/contact">Contact me</Button>
         <Button href={`mailto:${AUTHOR.email}`} variant="secondary">{AUTHOR.email}</Button>
       </div>
     </div>

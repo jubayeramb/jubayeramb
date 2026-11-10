@@ -1,14 +1,14 @@
 ---
 import Signature from "./Signature.astro";
 import SearchTrigger from "./SearchTrigger.astro";
-import { ASK_NAV, AUTHOR, NAV, SOCIALS } from "@/lib/site";
+import { ASK_NAV, AUTHOR, NAV, SOCIALS, pagePath } from "@/lib/site";
 
 type Props = {
   activeRoute?: string;
 };
 
 const { activeRoute } = Astro.props;
-const segment = Astro.url.pathname.split("/").filter(Boolean)[0];
+const segment = pagePath(Astro.url.pathname).split("/").filter(Boolean)[0];
 const active = activeRoute || segment || "home";
 const current = (id: string) => (active === id ? "page" : undefined);
 const SHEET = [...NAV, ASK_NAV];

@@ -23,9 +23,9 @@ ${projects.map((p) => `- [${p.data.title}](${SITE_URL}/projects/${p.id}.md): ${p
 
 ## About
 
-- [About](${SITE_URL}/about/): Background, experience, recognition, education and stack
-- [Now](${SITE_URL}/now/): What he is focused on right now
-- [Contact](${SITE_URL}/contact/): How to reach him; fastest is a DM on X or LinkedIn
+- [About](${SITE_URL}/about): Background, experience, recognition, education and stack
+- [Now](${SITE_URL}/now): What he is focused on right now
+- [Contact](${SITE_URL}/contact): How to reach him; fastest is a DM on X or LinkedIn
 
 ## Optional
 
