@@ -5,7 +5,7 @@
     "designation": "Software Engineer",
     "startDate": "2023-12-01",
     "endDate": "",
-    "description": "Driving a phased Node.js monolith → microservices migration. Built an event-driven backend (Express + BullMQ + Redis), real-time booking APIs, and the React + Next.js frontend serving 2,000+ users. Mentor two junior engineers.",
+    "description": "Moving a Node.js monolith toward microservices through a modular monolith. Built an event-driven backend (Express + BullMQ + Redis), real-time booking APIs, and the React + Next.js frontend serving 2,000+ users. Mentor two junior engineers.",
     "technologies": [
       "TypeScript",
       "Node.js",
