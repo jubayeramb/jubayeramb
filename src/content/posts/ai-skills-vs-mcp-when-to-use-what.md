@@ -2,6 +2,7 @@
 title: "AI Skills vs MCP: When to Use What"
 description: "A practical guide to AI agent skills and the Model Context Protocol. What each one is, what it costs you in context, and how to pick the right one without overthinking it."
 pubDate: 2026-05-12
+updatedDate: 2026-11-11
 tags: ["technical", "ai", "agents", "claude", "mcp", "skills"]
 image:
   src: "./images/ai-skills-vs-mcp/hero.png"
@@ -16,6 +17,10 @@ faq:
     a: "Skills are reusable instruction packs the agent loads on demand. MCP is a protocol that lets the agent talk to outside systems."
   - q: "What is the difference between AI Agent Skills and MCP?"
     a: "Same answer. Skills live in your repo. MCP lives behind a server. Skills carry know-how. MCP carries access."
+  - q: "Is MCP worth it?"
+    a: "When the agent needs live data, a side effect, or access behind auth, yes. When the tool only returns static text, or one CLI command would do the job, no: you pay for its tool catalog in context every turn and get nothing a Skill or a script would not give you."
+  - q: "Should I build an MCP server or a Skill?"
+    a: "Build an MCP server when the value is access: credentials, a live system, several different agents or apps that need the same tools. Build a Skill when the value is know-how, or when a short script plus instructions is enough."
   - q: "Do Skills replace MCP?"
     a: "No. They share an agent runtime but solve different problems. Skills cannot fetch a fresh row from your database. MCP cannot capture how your team writes a pull request comment."
   - q: "Should I rewrite my MCP server as a Skill?"
@@ -108,6 +113,26 @@ Skills sidestep this almost completely. The Skill index lives in a hundred-token
 
 This is not a knock on MCP. It is a planning constraint. When you reach for MCP, you are paying tokens for _access_. Make sure the access is worth it.
 
+## Is MCP worth it?
+
+Yes, when the agent needs something it cannot get any other way.
+No, when you are paying for a tool catalog that a file or a one-line command would replace.
+
+MCP earns its context cost when at least one of these is true:
+
+- **The data is live.** The answer changes between Monday and Friday: tickets, inventory, a calendar, a deploy status.
+- **The agent has to act.** It sends, creates, updates or deploys something on a system you do not own.
+- **There is auth in the way.** OAuth, a service token, per-user permissions. The server holds the secret so the prompt never does.
+- **More than one client needs it.** The same tools have to work in Claude, Cursor and your own agent.
+
+It is not worth it when:
+
+- **The tool returns the same thing every time.** A style guide, a lookup table, an API reference. That is a Skill.
+- **One command does the job.** If the agent can run `gh pr list` or a small script in a terminal, a Skill that tells it which command to run is cheaper than a server that exposes thirty tools.
+- **You only ever call one or two tools.** Every tool the server exposes still sits in context. Turn off the ones you do not use, or skip the server.
+
+So the honest answer to "is MCP useful" is: very, for reach. For knowledge, it is the expensive way to do something a Skill does for almost nothing.
+
 ## When to pick which, in 10 seconds
 
 ![Decision flow card. Top question is whether the agent needs fresh data or to act on a system. If yes, reach for MCP, with examples like Drive search, Slack posts, DB queries. Second question is whether the task is about doing a recurring task well. If yes, write a Skill, with examples like house style, code review checklist, deck templates.](/assets/images/blog/ai-skills-vs-mcp/decision-flow.png)
@@ -122,6 +147,28 @@ That is a Skill. The know-how is the thing you are missing.
 
 **Both?** Yes, usually. Most real workflows are MCP for the verbs and Skills for the style.
 
+## MCP server vs Skill: which one should I build?
+
+The question changes a little when you are the one building the extension, not just picking one.
+
+Build an **MCP server** when:
+
+- It needs credentials that should not live in a repo or a prompt.
+- It talks to a live system over the network.
+- Several different agents or apps will use it, and you want one implementation behind all of them.
+- You want the server, not the model, to enforce what is allowed (read-only queries, rate limits, which tables it can touch).
+
+Build a **Skill** when:
+
+- The value is instructions, examples, templates or a checklist.
+- A short script in the Skill folder can do the work, and the agent can run it.
+- It only needs to work in the agents that support Skills.
+- You want to change it by editing a Markdown file, not by redeploying a server.
+
+If you are unsure, start with a Skill.
+It is a folder, so it costs nothing to try.
+Move the part that needs a key or live data into an MCP server once you hit that wall.
+
 ## A small worked example
 
 Say you want an agent that ships your weekly customer digest.
@@ -133,6 +180,15 @@ Say you want an agent that ships your weekly customer digest.
 
 Notice how the seam falls. MCP shows up wherever the agent crosses a system boundary. Skills show up wherever the agent has to make a judgment call about _how good_ the output should be.
 
+## Skills vs MCP in Claude Code
+
+In Claude Code the two sit side by side, and the difference is easy to see on disk.
+
+- **Skills** are folders with a `SKILL.md`. Project Skills go in `.claude/skills/<name>/` and are shared through the repo. Personal ones go in `~/.claude/skills/<name>/`. Claude Code reads only each Skill's name and description at startup, and loads the body when a task matches.
+- **MCP servers** are added with `claude mcp add`, or listed in a `.mcp.json` at the repo root so the whole team gets the same servers. Their tools are available to the agent from the start of the session, which is where the context cost comes from.
+
+A setup that works well: a project `.mcp.json` with the two or three servers the team really uses, and a `.claude/skills/` folder for everything about _how_ your team works.
+
 ## The short rule I use
 
 When I am about to wire something up, I ask one question. _Is what I am giving the agent a recipe, or a key?_
@@ -141,4 +197,6 @@ A recipe is a Skill. A key is MCP.
 
 If it is both, the recipe goes in a Skill and the key goes behind an MCP server, and the agent picks them up at the moment it needs each one. That is the whole pattern. Once you see it, every new extension becomes obvious.
 
-If you found this useful, or you disagree with how I drew the line, I would love to hear about it. The fastest way to reach me is through the one of the channels on the [contact page](/contact), or you can chat about me on the [home page](/) (yes, it is voice-enabled now).
+Skills and MCP decide what an agent knows and what it can reach. For the small decisions inside a workflow (classify, route, flag), I also wrote about [Jev and System One Models](/writings/jev-system-one-model-vs-llms), a model built to return those decisions directly.
+
+If you found this useful, or you disagree with how I drew the line, I would love to hear about it. The fastest way to reach me is through one of the channels on the [contact page](/contact), or you can chat about me on the [home page](/) (yes, it is voice-enabled now).
