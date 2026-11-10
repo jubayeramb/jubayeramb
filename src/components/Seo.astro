@@ -121,16 +121,8 @@ const websiteLd = {
   description: SITE_DESCRIPTION,
   inLanguage: LOCALE.ld,
   publisher: { "@id": PERSON_ID },
-  // Search action points at /ask, the site's real query surface (a chat
-  // over the site's own content).
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${SITE_URL}/ask?q={search_term_string}`,
-    },
-    "query-input": "required name=search_term_string",
-  },
+  // No SearchAction: Google retired the sitelinks search box, and the only
+  // query surface here (/ask) is noindex.
 };
 
 const personLd = {
@@ -346,9 +338,20 @@ const graph = [websiteLd, personLd, pageLd, articleLd, projectLd, faqLd, breadcr
 <meta name="color-scheme" content="light dark" />
 <meta name="format-detection" content="telephone=no" />
 
-<link rel="canonical" href={canonicalUrl} />
-<link rel="alternate" hreflang="en" href={canonicalUrl} />
-<link rel="alternate" hreflang="x-default" href={canonicalUrl} />
+{
+  /* A "noindex, nofollow" page (404, /ask) has nothing to consolidate, so it
+     gets no canonical. On the 404 page one would point at /404, a URL that
+     answers 200, which Google reads as a soft 404. */
+}
+{
+  robots !== "noindex" && (
+    <>
+      <link rel="canonical" href={canonicalUrl} />
+      <link rel="alternate" hreflang="en" href={canonicalUrl} />
+      <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
+    </>
+  )
+}
 <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME}${TITLE_SEPARATOR}Writing`} href={abs("/rss.xml")} />
 <link rel="alternate" type="application/feed+json" title={`${SITE_NAME}${TITLE_SEPARATOR}Writing`} href={abs("/feed.json")} />
 {markdownAlternate && <link rel="alternate" type="text/markdown" title="Markdown version" href={abs(markdownAlternate)} />}
