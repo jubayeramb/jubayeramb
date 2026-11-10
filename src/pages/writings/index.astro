@@ -26,7 +26,7 @@ const description =
 
 const collectionItems = posts.map((p) => ({
   title: p.data.title,
-  url: `/writings/${p.id}/`,
+  url: `/writings/${p.id}`,
   date: p.data.pubDate,
   description: p.data.description,
 }));
@@ -67,13 +67,13 @@ const collectionItems = posts.map((p) => ({
           {
             topics.map(({ tag, count }) => (
               <li>
-                <a href={`/tags/${tag}/`}>
+                <a href={`/tags/${tag}`}>
                   {tagLabel(tag)} <span class="meta">{count}</span>
                 </a>
               </li>
             ))
           }
-          <li><a href="/tags/">All tags <span aria-hidden="true">→</span></a></li>
+          <li><a href="/tags">All tags <span aria-hidden="true">→</span></a></li>
         </ul>
       </div>
       <div>

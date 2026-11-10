@@ -11,7 +11,7 @@ function modifiedMap() {
   if (!cached) {
     const now = readNowSnapshot();
     cached = lastModifiedByPath(process.cwd(), {
-      "/now/": now.lastEdited ? new Date(now.lastEdited) : undefined,
+      "/now": now.lastEdited ? new Date(now.lastEdited) : undefined,
     });
   }
   return cached;
@@ -22,7 +22,7 @@ export function siteLastUpdated(): Date | undefined {
   return modifiedMap().get("/");
 }
 
-/** Real last-modified date for a path such as "/writings/", if known. */
+/** Real last-modified date for a path such as "/writings", if known. */
 export function pathLastModified(path: string): Date | undefined {
   return modifiedMap().get(path);
 }

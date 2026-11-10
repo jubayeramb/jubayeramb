@@ -14,13 +14,13 @@ import { AUTHOR, SOCIALS } from "@/lib/site";
   <div class="author__body">
     <p class="eyebrow">Written by</p>
     <h2 id="author-name" class="author__name">
-      <a href="/about/" rel="author">{AUTHOR.name}</a>
+      <a href="/about" rel="author">{AUTHOR.name}</a>
     </h2>
     <p class="author__line">
       Software engineer based in Dhaka, Bangladesh, mostly self-taught, currently working at {AUTHOR.employer.name}.
     </p>
     <ul class="author__links">
-      <li><a href="/about/">About me</a></li>
+      <li><a href="/about">About me</a></li>
       {
         SOCIALS.map((s) => (
           <li>

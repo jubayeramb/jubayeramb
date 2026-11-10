@@ -16,10 +16,10 @@ export const GET: APIRoute = async () => {
     icon: `${SITE_URL}/icon-512.png`,
     favicon: `${SITE_URL}/icon-192.png`,
     language: LOCALE.html,
-    authors: [{ name: AUTHOR.name, url: `${SITE_URL}/about/` }],
+    authors: [{ name: AUTHOR.name, url: `${SITE_URL}/about` }],
     items: posts.map((p) => ({
-      id: `${SITE_URL}/writings/${p.id}/`,
-      url: `${SITE_URL}/writings/${p.id}/`,
+      id: `${SITE_URL}/writings/${p.id}`,
+      url: `${SITE_URL}/writings/${p.id}`,
       title: p.data.title,
       summary: p.data.description,
       content_html: absolutizeHtml(p.rendered?.html ?? ""),

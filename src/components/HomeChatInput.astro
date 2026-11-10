@@ -28,7 +28,7 @@ const SUGGESTIONS = [
     <ol class="home-chat-preview chat-bubbles" id="home-chat-preview" hidden></ol>
   </div>
 
-  <form class="home-chat-form" id="home-chat-form" action="/ask/" method="get" autocomplete="off">
+  <form class="home-chat-form" id="home-chat-form" action="/ask" method="get" autocomplete="off">
     <svg
       class="home-chat-icon"
       viewBox="0 0 24 24"
@@ -68,7 +68,7 @@ const SUGGESTIONS = [
 
   // Wired once the page has loaded and gone idle, so this and chat-store
   // never compete with first paint. A question submitted before then falls
-  // back to the form's action, /ask/?q=, which asks it there.
+  // back to the form's action, /ask?q=, which asks it there.
   afterLoad(() => void import("../lib/home-chat-input"));
 </script>
 

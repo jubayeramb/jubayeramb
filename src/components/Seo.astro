@@ -7,6 +7,7 @@ import {
   AUTHOR,
   LOCALE,
   NAV,
+  pagePath,
   SITE_DESCRIPTION,
   SITE_HOST,
   SITE_NAME,
@@ -56,11 +57,10 @@ const WEBSITE_ID = `${SITE_URL}/#website`;
 const leadsWithName = title.startsWith(SITE_NAME);
 const fullTitle = leadsWithName ? title : `${title}${TITLE_SEPARATOR}${SITE_NAME}`;
 
-// Canonical always ends with "/" to match the sitemap
-// (build.format = "directory").
-const normalizedPath = Astro.url.pathname.endsWith("/")
-  ? Astro.url.pathname
-  : `${Astro.url.pathname}/`;
+// Canonical never ends with "/" or ".html" (except the root "/") to match
+// the sitemap. build.format = "file" writes about.html, which Cloudflare
+// Pages serves at /about and 308-redirects /about/ to.
+const normalizedPath = pagePath(Astro.url.pathname);
 const canonicalUrl = canonical ?? abs(normalizedPath);
 const pageId = `${canonicalUrl}#webpage`;
 
@@ -164,7 +164,7 @@ const personLd = {
 
 const breadcrumbSegments = normalizedPath.split("/").filter(Boolean);
 const sectionLabel = (seg: string) =>
-  NAV.find((n) => n.href === `/${seg}/`)?.label ??
+  NAV.find((n) => n.href === `/${seg}`)?.label ??
   (seg === "tags" ? "Tags" : seg === "ask" ? "Ask" : seg.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()));
 const breadcrumbLd =
   breadcrumbSegments.length > 0
@@ -359,7 +359,7 @@ const graph = [websiteLd, personLd, pageLd, articleLd, projectLd, faqLd, breadcr
 
 <!-- IndieWeb / Mastodon identity verification + author profile linking -->
 {SOCIALS.map((s) => <link rel="me" href={s.href} />)}
-<link rel="author" href={abs("/about/")} />
+<link rel="author" href={abs("/about")} />
 
 <!-- Open Graph -->
 <meta property="og:site_name" content={SITE_NAME} />
@@ -375,7 +375,7 @@ const graph = [websiteLd, personLd, pageLd, articleLd, projectLd, faqLd, breadcr
 <meta property="og:image:alt" content={ogImageAlt} />
 {type === "article" && published && <meta property="article:published_time" content={published} />}
 {type === "article" && modified && <meta property="article:modified_time" content={modified} />}
-{type === "article" && <meta property="article:author" content={abs("/about/")} />}
+{type === "article" && <meta property="article:author" content={abs("/about")} />}
 {type === "article" && tags.map((tag) => <meta property="article:tag" content={tagLabel(tag)} />)}
 {
   type === "profile" && (

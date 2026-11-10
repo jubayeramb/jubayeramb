@@ -21,7 +21,7 @@ const description =
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q")?.trim();
     if (!q) return;
-    history.replaceState({}, "", "/ask/");
+    history.replaceState({}, "", "/ask");
     requestAnimationFrame(() => send(q));
   };
 

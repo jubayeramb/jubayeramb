@@ -179,7 +179,7 @@ function askAi() {
   if (!els) return;
   const q = els.input.value.trim();
   close();
-  window.location.assign(q ? `/ask/?q=${encodeURIComponent(q)}` : "/ask/");
+  window.location.assign(q ? `/ask?q=${encodeURIComponent(q)}` : "/ask");
 }
 
 function wire({ dialog, input, list, askBtn }: Els) {
