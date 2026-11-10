@@ -5,6 +5,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import remarkHeadingGuard from "./src/lib/markdown/remark-heading-guard";
 import { shikiAaLight } from "./src/lib/markdown/shiki-aa-light";
 import rehypePublicImg from "./src/lib/markdown/rehype-public-img";
+import rehypeTableScroll from "./src/lib/markdown/rehype-table-scroll";
 import {
   lastModifiedByPath,
   readCollection,
@@ -150,6 +151,7 @@ export default defineConfig({
         },
       ],
       rehypePublicImg,
+      rehypeTableScroll,
     ],
   },
   integrations: [
